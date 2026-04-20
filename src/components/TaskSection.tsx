@@ -84,11 +84,11 @@ export function TaskSection({
             <motion.li
               key={`${tone}-${i}`}
               layout
-              initial={{ opacity: 0, y: -10, scale: 0.92 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 30, scale: 0.9 }}
-              transition={{ type: "spring", stiffness: 360, damping: 24 }}
-              className="group relative"
+              initial={{ opacity: 0, height: 0, scale: 0.92 }}
+              animate={{ opacity: 1, height: "auto", scale: 1 }}
+              exit={{ opacity: 0, height: 0, scale: 0.92 }}
+              transition={{ type: "spring", stiffness: 360, damping: 30 }}
+              className="group relative overflow-visible"
             >
               <PillInput
                 tone={tone}
