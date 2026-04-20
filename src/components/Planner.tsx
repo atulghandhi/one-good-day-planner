@@ -25,6 +25,11 @@ export function Planner() {
   const [state, setState] = useState<PlannerState>(EMPTY_STATE);
   const [hydrated, setHydrated] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [dateLabel, setDateLabel] = useState("");
+
+  useEffect(() => {
+    setDateLabel(todayLabel());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,7 +87,7 @@ export function Planner() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-card/70 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-soft backdrop-blur">
               <Sparkles className="h-3.5 w-3.5 text-[color:var(--mit)]" />
-              {todayLabel()}
+              {dateLabel || "\u00A0"}
             </div>
             <h1 className="mt-4 font-display text-4xl md:text-5xl tracking-tight">
               One good day.
