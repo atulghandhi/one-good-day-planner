@@ -92,7 +92,16 @@ export function TaskSection({
               <PillInput
                 tone={tone}
                 value={value}
+                autoFocus={i === items.length - 1 && i > 0 && value === ""}
                 onChange={(e) => update(i, e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (i === items.length - 1 && value.trim().length > 0) {
+                      add();
+                    }
+                  }
+                }}
                 placeholder={placeholder}
               />
               {items.length > 1 && (
