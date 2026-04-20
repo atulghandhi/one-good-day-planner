@@ -24,7 +24,7 @@ export const PillInput = forwardRef<HTMLInputElement, Props>(
           "shadow-soft focus-visible:shadow-pop focus-visible:-translate-y-[1px]",
           "focus-visible:ring-4",
           size === "lg"
-            ? "px-8 py-7 my-2 text-xl md:text-2xl font-display tracking-tight placeholder:text-base placeholder:font-sans placeholder:tracking-normal"
+            ? "px-5 py-3 my-6 text-base font-display tracking-tight placeholder:font-sans placeholder:tracking-normal"
             : "px-5 py-3 text-base",
           toneRing,
           className,
