@@ -25,6 +25,11 @@ export function Planner() {
   const [state, setState] = useState<PlannerState>(EMPTY_STATE);
   const [hydrated, setHydrated] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [dateLabel, setDateLabel] = useState("");
+
+  useEffect(() => {
+    setDateLabel(todayLabel());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
