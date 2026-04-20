@@ -29,14 +29,18 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "One Good Day" },
+      { name: "description", content: "One Good Day - lightweight daily planning app with 'most important task', 'shoulds' and 'coulds'. Daily planner for ADHD or increased productivity." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "One Good Day" },
+      { property: "og:description", content: "One Good Day - lightweight daily planning app with 'most important task', 'shoulds' and 'coulds'. Daily planner for ADHD or increased productivity." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "One Good Day" },
+      { name: "twitter:description", content: "One Good Day - lightweight daily planning app with 'most important task', 'shoulds' and 'coulds'. Daily planner for ADHD or increased productivity." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6a970a7c-e24a-4730-855f-66d78997ef2a/id-preview-4495c1b8--a71304b9-30e3-438d-a99c-7d32d9297f2c.lovable.app-1776685159283.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6a970a7c-e24a-4730-855f-66d78997ef2a/id-preview-4495c1b8--a71304b9-30e3-438d-a99c-7d32d9297f2c.lovable.app-1776685159283.png" },
     ],
     links: [
       {
