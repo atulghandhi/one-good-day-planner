@@ -188,6 +188,20 @@ export function Planner() {
                                 next[i] = e.target.value;
                                 setState((s) => ({ ...s, mitSubs: next }));
                               }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  if (
+                                    i === state.mitSubs.length - 1 &&
+                                    sub.trim().length > 0
+                                  ) {
+                                    setState((s) => ({
+                                      ...s,
+                                      mitSubs: [...s.mitSubs, ""],
+                                    }));
+                                  }
+                                }
+                              }}
                               onBlur={flushSave}
                               placeholder={`Step ${i + 1}`}
                             />

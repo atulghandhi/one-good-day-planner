@@ -93,6 +93,14 @@ export function TaskSection({
                 tone={tone}
                 value={value}
                 onChange={(e) => update(i, e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (i === items.length - 1 && value.trim().length > 0) {
+                      add();
+                    }
+                  }
+                }}
                 placeholder={placeholder}
               />
               {items.length > 1 && (
