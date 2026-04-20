@@ -183,11 +183,6 @@ export function Planner() {
                             <PillInput
                               tone="mit"
                               value={sub}
-                              autoFocus={
-                                i === state.mitSubs.length - 1 &&
-                                i > 0 &&
-                                sub === ""
-                              }
                               onChange={(e) => {
                                 const next = [...state.mitSubs];
                                 next[i] = e.target.value;
