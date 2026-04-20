@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { RotateCcw, Sparkles } from "lucide-react";
+import { Plus, RotateCcw, Sparkles, X } from "lucide-react";
 import {
   EMPTY_STATE,
   type PlannerState,
@@ -143,35 +143,74 @@ export function Planner() {
                   className="overflow-hidden"
                 >
                   <div className="px-2 pt-5 pb-1">
-                    <p className="mb-3 text-xs font-medium text-muted-foreground">
-                      Break it down (optional)
-                    </p>
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Break it down (optional)
+                      </p>
+                      <motion.button
+                        onClick={() =>
+                          setState((s) => ({
+                            ...s,
+                            mitSubs: [...s.mitSubs, ""],
+                          }))
+                        }
+                        whileTap={{ scale: 0.85, rotate: -10 }}
+                        whileHover={{ scale: 1.08, rotate: 8 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 14 }}
+                        className="grid h-9 w-9 place-items-center rounded-full bg-gradient-mit text-foreground shadow-pop"
+                        aria-label="Add step"
+                        type="button"
+                      >
+                        <Plus className="h-4 w-4" strokeWidth={2.8} />
+                      </motion.button>
+                    </div>
                     <ul className="flex flex-col gap-2.5">
-                      {state.mitSubs.map((sub, i) => (
-                        <motion.li
-                          key={i}
-                          initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 22,
-                            delay: i * 0.06,
-                          }}
-                        >
-                          <PillInput
-                            tone="mit"
-                            value={sub}
-                            onChange={(e) => {
-                              const next = [...state.mitSubs];
-                              next[i] = e.target.value;
-                              setState((s) => ({ ...s, mitSubs: next }));
+                      <AnimatePresence initial={false}>
+                        {state.mitSubs.map((sub, i) => (
+                          <motion.li
+                            key={i}
+                            layout
+                            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, x: 30, scale: 0.9 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 22,
                             }}
-                            onBlur={flushSave}
-                            placeholder={`Step ${i + 1}`}
-                          />
-                        </motion.li>
-                      ))}
+                            className="group relative"
+                          >
+                            <PillInput
+                              tone="mit"
+                              value={sub}
+                              onChange={(e) => {
+                                const next = [...state.mitSubs];
+                                next[i] = e.target.value;
+                                setState((s) => ({ ...s, mitSubs: next }));
+                              }}
+                              onBlur={flushSave}
+                              placeholder={`Step ${i + 1}`}
+                            />
+                            {state.mitSubs.length > 1 && (
+                              <button
+                                onClick={() =>
+                                  setState((s) => ({
+                                    ...s,
+                                    mitSubs: s.mitSubs.filter(
+                                      (_, idx) => idx !== i,
+                                    ),
+                                  }))
+                                }
+                                className="absolute right-2 top-1/2 -translate-y-1/2 grid h-8 w-8 place-items-center rounded-full bg-background/70 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground"
+                                aria-label="Remove step"
+                                type="button"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            )}
+                          </motion.li>
+                        ))}
+                      </AnimatePresence>
                     </ul>
                   </div>
                 </motion.div>
