@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
-type Props = React.InputHTMLAttributes<HTMLInputElement> & {
+type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> & {
   tone?: "mit" | "should" | "could" | "neutral";
   size?: "lg" | "md";
 };
