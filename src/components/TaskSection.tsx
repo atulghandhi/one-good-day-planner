@@ -72,6 +72,7 @@ export function TaskSection({
           transition={{ type: "spring", stiffness: 400, damping: 14 }}
           className={`grid h-11 w-11 place-items-center rounded-full ${gradient} text-foreground shadow-pop`}
           aria-label={`Add to ${title}`}
+          tabIndex={-1}
         >
           <Plus className="h-5 w-5" strokeWidth={2.8} />
         </motion.button>
@@ -110,6 +111,7 @@ export function TaskSection({
                   className="absolute right-2 top-1/2 -translate-y-1/2 grid h-8 w-8 place-items-center rounded-full bg-background/70 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground"
                   aria-label="Remove"
                   type="button"
+                  tabIndex={-1}
                 >
                   <X className="h-4 w-4" />
                 </button>

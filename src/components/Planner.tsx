@@ -160,6 +160,7 @@ export function Planner() {
                         className="grid h-9 w-9 place-items-center rounded-full bg-gradient-mit text-foreground shadow-pop"
                         aria-label="Add step"
                         type="button"
+                        tabIndex={-1}
                       >
                         <Plus className="h-4 w-4" strokeWidth={2.8} />
                       </motion.button>
@@ -218,6 +219,7 @@ export function Planner() {
                                 className="absolute right-2 top-1/2 -translate-y-1/2 grid h-8 w-8 place-items-center rounded-full bg-background/70 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground"
                                 aria-label="Remove step"
                                 type="button"
+                                tabIndex={-1}
                               >
                                 <X className="h-4 w-4" />
                               </button>
@@ -255,8 +257,15 @@ export function Planner() {
           />
         </div>
 
-        <footer className="mt-12 text-center text-xs text-muted-foreground">
-          Saved automatically · just for today
+        <footer className="mt-12 flex flex-col items-center gap-1.5 text-center text-xs text-muted-foreground">
+          <p>
+            <kbd className="rounded bg-card/70 px-1.5 py-0.5 font-mono text-[10px] shadow-soft">Enter</kbd>
+            <span className="mx-1.5">new field</span>
+            <span className="opacity-50">·</span>
+            <kbd className="ml-1.5 rounded bg-card/70 px-1.5 py-0.5 font-mono text-[10px] shadow-soft">Tab</kbd>
+            <span className="ml-1.5">next field</span>
+          </p>
+          <p>Saved automatically · just for today</p>
         </footer>
       </main>
 
