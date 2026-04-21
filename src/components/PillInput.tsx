@@ -4,10 +4,11 @@ import { cn } from "@/lib/utils";
 type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> & {
   tone?: "mit" | "should" | "could" | "neutral";
   size?: "lg" | "md";
+  done?: boolean;
 };
 
 export const PillInput = forwardRef<HTMLInputElement, Props>(
-  ({ className, tone = "neutral", size = "md", ...props }, ref) => {
+  ({ className, tone = "neutral", size = "md", done = false, ...props }, ref) => {
     const toneRing = {
       mit: "focus-visible:ring-[color:var(--mit)]/60",
       should: "focus-visible:ring-[color:var(--should)]/60",
@@ -27,6 +28,7 @@ export const PillInput = forwardRef<HTMLInputElement, Props>(
             ? "px-5 py-3 my-6 text-base font-display tracking-tight placeholder:font-sans placeholder:tracking-normal"
             : "px-5 py-3 text-base",
           toneRing,
+          done && "line-through text-muted-foreground/70 bg-muted/40 shadow-none",
           className,
         )}
         {...props}
