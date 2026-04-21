@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, RotateCcw, Sparkles, X } from "lucide-react";
+import { Check, Plus, RotateCcw, Sparkles, X } from "lucide-react";
 import {
   EMPTY_STATE,
   type PlannerState,
+  type TaskItem,
   clearState,
   loadState,
   saveState,
@@ -169,7 +170,10 @@ export function Planner() {
                         onClick={() =>
                           setState((s) => ({
                             ...s,
-                            mitSubs: [...s.mitSubs, ""],
+                            mitSubs: [
+                              ...s.mitSubs,
+                              { text: "", done: false } as TaskItem,
+                            ],
                           }))
                         }
                         whileTap={{ scale: 0.85, rotate: -10 }}
@@ -185,7 +189,7 @@ export function Planner() {
                     </div>
                     <ul className="flex flex-col gap-2.5">
                       <AnimatePresence initial={false}>
-                        {state.mitSubs.map((sub, i) => (
+                        {orderedSubs.map(({ item: sub, originalIndex: i }) => (
                           <motion.li
                             key={i}
                             layout
@@ -201,10 +205,12 @@ export function Planner() {
                           >
                             <PillInput
                               tone="mit"
-                              value={sub}
+                              value={sub.text}
+                              done={sub.done}
+                              readOnly={sub.done}
                               onChange={(e) => {
                                 const next = [...state.mitSubs];
-                                next[i] = e.target.value;
+                                next[i] = { ...next[i], text: e.target.value };
                                 setState((s) => ({ ...s, mitSubs: next }));
                               }}
                               onKeyDown={(e) => {
@@ -213,10 +219,13 @@ export function Planner() {
                                   if (focusNextSiblingInput(e.currentTarget)) {
                                     return;
                                   }
-                                  if (sub.trim().length > 0) {
+                                  if (sub.text.trim().length > 0) {
                                     setState((s) => ({
                                       ...s,
-                                      mitSubs: [...s.mitSubs, ""],
+                                      mitSubs: [
+                                        ...s.mitSubs,
+                                        { text: "", done: false },
+                                      ],
                                     }));
                                     requestAnimationFrame(() => {
                                       const list =
@@ -224,11 +233,46 @@ export function Planner() {
                                       const inputs = list
                                         ? Array.from(
                                             list.querySelectorAll<HTMLInputElement>(
-                                              "input",
+                                              "input:not([readonly])",
                                             ),
                                           )
                                         : [];
                                       inputs[inputs.length - 1]?.focus();
+                                    });
+                                  }
+                                  return;
+                                }
+                                if (
+                                  e.key === "Backspace" &&
+                                  sub.text === "" &&
+                                  state.mitSubs.length > 1
+                                ) {
+                                  e.preventDefault();
+                                  const list = e.currentTarget.closest("ul");
+                                  const inputs = list
+                                    ? Array.from(
+                                        list.querySelectorAll<HTMLInputElement>(
+                                          "input",
+                                        ),
+                                      )
+                                    : [];
+                                  const idx = inputs.indexOf(e.currentTarget);
+                                  const prev = inputs[idx - 1];
+                                  setState((s) => ({
+                                    ...s,
+                                    mitSubs: s.mitSubs.filter(
+                                      (_, idx2) => idx2 !== i,
+                                    ),
+                                  }));
+                                  if (prev) {
+                                    requestAnimationFrame(() => {
+                                      prev.focus();
+                                      const len = prev.value.length;
+                                      try {
+                                        prev.setSelectionRange(len, len);
+                                      } catch {
+                                        /* ignore */
+                                      }
                                     });
                                   }
                                 }
@@ -236,24 +280,52 @@ export function Planner() {
                               onBlur={flushSave}
                               placeholder={`Step ${i + 1}`}
                             />
-                            {state.mitSubs.length > 1 && (
-                              <button
-                                onClick={() =>
-                                  setState((s) => ({
-                                    ...s,
-                                    mitSubs: s.mitSubs.filter(
-                                      (_, idx) => idx !== i,
-                                    ),
-                                  }))
-                                }
-                                className="absolute right-2 top-1/2 -translate-y-1/2 grid h-8 w-8 place-items-center rounded-full bg-background/70 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground"
-                                aria-label="Remove step"
-                                type="button"
-                                tabIndex={-1}
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            )}
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                              {sub.done && (
+                                <button
+                                  onClick={() =>
+                                    setState((s) => ({
+                                      ...s,
+                                      mitSubs: s.mitSubs.filter(
+                                        (_, idx) => idx !== i,
+                                      ),
+                                    }))
+                                  }
+                                  className="grid h-8 w-8 place-items-center rounded-full bg-background/70 text-muted-foreground transition-all hover:bg-destructive hover:text-destructive-foreground"
+                                  aria-label="Remove step"
+                                  type="button"
+                                  tabIndex={-1}
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              )}
+                              {sub.text.trim().length > 0 && (
+                                <button
+                                  onClick={() =>
+                                    setState((s) => ({
+                                      ...s,
+                                      mitSubs: s.mitSubs.map((it, idx) =>
+                                        idx === i
+                                          ? { ...it, done: !it.done }
+                                          : it,
+                                      ),
+                                    }))
+                                  }
+                                  className={`grid h-8 w-8 place-items-center rounded-full transition-all ${
+                                    sub.done
+                                      ? "bg-[color:var(--mit)]/80 text-[color:var(--mit-foreground)] shadow-soft"
+                                      : "bg-background/70 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-[color:var(--mit)]/70 hover:text-[color:var(--mit-foreground)]"
+                                  }`}
+                                  aria-label={
+                                    sub.done ? "Mark incomplete" : "Mark done"
+                                  }
+                                  type="button"
+                                  tabIndex={-1}
+                                >
+                                  <Check className="h-4 w-4" strokeWidth={3} />
+                                </button>
+                              )}
+                            </div>
                           </motion.li>
                         ))}
                       </AnimatePresence>
