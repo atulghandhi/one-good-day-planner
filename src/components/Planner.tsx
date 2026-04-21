@@ -75,6 +75,18 @@ export function Planner() {
 
   const showSubs = state.mit.trim().length > 0;
 
+  // Sort sub-steps so completed ones drop to the bottom (preserve original index for keys + edits)
+  const orderedSubs = useMemo(
+    () =>
+      state.mitSubs
+        .map((item, originalIndex) => ({ item, originalIndex }))
+        .sort((a, b) => {
+          if (a.item.done === b.item.done) return 0;
+          return a.item.done ? 1 : -1;
+        }),
+    [state.mitSubs],
+  );
+
   const handleReset = async () => {
     await clearState();
     setState(EMPTY_STATE);
