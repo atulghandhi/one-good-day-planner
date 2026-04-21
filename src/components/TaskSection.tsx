@@ -98,7 +98,19 @@ export function TaskSection({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    if (i === items.length - 1 && value.trim().length > 0) {
+                    const list = e.currentTarget.closest("ul");
+                    const inputs = list
+                      ? Array.from(
+                          list.querySelectorAll<HTMLInputElement>("input"),
+                        )
+                      : [];
+                    const idx = inputs.indexOf(e.currentTarget);
+                    const next = inputs[idx + 1];
+                    if (next) {
+                      next.focus();
+                      return;
+                    }
+                    if (value.trim().length > 0) {
                       add();
                     }
                   }
