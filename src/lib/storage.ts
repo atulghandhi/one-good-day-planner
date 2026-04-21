@@ -9,7 +9,7 @@ export type PlannerState = {
 
 export const EMPTY_STATE: PlannerState = {
   mit: "",
-  mitSubs: ["", "", ""],
+  mitSubs: [""],
   shoulds: [""],
   coulds: [""],
 };

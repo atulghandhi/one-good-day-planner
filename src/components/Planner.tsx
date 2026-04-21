@@ -12,6 +12,7 @@ import { useDebouncedEffect } from "@/hooks/use-debounce";
 import { PillInput } from "./PillInput";
 import { TaskSection } from "./TaskSection";
 import { ResetDialog } from "./ResetDialog";
+import { ThemePicker } from "./ThemePicker";
 
 function todayLabel() {
   return new Date().toLocaleDateString(undefined, {
@@ -19,6 +20,20 @@ function todayLabel() {
     month: "long",
     day: "numeric",
   });
+}
+
+// Focus the next input in the same <ul>; return true if found.
+function focusNextSiblingInput(el: HTMLInputElement): boolean {
+  const list = el.closest("ul");
+  if (!list) return false;
+  const inputs = Array.from(list.querySelectorAll<HTMLInputElement>("input"));
+  const idx = inputs.indexOf(el);
+  const next = inputs[idx + 1];
+  if (next) {
+    next.focus();
+    return true;
+  }
+  return false;
 }
 
 export function Planner() {
@@ -97,16 +112,19 @@ export function Planner() {
             </p>
           </div>
 
-          <motion.button
-            onClick={() => setConfirmOpen(true)}
-            whileHover={{ rotate: -90, scale: 1.05 }}
-            whileTap={{ scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 300, damping: 18 }}
-            className="grid h-12 w-12 place-items-center rounded-full bg-card text-foreground shadow-pop"
-            aria-label="Reset day"
-          >
-            <RotateCcw className="h-5 w-5" strokeWidth={2.5} />
-          </motion.button>
+          <div className="flex items-center gap-2">
+            <ThemePicker />
+            <motion.button
+              onClick={() => setConfirmOpen(true)}
+              whileHover={{ rotate: -90, scale: 1.05 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18 }}
+              className="grid h-12 w-12 place-items-center rounded-full bg-card text-foreground shadow-pop"
+              aria-label="Reset day"
+            >
+              <RotateCcw className="h-5 w-5" strokeWidth={2.5} />
+            </motion.button>
+          </div>
         </div>
 
         {/* MIT */}
@@ -171,13 +189,13 @@ export function Planner() {
                           <motion.li
                             key={i}
                             layout
-                            initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, x: 30, scale: 0.9 }}
+                            initial={{ opacity: 0, height: 0, scale: 0.92 }}
+                            animate={{ opacity: 1, height: "auto", scale: 1 }}
+                            exit={{ opacity: 0, height: 0, scale: 0.92 }}
                             transition={{
                               type: "spring",
-                              stiffness: 300,
-                              damping: 22,
+                              stiffness: 360,
+                              damping: 30,
                             }}
                             className="group relative"
                           >
@@ -192,14 +210,26 @@ export function Planner() {
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
-                                  if (
-                                    i === state.mitSubs.length - 1 &&
-                                    sub.trim().length > 0
-                                  ) {
+                                  if (focusNextSiblingInput(e.currentTarget)) {
+                                    return;
+                                  }
+                                  if (sub.trim().length > 0) {
                                     setState((s) => ({
                                       ...s,
                                       mitSubs: [...s.mitSubs, ""],
                                     }));
+                                    requestAnimationFrame(() => {
+                                      const list =
+                                        e.currentTarget?.closest("ul");
+                                      const inputs = list
+                                        ? Array.from(
+                                            list.querySelectorAll<HTMLInputElement>(
+                                              "input",
+                                            ),
+                                          )
+                                        : [];
+                                      inputs[inputs.length - 1]?.focus();
+                                    });
                                   }
                                 }
                               }}
@@ -260,7 +290,7 @@ export function Planner() {
         <footer className="mt-12 flex flex-col items-center gap-1.5 text-center text-xs text-muted-foreground">
           <p>
             <kbd className="rounded bg-card/70 px-1.5 py-0.5 font-mono text-[10px] shadow-soft">Enter</kbd>
-            <span className="mx-1.5">new field</span>
+            <span className="mx-1.5">next field (or new)</span>
             <span className="opacity-50">·</span>
             <kbd className="ml-1.5 rounded bg-card/70 px-1.5 py-0.5 font-mono text-[10px] shadow-soft">Tab</kbd>
             <span className="ml-1.5">next field</span>
