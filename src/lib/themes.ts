@@ -1,13 +1,12 @@
-// Theme presets — each defines the 4 core hue tokens used across the app.
-// Colors chosen for harmony + readable foreground contrast on light card.
+// Theme presets — 3 light, 3 dark. Each defines core hue tokens used across the app.
 
 export type ThemeKey =
-  | "coral"
-  | "ocean"
+  | "sakura"
+  | "blossom"
+  | "meadow"
+  | "nebula"
   | "forest"
-  | "sunset"
-  | "candy"
-  | "midnight";
+  | "starry";
 
 export type ThemeTokens = {
   background: string;
@@ -31,8 +30,37 @@ export type ThemeTokens = {
   gradientCould: string;
 };
 
-// Default — current playful pastel coral palette
-const coral: ThemeTokens = {
+/* ---------------- LIGHT THEMES ---------------- */
+
+// Sakura — Japan inspired: soft pinks, washi cream, indigo ink, matcha
+const sakura: ThemeTokens = {
+  background: "oklch(0.98 0.015 35)",
+  foreground: "oklch(0.24 0.05 280)",
+  card: "oklch(0.995 0.005 60)",
+  cardForeground: "oklch(0.24 0.05 280)",
+  muted: "oklch(0.95 0.02 30)",
+  mutedForeground: "oklch(0.48 0.04 280)",
+  border: "oklch(0.91 0.02 30)",
+  mit: "oklch(0.82 0.11 10)",
+  mitFg: "oklch(0.28 0.1 10)",
+  should: "oklch(0.85 0.09 145)",
+  shouldFg: "oklch(0.3 0.07 145)",
+  could: "oklch(0.78 0.09 270)",
+  couldFg: "oklch(0.28 0.1 270)",
+  sun: "oklch(0.92 0.1 80)",
+  sky: "oklch(0.9 0.06 220)",
+  gradientSky:
+    "linear-gradient(135deg, oklch(0.97 0.03 30), oklch(0.94 0.05 350) 50%, oklch(0.95 0.04 140))",
+  gradientMit:
+    "linear-gradient(135deg, oklch(0.88 0.1 15), oklch(0.82 0.12 350))",
+  gradientShould:
+    "linear-gradient(135deg, oklch(0.88 0.09 145), oklch(0.86 0.1 125))",
+  gradientCould:
+    "linear-gradient(135deg, oklch(0.82 0.09 275), oklch(0.8 0.1 250))",
+};
+
+// Blossom — playful pastel coral / mint / lavender (the original)
+const blossom: ThemeTokens = {
   background: "oklch(0.985 0.02 95)",
   foreground: "oklch(0.22 0.04 285)",
   card: "oklch(1 0 0)",
@@ -58,157 +86,136 @@ const coral: ThemeTokens = {
     "linear-gradient(135deg, oklch(0.88 0.13 280), oklch(0.86 0.13 320))",
 };
 
-// Cool ocean — teals & blues
-const ocean: ThemeTokens = {
-  background: "oklch(0.98 0.02 220)",
-  foreground: "oklch(0.22 0.05 240)",
+// Meadow — soft buttery yellow, sky blue, peach
+const meadow: ThemeTokens = {
+  background: "oklch(0.985 0.025 95)",
+  foreground: "oklch(0.24 0.04 240)",
   card: "oklch(1 0 0)",
-  cardForeground: "oklch(0.22 0.05 240)",
-  muted: "oklch(0.95 0.02 220)",
+  cardForeground: "oklch(0.24 0.04 240)",
+  muted: "oklch(0.95 0.02 95)",
   mutedForeground: "oklch(0.5 0.04 240)",
-  border: "oklch(0.92 0.02 220)",
-  mit: "oklch(0.75 0.14 220)",
-  mitFg: "oklch(0.25 0.1 230)",
-  should: "oklch(0.83 0.12 190)",
-  shouldFg: "oklch(0.28 0.08 200)",
-  could: "oklch(0.82 0.11 260)",
-  couldFg: "oklch(0.3 0.1 260)",
-  sun: "oklch(0.9 0.1 200)",
-  sky: "oklch(0.88 0.09 240)",
+  border: "oklch(0.92 0.02 95)",
+  mit: "oklch(0.86 0.13 85)",
+  mitFg: "oklch(0.3 0.1 70)",
+  should: "oklch(0.85 0.1 215)",
+  shouldFg: "oklch(0.28 0.08 230)",
+  could: "oklch(0.85 0.1 50)",
+  couldFg: "oklch(0.3 0.09 40)",
+  sun: "oklch(0.92 0.14 85)",
+  sky: "oklch(0.88 0.09 215)",
   gradientSky:
-    "linear-gradient(135deg, oklch(0.95 0.05 200), oklch(0.92 0.07 230) 50%, oklch(0.94 0.05 260))",
+    "linear-gradient(135deg, oklch(0.96 0.06 85), oklch(0.93 0.07 200) 50%, oklch(0.95 0.05 50))",
   gradientMit:
-    "linear-gradient(135deg, oklch(0.82 0.13 215), oklch(0.78 0.15 235))",
+    "linear-gradient(135deg, oklch(0.9 0.13 90), oklch(0.86 0.14 70))",
   gradientShould:
-    "linear-gradient(135deg, oklch(0.88 0.12 185), oklch(0.86 0.12 205))",
+    "linear-gradient(135deg, oklch(0.88 0.1 220), oklch(0.86 0.11 200))",
   gradientCould:
-    "linear-gradient(135deg, oklch(0.87 0.11 255), oklch(0.85 0.12 280))",
+    "linear-gradient(135deg, oklch(0.88 0.1 55), oklch(0.85 0.11 35))",
 };
 
-// Forest — sage & earth
-const forest: ThemeTokens = {
-  background: "oklch(0.97 0.02 120)",
-  foreground: "oklch(0.22 0.04 145)",
-  card: "oklch(0.995 0.005 120)",
-  cardForeground: "oklch(0.22 0.04 145)",
-  muted: "oklch(0.94 0.02 120)",
-  mutedForeground: "oklch(0.48 0.04 145)",
-  border: "oklch(0.91 0.02 120)",
-  mit: "oklch(0.72 0.14 145)",
-  mitFg: "oklch(0.24 0.09 145)",
-  should: "oklch(0.82 0.11 95)",
-  shouldFg: "oklch(0.28 0.08 95)",
-  could: "oklch(0.82 0.1 60)",
-  couldFg: "oklch(0.3 0.09 50)",
-  sun: "oklch(0.9 0.13 95)",
-  sky: "oklch(0.88 0.08 165)",
-  gradientSky:
-    "linear-gradient(135deg, oklch(0.95 0.05 130), oklch(0.93 0.06 100) 50%, oklch(0.95 0.05 70))",
-  gradientMit:
-    "linear-gradient(135deg, oklch(0.8 0.13 150), oklch(0.75 0.15 135))",
-  gradientShould:
-    "linear-gradient(135deg, oklch(0.87 0.11 100), oklch(0.85 0.12 85))",
-  gradientCould:
-    "linear-gradient(135deg, oklch(0.86 0.1 65), oklch(0.84 0.11 45))",
-};
+/* ---------------- DARK THEMES ---------------- */
 
-// Sunset — warm oranges, magentas
-const sunset: ThemeTokens = {
-  background: "oklch(0.98 0.02 60)",
-  foreground: "oklch(0.22 0.05 30)",
-  card: "oklch(1 0 0)",
-  cardForeground: "oklch(0.22 0.05 30)",
-  muted: "oklch(0.95 0.02 60)",
-  mutedForeground: "oklch(0.48 0.04 30)",
-  border: "oklch(0.92 0.02 60)",
-  mit: "oklch(0.75 0.17 50)",
-  mitFg: "oklch(0.25 0.12 40)",
-  should: "oklch(0.78 0.15 15)",
-  shouldFg: "oklch(0.28 0.1 15)",
-  could: "oklch(0.78 0.14 340)",
-  couldFg: "oklch(0.3 0.1 340)",
-  sun: "oklch(0.9 0.15 80)",
-  sky: "oklch(0.85 0.11 350)",
-  gradientSky:
-    "linear-gradient(135deg, oklch(0.95 0.06 70), oklch(0.92 0.08 30) 50%, oklch(0.93 0.07 350))",
-  gradientMit:
-    "linear-gradient(135deg, oklch(0.82 0.16 60), oklch(0.78 0.17 35))",
-  gradientShould:
-    "linear-gradient(135deg, oklch(0.83 0.14 25), oklch(0.8 0.15 5))",
-  gradientCould:
-    "linear-gradient(135deg, oklch(0.83 0.13 350), oklch(0.8 0.14 320))",
-};
-
-// Candy — bubblegum pinks & lilacs
-const candy: ThemeTokens = {
-  background: "oklch(0.98 0.02 340)",
-  foreground: "oklch(0.22 0.05 320)",
-  card: "oklch(1 0 0)",
-  cardForeground: "oklch(0.22 0.05 320)",
-  muted: "oklch(0.95 0.02 340)",
-  mutedForeground: "oklch(0.5 0.04 320)",
-  border: "oklch(0.92 0.02 340)",
-  mit: "oklch(0.78 0.15 350)",
-  mitFg: "oklch(0.27 0.1 345)",
-  should: "oklch(0.83 0.12 300)",
-  shouldFg: "oklch(0.3 0.09 300)",
-  could: "oklch(0.84 0.11 250)",
-  couldFg: "oklch(0.3 0.1 255)",
-  sun: "oklch(0.9 0.13 340)",
-  sky: "oklch(0.88 0.1 280)",
-  gradientSky:
-    "linear-gradient(135deg, oklch(0.95 0.06 340), oklch(0.93 0.07 300) 50%, oklch(0.94 0.06 260))",
-  gradientMit:
-    "linear-gradient(135deg, oklch(0.85 0.14 355), oklch(0.81 0.16 335))",
-  gradientShould:
-    "linear-gradient(135deg, oklch(0.87 0.12 305), oklch(0.85 0.13 285))",
-  gradientCould:
-    "linear-gradient(135deg, oklch(0.87 0.11 260), oklch(0.85 0.12 240))",
-};
-
-// Midnight — dark mode with neon accents
-const midnight: ThemeTokens = {
-  background: "oklch(0.18 0.03 285)",
-  foreground: "oklch(0.97 0.01 90)",
-  card: "oklch(0.24 0.03 285)",
-  cardForeground: "oklch(0.97 0.01 90)",
-  muted: "oklch(0.3 0.04 285)",
-  mutedForeground: "oklch(0.78 0.02 285)",
+// Nebula — purple sci-fi, neon magenta + cyan
+const nebula: ThemeTokens = {
+  background: "oklch(0.17 0.04 295)",
+  foreground: "oklch(0.97 0.01 300)",
+  card: "oklch(0.23 0.05 295)",
+  cardForeground: "oklch(0.97 0.01 300)",
+  muted: "oklch(0.3 0.05 295)",
+  mutedForeground: "oklch(0.78 0.03 295)",
   border: "oklch(1 0 0 / 12%)",
-  mit: "oklch(0.78 0.18 25)",
-  mitFg: "oklch(0.97 0.04 30)",
-  should: "oklch(0.78 0.16 165)",
-  shouldFg: "oklch(0.96 0.05 165)",
-  could: "oklch(0.78 0.16 280)",
-  couldFg: "oklch(0.96 0.05 280)",
-  sun: "oklch(0.78 0.18 90)",
-  sky: "oklch(0.7 0.15 230)",
+  mit: "oklch(0.72 0.2 320)",
+  mitFg: "oklch(0.98 0.04 320)",
+  should: "oklch(0.74 0.17 200)",
+  shouldFg: "oklch(0.97 0.05 200)",
+  could: "oklch(0.72 0.18 270)",
+  couldFg: "oklch(0.97 0.05 270)",
+  sun: "oklch(0.78 0.18 320)",
+  sky: "oklch(0.7 0.16 250)",
   gradientSky:
-    "linear-gradient(135deg, oklch(0.22 0.06 280), oklch(0.2 0.07 250) 50%, oklch(0.22 0.06 320))",
+    "linear-gradient(135deg, oklch(0.2 0.07 290), oklch(0.18 0.09 320) 50%, oklch(0.2 0.08 260))",
   gradientMit:
-    "linear-gradient(135deg, oklch(0.72 0.18 30), oklch(0.65 0.2 10))",
+    "linear-gradient(135deg, oklch(0.65 0.21 320), oklch(0.6 0.22 295))",
   gradientShould:
-    "linear-gradient(135deg, oklch(0.7 0.16 160), oklch(0.68 0.17 190))",
+    "linear-gradient(135deg, oklch(0.66 0.18 205), oklch(0.62 0.19 230))",
   gradientCould:
-    "linear-gradient(135deg, oklch(0.7 0.17 280), oklch(0.68 0.18 310))",
+    "linear-gradient(135deg, oklch(0.65 0.19 275), oklch(0.6 0.2 300))",
 };
 
-export const THEMES: Record<ThemeKey, { name: string; tokens: ThemeTokens }> = {
-  coral: { name: "Coral", tokens: coral },
-  ocean: { name: "Ocean", tokens: ocean },
-  forest: { name: "Forest", tokens: forest },
-  sunset: { name: "Sunset", tokens: sunset },
-  candy: { name: "Candy", tokens: candy },
-  midnight: { name: "Midnight", tokens: midnight },
+// Forest — deep green forest, mossy & earthy
+const forest: ThemeTokens = {
+  background: "oklch(0.18 0.03 150)",
+  foreground: "oklch(0.96 0.02 110)",
+  card: "oklch(0.24 0.04 150)",
+  cardForeground: "oklch(0.96 0.02 110)",
+  muted: "oklch(0.3 0.04 150)",
+  mutedForeground: "oklch(0.78 0.03 130)",
+  border: "oklch(1 0 0 / 12%)",
+  mit: "oklch(0.74 0.16 145)",
+  mitFg: "oklch(0.97 0.05 145)",
+  should: "oklch(0.78 0.14 95)",
+  shouldFg: "oklch(0.97 0.05 95)",
+  could: "oklch(0.74 0.13 60)",
+  couldFg: "oklch(0.97 0.05 55)",
+  sun: "oklch(0.82 0.16 100)",
+  sky: "oklch(0.7 0.12 175)",
+  gradientSky:
+    "linear-gradient(135deg, oklch(0.2 0.05 160), oklch(0.18 0.06 140) 50%, oklch(0.2 0.05 110))",
+  gradientMit:
+    "linear-gradient(135deg, oklch(0.66 0.17 150), oklch(0.6 0.18 135))",
+  gradientShould:
+    "linear-gradient(135deg, oklch(0.7 0.15 100), oklch(0.66 0.16 85))",
+  gradientCould:
+    "linear-gradient(135deg, oklch(0.66 0.14 65), oklch(0.62 0.15 45))",
 };
 
+// Starry — midnight blue starry sky
+const starry: ThemeTokens = {
+  background: "oklch(0.16 0.05 265)",
+  foreground: "oklch(0.97 0.02 250)",
+  card: "oklch(0.22 0.06 265)",
+  cardForeground: "oklch(0.97 0.02 250)",
+  muted: "oklch(0.28 0.06 265)",
+  mutedForeground: "oklch(0.78 0.04 250)",
+  border: "oklch(1 0 0 / 12%)",
+  mit: "oklch(0.74 0.16 245)",
+  mitFg: "oklch(0.97 0.05 245)",
+  should: "oklch(0.78 0.14 215)",
+  shouldFg: "oklch(0.97 0.05 215)",
+  could: "oklch(0.74 0.15 290)",
+  couldFg: "oklch(0.97 0.05 290)",
+  sun: "oklch(0.92 0.12 95)",
+  sky: "oklch(0.7 0.15 240)",
+  gradientSky:
+    "linear-gradient(135deg, oklch(0.18 0.08 260), oklch(0.16 0.1 280) 50%, oklch(0.2 0.08 230))",
+  gradientMit:
+    "linear-gradient(135deg, oklch(0.66 0.17 250), oklch(0.6 0.18 270))",
+  gradientShould:
+    "linear-gradient(135deg, oklch(0.7 0.15 220), oklch(0.66 0.16 240))",
+  gradientCould:
+    "linear-gradient(135deg, oklch(0.66 0.16 290), oklch(0.62 0.17 310))",
+};
+
+export const THEMES: Record<
+  ThemeKey,
+  { name: string; tokens: ThemeTokens; mode: "light" | "dark" }
+> = {
+  sakura: { name: "Sakura", tokens: sakura, mode: "light" },
+  blossom: { name: "Blossom", tokens: blossom, mode: "light" },
+  meadow: { name: "Meadow", tokens: meadow, mode: "light" },
+  nebula: { name: "Nebula", tokens: nebula, mode: "dark" },
+  forest: { name: "Forest", tokens: forest, mode: "dark" },
+  starry: { name: "Starry", tokens: starry, mode: "dark" },
+};
+
+// Order: lights first, then darks (top to bottom in dropdown)
 export const THEME_ORDER: ThemeKey[] = [
-  "coral",
-  "ocean",
+  "sakura",
+  "blossom",
+  "meadow",
+  "nebula",
   "forest",
-  "sunset",
-  "candy",
-  "midnight",
+  "starry",
 ];
 
 const STORAGE_KEY = "one-good-day:theme";
@@ -243,6 +250,10 @@ export function applyTheme(key: ThemeKey) {
   set("--gradient-should", t.gradientShould);
   set("--gradient-could", t.gradientCould);
 
+  // Toggle .dark class so any dark-mode utilities apply correctly
+  if (theme.mode === "dark") root.classList.add("dark");
+  else root.classList.remove("dark");
+
   try {
     window.localStorage.setItem(STORAGE_KEY, key);
   } catch {
@@ -251,12 +262,12 @@ export function applyTheme(key: ThemeKey) {
 }
 
 export function loadSavedTheme(): ThemeKey {
-  if (typeof window === "undefined") return "coral";
+  if (typeof window === "undefined") return "blossom";
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
     if (v && v in THEMES) return v as ThemeKey;
   } catch {
     /* ignore */
   }
-  return "coral";
+  return "blossom";
 }

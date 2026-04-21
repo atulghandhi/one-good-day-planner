@@ -11,7 +11,7 @@ import {
 
 export function ThemePicker() {
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState<ThemeKey>("coral");
+  const [active, setActive] = useState<ThemeKey>("blossom");
   const closeTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export function ThemePicker() {
             animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
             exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute right-0 top-14 z-30 grid grid-cols-3 gap-2 rounded-2xl border border-white/40 bg-card/40 p-2.5 shadow-pop backdrop-blur-xl"
+            className="absolute right-0 top-14 z-30 flex flex-col gap-2 rounded-2xl border border-white/40 bg-card/40 p-2.5 shadow-pop backdrop-blur-xl"
           >
             {THEME_ORDER.map((key, i) => {
               const t = THEMES[key].tokens;
@@ -82,17 +82,18 @@ export function ThemePicker() {
                 <motion.button
                   key={key}
                   type="button"
-                  initial={{ opacity: 0, y: -8, scale: 0.6 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  initial={{ opacity: 0, x: 8, scale: 0.6 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
                   transition={{
                     delay: i * 0.04,
                     type: "spring",
                     stiffness: 400,
                     damping: 18,
                   }}
-                  whileHover={{ scale: 1.12, rotate: 4 }}
+                  whileHover={{ scale: 1.12, x: -2 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => pick(key)}
+                  title={THEMES[key].name}
                   aria-label={`${THEMES[key].name} theme`}
                   className={`h-9 w-9 rounded-xl ring-2 ring-offset-2 ring-offset-transparent transition-shadow ${
                     isActive
