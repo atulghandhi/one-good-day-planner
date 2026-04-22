@@ -145,7 +145,7 @@ export function Planner() {
         <motion.section
           layout
           className="rounded-[2.2rem] bg-gradient-mit p-1 shadow-pop"
-          transition={{ type: "spring", stiffness: 200, damping: 24 }}
+          transition={{ layout: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
         >
           <div className="rounded-[2rem] bg-card/90 backdrop-blur p-5 md:p-6">
             <label className="mb-3 block px-2 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--mit-foreground)]">
@@ -224,8 +224,8 @@ export function Planner() {
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{
-                    height: { type: "spring", stiffness: 200, damping: 26 },
-                    opacity: { duration: 0.25 },
+                    height: { duration: 0.32, ease: [0.32, 0.72, 0, 1] },
+                    opacity: { duration: 0.2 },
                   }}
                   className="overflow-hidden"
                 >
