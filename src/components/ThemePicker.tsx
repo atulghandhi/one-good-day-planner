@@ -29,7 +29,7 @@ export function ThemePicker() {
 
   const scheduleClose = () => {
     cancelClose();
-    closeTimer.current = window.setTimeout(() => setOpen(false), 1000);
+    closeTimer.current = window.setTimeout(() => setOpen(false), 500);
   };
 
   useEffect(() => () => cancelClose(), []);
