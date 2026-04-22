@@ -254,6 +254,9 @@ export function applyTheme(key: ThemeKey) {
   if (theme.mode === "dark") root.classList.add("dark");
   else root.classList.remove("dark");
 
+  // Tag the root with the theme key so CSS effects (stars, glitter) can target
+  root.setAttribute("data-theme", key);
+
   try {
     window.localStorage.setItem(STORAGE_KEY, key);
   } catch {
