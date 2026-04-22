@@ -10,6 +10,7 @@ import {
   saveState,
 } from "@/lib/storage";
 import { useDebouncedEffect } from "@/hooks/use-debounce";
+import { bigConfetti, smallConfetti } from "@/lib/confetti";
 import { PillInput } from "./PillInput";
 import { TaskSection } from "./TaskSection";
 import { ResetDialog } from "./ResetDialog";
