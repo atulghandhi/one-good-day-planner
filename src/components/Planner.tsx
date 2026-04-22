@@ -155,12 +155,67 @@ export function Planner() {
               tone="mit"
               size="lg"
               value={state.mit}
-              onChange={(e) => setState((s) => ({ ...s, mit: e.target.value }))}
+              onChange={(e) =>
+                setState((s) => {
+                  const text = e.target.value;
+                  const needsSub =
+                    text.trim().length > 0 && s.mitSubs.length === 0;
+                  return {
+                    ...s,
+                    mit: text,
+                    mitSubs: needsSub
+                      ? [{ text: "", done: false }]
+                      : s.mitSubs,
+                  };
+                })
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && state.mit.trim().length > 0) {
+                  e.preventDefault();
+                  // Focus first sub-step input (will be created by onChange if needed)
+                  requestAnimationFrame(() => {
+                    const root = e.currentTarget?.closest("section");
+                    const sub = root?.querySelector<HTMLInputElement>(
+                      "ul input:not([readonly])",
+                    );
+                    sub?.focus();
+                  });
+                }
+              }}
               onBlur={flushSave}
               placeholder="What would make today a win?"
               autoFocus
             />
 
+            {state.mit.trim().length > 0 && !state.mitDone && (
+              <div className="mt-3 flex justify-end px-2">
+                <motion.button
+                  type="button"
+                  onClick={(e) => {
+                    setState((s) => ({ ...s, mitDone: true }));
+                    bigConfetti();
+                    (e.currentTarget as HTMLElement).blur();
+                  }}
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.94 }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--mit)]/80 px-3 py-1 text-xs font-semibold text-[color:var(--mit-foreground)] shadow-soft hover:bg-[color:var(--mit)]"
+                >
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                  Done!
+                </motion.button>
+              </div>
+            )}
+            {state.mitDone && (
+              <div className="mt-3 flex justify-end px-2">
+                <button
+                  type="button"
+                  onClick={() => setState((s) => ({ ...s, mitDone: false }))}
+                  className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+                >
+                  undo
+                </button>
+              </div>
+            )}
             <AnimatePresence initial={false}>
               {showSubs && (
                 <motion.div
