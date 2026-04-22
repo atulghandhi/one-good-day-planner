@@ -175,3 +175,63 @@
   .bg-gradient-should { background: var(--gradient-should); }
   .bg-gradient-could { background: var(--gradient-could); }
 }
+
+/* ----- Theme background effects (do not affect cards/text) ----- */
+
+/* Starry: tiny pinpricks like a night sky */
+html[data-theme="starry"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, oklch(0.98 0.02 250 / 0.9) 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 72%, oklch(0.97 0.03 220 / 0.7) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 41% 34%, oklch(0.99 0.02 260 / 0.95) 50%, transparent 51%),
+    radial-gradient(1px 1px at 55% 12%, oklch(0.96 0.04 200 / 0.6) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 68% 58%, oklch(0.99 0.02 280 / 0.85) 50%, transparent 51%),
+    radial-gradient(1px 1px at 78% 22%, oklch(0.97 0.03 240 / 0.7) 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 86% 78%, oklch(0.99 0.02 270 / 0.95) 50%, transparent 51%),
+    radial-gradient(1px 1px at 8% 88%, oklch(0.96 0.03 230 / 0.65) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 35% 92%, oklch(0.98 0.02 250 / 0.8) 50%, transparent 51%),
+    radial-gradient(1px 1px at 62% 84%, oklch(0.97 0.03 260 / 0.7) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 92% 42%, oklch(0.99 0.02 245 / 0.9) 50%, transparent 51%),
+    radial-gradient(1px 1px at 18% 48%, oklch(0.97 0.02 235 / 0.6) 50%, transparent 51%);
+  background-size: 420px 420px;
+  background-repeat: repeat;
+  animation: twinkle 5s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.5; }
+}
+
+/* Blossom: subtle glitter shimmer */
+html[data-theme="blossom"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 14% 22%, oklch(0.95 0.12 350 / 0.6) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 30% 70%, oklch(0.95 0.1 50 / 0.55) 50%, transparent 51%),
+    radial-gradient(1px 1px at 47% 36%, oklch(0.96 0.1 320 / 0.5) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 62% 14%, oklch(0.96 0.1 30 / 0.55) 50%, transparent 51%),
+    radial-gradient(1px 1px at 76% 60%, oklch(0.95 0.11 340 / 0.55) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 88% 30%, oklch(0.95 0.1 60 / 0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 10% 84%, oklch(0.96 0.1 320 / 0.55) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 38% 90%, oklch(0.95 0.11 350 / 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 66% 88%, oklch(0.95 0.1 40 / 0.5) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 92% 76%, oklch(0.96 0.1 330 / 0.55) 50%, transparent 51%);
+  background-size: 360px 360px;
+  background-repeat: repeat;
+  animation: shimmer 6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.7; transform: translateY(0); }
+  50% { opacity: 0.95; transform: translateY(-2px); }
+}

@@ -10,6 +10,7 @@ import {
   saveState,
 } from "@/lib/storage";
 import { useDebouncedEffect } from "@/hooks/use-debounce";
+import { bigConfetti, smallConfetti } from "@/lib/confetti";
 import { PillInput } from "./PillInput";
 import { TaskSection } from "./TaskSection";
 import { ResetDialog } from "./ResetDialog";
@@ -144,7 +145,7 @@ export function Planner() {
         <motion.section
           layout
           className="rounded-[2.2rem] bg-gradient-mit p-1 shadow-pop"
-          transition={{ type: "spring", stiffness: 200, damping: 24 }}
+          transition={{ layout: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
         >
           <div className="rounded-[2rem] bg-card/90 backdrop-blur p-5 md:p-6">
             <label className="mb-3 block px-2 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--mit-foreground)]">
@@ -154,12 +155,67 @@ export function Planner() {
               tone="mit"
               size="lg"
               value={state.mit}
-              onChange={(e) => setState((s) => ({ ...s, mit: e.target.value }))}
+              onChange={(e) =>
+                setState((s) => {
+                  const text = e.target.value;
+                  const needsSub =
+                    text.trim().length > 0 && s.mitSubs.length === 0;
+                  return {
+                    ...s,
+                    mit: text,
+                    mitSubs: needsSub
+                      ? [{ text: "", done: false }]
+                      : s.mitSubs,
+                  };
+                })
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && state.mit.trim().length > 0) {
+                  e.preventDefault();
+                  // Focus first sub-step input (will be created by onChange if needed)
+                  requestAnimationFrame(() => {
+                    const root = e.currentTarget?.closest("section");
+                    const sub = root?.querySelector<HTMLInputElement>(
+                      "ul input:not([readonly])",
+                    );
+                    sub?.focus();
+                  });
+                }
+              }}
               onBlur={flushSave}
               placeholder="What would make today a win?"
               autoFocus
             />
 
+            {state.mit.trim().length > 0 && !state.mitDone && (
+              <div className="mt-3 flex justify-end px-2">
+                <motion.button
+                  type="button"
+                  onClick={(e) => {
+                    setState((s) => ({ ...s, mitDone: true }));
+                    bigConfetti();
+                    (e.currentTarget as HTMLElement).blur();
+                  }}
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.94 }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--mit)]/80 px-3 py-1 text-xs font-semibold text-[color:var(--mit-foreground)] shadow-soft hover:bg-[color:var(--mit)]"
+                >
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                  Done!
+                </motion.button>
+              </div>
+            )}
+            {state.mitDone && (
+              <div className="mt-3 flex justify-end px-2">
+                <button
+                  type="button"
+                  onClick={() => setState((s) => ({ ...s, mitDone: false }))}
+                  className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+                >
+                  undo
+                </button>
+              </div>
+            )}
             <AnimatePresence initial={false}>
               {showSubs && (
                 <motion.div
@@ -168,8 +224,8 @@ export function Planner() {
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{
-                    height: { type: "spring", stiffness: 200, damping: 26 },
-                    opacity: { duration: 0.25 },
+                    height: { duration: 0.32, ease: [0.32, 0.72, 0, 1] },
+                    opacity: { duration: 0.2 },
                   }}
                   className="overflow-hidden"
                 >
@@ -204,16 +260,17 @@ export function Planner() {
                         {orderedSubs.map(({ item: sub, originalIndex: i }) => (
                           <motion.li
                             key={i}
-                            layout
+                            layout="position"
                             initial={{ opacity: 0, height: 0, scale: 0.92 }}
                             animate={{ opacity: 1, height: "auto", scale: 1 }}
                             exit={{ opacity: 0, height: 0, scale: 0.92 }}
                             transition={{
-                              type: "spring",
-                              stiffness: 360,
-                              damping: 30,
+                              height: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
+                              opacity: { duration: 0.2 },
+                              scale: { duration: 0.22, ease: [0.32, 0.72, 0, 1] },
+                              layout: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
                             }}
-                            className="group relative"
+                            className="group relative overflow-hidden"
                           >
                             <PillInput
                               tone="mit"
@@ -313,7 +370,8 @@ export function Planner() {
                               )}
                               {sub.text.trim().length > 0 && (
                                 <button
-                                  onClick={() =>
+                                  onClick={(ev) => {
+                                    const wasDone = sub.done;
                                     setState((s) => ({
                                       ...s,
                                       mitSubs: s.mitSubs.map((it, idx) =>
@@ -321,8 +379,14 @@ export function Planner() {
                                           ? { ...it, done: !it.done }
                                           : it,
                                       ),
-                                    }))
-                                  }
+                                    }));
+                                    if (!wasDone) {
+                                      smallConfetti(
+                                        "mit",
+                                        ev.currentTarget as HTMLElement,
+                                      );
+                                    }
+                                  }}
                                   className={`grid h-8 w-8 place-items-center rounded-full transition-all ${
                                     sub.done
                                       ? "bg-[color:var(--mit)]/80 text-[color:var(--mit-foreground)] shadow-soft"
