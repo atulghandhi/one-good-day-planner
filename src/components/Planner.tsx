@@ -260,16 +260,17 @@ export function Planner() {
                         {orderedSubs.map(({ item: sub, originalIndex: i }) => (
                           <motion.li
                             key={i}
-                            layout
+                            layout="position"
                             initial={{ opacity: 0, height: 0, scale: 0.92 }}
                             animate={{ opacity: 1, height: "auto", scale: 1 }}
                             exit={{ opacity: 0, height: 0, scale: 0.92 }}
                             transition={{
-                              type: "spring",
-                              stiffness: 360,
-                              damping: 30,
+                              height: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
+                              opacity: { duration: 0.2 },
+                              scale: { duration: 0.22, ease: [0.32, 0.72, 0, 1] },
+                              layout: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
                             }}
-                            className="group relative"
+                            className="group relative overflow-hidden"
                           >
                             <PillInput
                               tone="mit"
