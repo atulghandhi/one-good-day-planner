@@ -370,7 +370,8 @@ export function Planner() {
                               )}
                               {sub.text.trim().length > 0 && (
                                 <button
-                                  onClick={() =>
+                                  onClick={(ev) => {
+                                    const wasDone = sub.done;
                                     setState((s) => ({
                                       ...s,
                                       mitSubs: s.mitSubs.map((it, idx) =>
@@ -378,8 +379,14 @@ export function Planner() {
                                           ? { ...it, done: !it.done }
                                           : it,
                                       ),
-                                    }))
-                                  }
+                                    }));
+                                    if (!wasDone) {
+                                      smallConfetti(
+                                        "mit",
+                                        ev.currentTarget as HTMLElement,
+                                      );
+                                    }
+                                  }}
                                   className={`grid h-8 w-8 place-items-center rounded-full transition-all ${
                                     sub.done
                                       ? "bg-[color:var(--mit)]/80 text-[color:var(--mit-foreground)] shadow-soft"
