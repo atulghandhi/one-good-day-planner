@@ -157,16 +157,16 @@ const forest: ThemeTokens = {
   shouldFg: "oklch(0.97 0.05 95)",
   could: "oklch(0.74 0.13 60)",
   couldFg: "oklch(0.97 0.05 55)",
-  sun: "oklch(0.82 0.16 100)",
-  sky: "oklch(0.7 0.12 175)",
+  sun: "oklch(0.55 0.08 150)",
+  sky: "oklch(0.5 0.08 175)",
   gradientSky:
-    "linear-gradient(135deg, oklch(0.2 0.05 160), oklch(0.18 0.06 140) 50%, oklch(0.2 0.05 110))",
+    "linear-gradient(135deg, oklch(0.18 0.04 155), oklch(0.16 0.05 140) 50%, oklch(0.17 0.04 170))",
   gradientMit:
-    "linear-gradient(135deg, oklch(0.66 0.17 150), oklch(0.6 0.18 135))",
+    "linear-gradient(135deg, oklch(0.5 0.12 150), oklch(0.45 0.13 135))",
   gradientShould:
-    "linear-gradient(135deg, oklch(0.7 0.15 100), oklch(0.66 0.16 85))",
+    "linear-gradient(135deg, oklch(0.5 0.1 130), oklch(0.46 0.11 110))",
   gradientCould:
-    "linear-gradient(135deg, oklch(0.66 0.14 65), oklch(0.62 0.15 45))",
+    "linear-gradient(135deg, oklch(0.48 0.1 95), oklch(0.44 0.11 75))",
 };
 
 // Starry — midnight blue starry sky
@@ -184,16 +184,16 @@ const starry: ThemeTokens = {
   shouldFg: "oklch(0.97 0.05 215)",
   could: "oklch(0.74 0.15 290)",
   couldFg: "oklch(0.97 0.05 290)",
-  sun: "oklch(0.92 0.12 95)",
-  sky: "oklch(0.7 0.15 240)",
+  sun: "oklch(0.55 0.1 250)",
+  sky: "oklch(0.5 0.12 240)",
   gradientSky:
-    "linear-gradient(135deg, oklch(0.18 0.08 260), oklch(0.16 0.1 280) 50%, oklch(0.2 0.08 230))",
+    "linear-gradient(135deg, oklch(0.16 0.06 265), oklch(0.14 0.08 280) 50%, oklch(0.17 0.07 240))",
   gradientMit:
-    "linear-gradient(135deg, oklch(0.66 0.17 250), oklch(0.6 0.18 270))",
+    "linear-gradient(135deg, oklch(0.5 0.14 250), oklch(0.42 0.15 270))",
   gradientShould:
-    "linear-gradient(135deg, oklch(0.7 0.15 220), oklch(0.66 0.16 240))",
+    "linear-gradient(135deg, oklch(0.5 0.12 220), oklch(0.45 0.13 235))",
   gradientCould:
-    "linear-gradient(135deg, oklch(0.66 0.16 290), oklch(0.62 0.17 310))",
+    "linear-gradient(135deg, oklch(0.48 0.13 285), oklch(0.42 0.14 305))",
 };
 
 export const THEMES: Record<
