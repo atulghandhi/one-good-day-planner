@@ -13,7 +13,7 @@ export type PlannerState = {
 export const EMPTY_STATE: PlannerState = {
   mit: "",
   mitDone: false,
-  mitSubs: [{ text: "", done: false }],
+  mitSubs: [],
   shoulds: [{ text: "", done: false }],
   coulds: [{ text: "", done: false }],
 };
@@ -23,9 +23,9 @@ const KEY = "one-good-day:v1";
 // Migrate legacy shape (string[] -> TaskItem[]) and ensure shape is complete.
 function normalize(raw: unknown): PlannerState {
   const r = (raw ?? {}) as Record<string, unknown>;
-  const toItems = (v: unknown): TaskItem[] => {
+  const toItems = (v: unknown, allowEmpty = false): TaskItem[] => {
     if (!Array.isArray(v) || v.length === 0)
-      return [{ text: "", done: false }];
+      return allowEmpty ? [] : [{ text: "", done: false }];
     return v.map((x) => {
       if (typeof x === "string") return { text: x, done: false };
       if (x && typeof x === "object") {
@@ -41,7 +41,7 @@ function normalize(raw: unknown): PlannerState {
   return {
     mit: typeof r.mit === "string" ? r.mit : "",
     mitDone: !!r.mitDone,
-    mitSubs: toItems(r.mitSubs),
+    mitSubs: toItems(r.mitSubs, true),
     shoulds: toItems(r.shoulds),
     coulds: toItems(r.coulds),
   };
