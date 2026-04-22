@@ -42,10 +42,12 @@ export function TaskSection({
     onChange(next);
   };
 
-  const toggleDone = (i: number) => {
+  const toggleDone = (i: number, source?: HTMLElement | null) => {
     const next = [...items];
-    next[i] = { ...next[i], done: !next[i].done };
+    const wasDone = next[i].done;
+    next[i] = { ...next[i], done: !wasDone };
     onChange(next);
+    if (!wasDone) smallConfetti(tone, source ?? null);
   };
 
   const add = () => onChange([...items, { text: "", done: false }]);
@@ -105,12 +107,17 @@ export function TaskSection({
             return (
               <motion.li
                 key={`${tone}-${i}`}
-                layout
+                layout="position"
                 initial={{ opacity: 0, height: 0, scale: 0.92 }}
                 animate={{ opacity: 1, height: "auto", scale: 1 }}
                 exit={{ opacity: 0, height: 0, scale: 0.92 }}
-                transition={{ type: "spring", stiffness: 360, damping: 30 }}
-                className="group relative overflow-visible"
+                transition={{
+                  height: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
+                  opacity: { duration: 0.2 },
+                  scale: { duration: 0.22, ease: [0.32, 0.72, 0, 1] },
+                  layout: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
+                }}
+                className="group relative overflow-hidden"
               >
                 <PillInput
                   tone={tone}
