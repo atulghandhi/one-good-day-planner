@@ -147,6 +147,16 @@ export function TaskSection({
                       }
                       if (value.trim().length > 0) {
                         add();
+                        requestAnimationFrame(() => {
+                          const after = list
+                            ? Array.from(
+                                list.querySelectorAll<HTMLInputElement>(
+                                  "input:not([readonly])",
+                                ),
+                              )
+                            : [];
+                          after[after.length - 1]?.focus();
+                        });
                       }
                       return;
                     }
@@ -196,7 +206,9 @@ export function TaskSection({
                   )}
                   {value.trim().length > 0 && (
                     <button
-                      onClick={() => toggleDone(i)}
+                      onClick={(e) =>
+                        toggleDone(i, e.currentTarget as HTMLElement)
+                      }
                       className={`grid h-8 w-8 place-items-center rounded-full transition-all ${
                         done
                           ? "bg-[color:var(--mit)]/80 text-[color:var(--mit-foreground)] shadow-soft"
