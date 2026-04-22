@@ -270,7 +270,7 @@ export function Planner() {
                               scale: { duration: 0.22, ease: [0.32, 0.72, 0, 1] },
                               layout: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
                             }}
-                            className="group relative overflow-hidden"
+                            className="group relative overflow-hidden rounded-full"
                           >
                             <PillInput
                               tone="mit"
