@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Plus, X } from "lucide-react";
 import { PillInput } from "./PillInput";
+import { smallConfetti } from "@/lib/confetti";
 import type { TaskItem } from "@/lib/storage";
 
 type Tone = "should" | "could";
