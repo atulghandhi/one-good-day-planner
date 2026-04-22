@@ -192,7 +192,10 @@ export function Planner() {
                 })
               }
               onKeyDown={(e) => {
-                if (e.key === "Enter" && state.mit.trim().length > 0) {
+                if (
+                  (e.key === "Enter" || (e.key === "Tab" && !e.shiftKey)) &&
+                  state.mit.trim().length > 0
+                ) {
                   e.preventDefault();
                   // Focus first sub-step input (will be created by onChange if needed)
                   requestAnimationFrame(() => {
@@ -220,6 +223,7 @@ export function Planner() {
                   }}
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.94 }}
+                  tabIndex={-1}
                   className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--mit)]/80 px-3 py-1 text-xs font-semibold text-[color:var(--mit-foreground)] shadow-soft hover:bg-[color:var(--mit)]"
                 >
                   <Check className="h-3.5 w-3.5" strokeWidth={3} />

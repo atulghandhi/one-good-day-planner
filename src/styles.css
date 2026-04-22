@@ -245,7 +245,7 @@ html[data-theme="starry"] body::after {
   50% { opacity: 0.5; }
 }
 
-/* Blossom: subtle glitter shimmer */
+/* Blossom: glitter shimmer — visible sparkle across the page */
 html[data-theme="blossom"] body::before {
   content: "";
   position: fixed;
@@ -253,23 +253,26 @@ html[data-theme="blossom"] body::before {
   pointer-events: none;
   z-index: 0;
   background-image:
-    radial-gradient(1px 1px at 14% 22%, oklch(0.95 0.12 350 / 0.6) 50%, transparent 51%),
-    radial-gradient(1.4px 1.4px at 30% 70%, oklch(0.95 0.1 50 / 0.55) 50%, transparent 51%),
-    radial-gradient(1px 1px at 47% 36%, oklch(0.96 0.1 320 / 0.5) 50%, transparent 51%),
-    radial-gradient(2.2px 2.2px at 62% 14%, oklch(0.96 0.1 30 / 0.6) 50%, transparent 51%),
-    radial-gradient(1px 1px at 76% 60%, oklch(0.95 0.11 340 / 0.55) 50%, transparent 51%),
-    radial-gradient(1.6px 1.6px at 88% 30%, oklch(0.95 0.1 60 / 0.55) 50%, transparent 51%),
-    radial-gradient(1px 1px at 10% 84%, oklch(0.96 0.1 320 / 0.55) 50%, transparent 51%),
-    radial-gradient(2.4px 2.4px at 38% 90%, oklch(0.95 0.11 350 / 0.65) 50%, transparent 51%),
-    radial-gradient(1px 1px at 66% 88%, oklch(0.95 0.1 40 / 0.5) 50%, transparent 51%),
-    radial-gradient(1.6px 1.6px at 92% 76%, oklch(0.96 0.1 330 / 0.55) 50%, transparent 51%),
-    radial-gradient(2px 2px at 52% 52%, oklch(0.96 0.11 340 / 0.6) 50%, transparent 51%);
-  background-size: 360px 360px;
+    radial-gradient(1.4px 1.4px at 14% 22%, oklch(0.96 0.16 350 / 0.95) 50%, transparent 51%),
+    radial-gradient(1.8px 1.8px at 30% 70%, oklch(0.96 0.14 50 / 0.9) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 47% 36%, oklch(0.97 0.14 320 / 0.85) 50%, transparent 51%),
+    radial-gradient(2.6px 2.6px at 62% 14%, oklch(0.97 0.14 30 / 0.95) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 76% 60%, oklch(0.96 0.15 340 / 0.9) 50%, transparent 51%),
+    radial-gradient(2px 2px at 88% 30%, oklch(0.96 0.14 60 / 0.9) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 10% 84%, oklch(0.97 0.14 320 / 0.9) 50%, transparent 51%),
+    radial-gradient(2.8px 2.8px at 38% 90%, oklch(0.96 0.15 350 / 0.95) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 66% 88%, oklch(0.96 0.14 40 / 0.85) 50%, transparent 51%),
+    radial-gradient(2px 2px at 92% 76%, oklch(0.97 0.14 330 / 0.9) 50%, transparent 51%),
+    radial-gradient(2.4px 2.4px at 52% 52%, oklch(0.97 0.15 340 / 0.95) 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 22% 8%, oklch(0.96 0.14 30 / 0.85) 50%, transparent 51%),
+    radial-gradient(2.2px 2.2px at 80% 46%, oklch(0.97 0.15 350 / 0.9) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 6% 50%, oklch(0.96 0.14 320 / 0.85) 50%, transparent 51%);
+  background-size: 280px 280px;
   background-repeat: repeat;
   animation: shimmer 6s ease-in-out infinite;
 }
 
-/* Cursor-follow shimmer for blossom */
+/* Cursor-follow shimmer for blossom — extra bright burst near pointer */
 html[data-theme="blossom"] body::after {
   content: "";
   position: fixed;
@@ -277,22 +280,22 @@ html[data-theme="blossom"] body::after {
   pointer-events: none;
   z-index: 0;
   background-image:
-    radial-gradient(1.4px 1.4px at 14% 22%, oklch(0.98 0.16 350 / 0.95) 50%, transparent 51%),
-    radial-gradient(1.8px 1.8px at 30% 70%, oklch(0.98 0.14 50 / 0.95) 50%, transparent 51%),
-    radial-gradient(1.4px 1.4px at 47% 36%, oklch(0.98 0.14 320 / 0.9) 50%, transparent 51%),
-    radial-gradient(2.6px 2.6px at 62% 14%, oklch(0.98 0.14 30 / 0.95) 50%, transparent 51%),
-    radial-gradient(1.4px 1.4px at 76% 60%, oklch(0.98 0.15 340 / 0.95) 50%, transparent 51%),
-    radial-gradient(2px 2px at 88% 30%, oklch(0.98 0.14 60 / 0.9) 50%, transparent 51%),
-    radial-gradient(1.4px 1.4px at 10% 84%, oklch(0.98 0.14 320 / 0.9) 50%, transparent 51%),
-    radial-gradient(2.8px 2.8px at 38% 90%, oklch(0.98 0.15 350 / 0.95) 50%, transparent 51%),
-    radial-gradient(1.4px 1.4px at 66% 88%, oklch(0.98 0.14 40 / 0.9) 50%, transparent 51%),
-    radial-gradient(2px 2px at 92% 76%, oklch(0.98 0.14 330 / 0.95) 50%, transparent 51%),
-    radial-gradient(2.4px 2.4px at 52% 52%, oklch(0.98 0.15 340 / 0.95) 50%, transparent 51%);
-  background-size: 360px 360px;
+    radial-gradient(2px 2px at 14% 22%, oklch(1 0.2 350) 50%, transparent 51%),
+    radial-gradient(2.4px 2.4px at 30% 70%, oklch(1 0.18 50) 50%, transparent 51%),
+    radial-gradient(2px 2px at 47% 36%, oklch(1 0.18 320) 50%, transparent 51%),
+    radial-gradient(3.4px 3.4px at 62% 14%, oklch(1 0.18 30) 50%, transparent 51%),
+    radial-gradient(2px 2px at 76% 60%, oklch(1 0.2 340) 50%, transparent 51%),
+    radial-gradient(2.6px 2.6px at 88% 30%, oklch(1 0.18 60) 50%, transparent 51%),
+    radial-gradient(2px 2px at 10% 84%, oklch(1 0.18 320) 50%, transparent 51%),
+    radial-gradient(3.6px 3.6px at 38% 90%, oklch(1 0.2 350) 50%, transparent 51%),
+    radial-gradient(2px 2px at 66% 88%, oklch(1 0.18 40) 50%, transparent 51%),
+    radial-gradient(2.6px 2.6px at 92% 76%, oklch(1 0.18 330) 50%, transparent 51%),
+    radial-gradient(3.2px 3.2px at 52% 52%, oklch(1 0.2 340) 50%, transparent 51%);
+  background-size: 280px 280px;
   background-repeat: repeat;
-  -webkit-mask-image: radial-gradient(circle 200px at var(--mx) var(--my), black 0%, transparent 70%);
-  mask-image: radial-gradient(circle 200px at var(--mx) var(--my), black 0%, transparent 70%);
-  opacity: 0.9;
+  -webkit-mask-image: radial-gradient(circle 220px at var(--mx) var(--my), black 0%, transparent 70%);
+  mask-image: radial-gradient(circle 220px at var(--mx) var(--my), black 0%, transparent 70%);
+  opacity: 1;
 }
 
 @keyframes shimmer {
