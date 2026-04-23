@@ -56,6 +56,15 @@ export function GlitterRain() {
     };
     window.addEventListener("pointermove", onMove, { passive: true });
 
+    const onScroll = () => {
+      for (const f of flakesRef.current) {
+        if (f.settled && f.vanishing === 0) {
+          f.vanishing = 0.001;
+        }
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+
     // Spawn helpers
     const spawn = () => {
       const W = window.innerWidth;
@@ -99,13 +108,13 @@ export function GlitterRain() {
       ctx.rotate(rot);
       const glowAlpha = Math.min(1, alpha * brightness);
       // outer glow
-      const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 2.4);
+      const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 1.2);
       grad.addColorStop(0, `oklch(0.98 0.22 ${hue} / ${0.9 * glowAlpha})`);
       grad.addColorStop(0.5, `oklch(0.85 0.2 ${hue} / ${0.35 * glowAlpha})`);
       grad.addColorStop(1, `oklch(0.85 0.2 ${hue} / 0)`);
       ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.arc(0, 0, size * 2.4, 0, Math.PI * 2);
+      ctx.arc(0, 0, size * 1.2, 0, Math.PI * 2);
       ctx.fill();
 
       // 4-point star
@@ -237,6 +246,7 @@ export function GlitterRain() {
     return () => {
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("scroll", onScroll);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []);
