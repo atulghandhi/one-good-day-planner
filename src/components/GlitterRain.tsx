@@ -249,5 +249,3 @@ export function GlitterRain() {
     />
   );
 }
-// SETTLE_FADE_MS unused — kept as design ref
-void SETTLE_FADE_MS;
