@@ -205,7 +205,7 @@ html[data-theme="starry"] body::before {
     radial-gradient(1.2px 1.2px at 18% 48%, oklch(0.97 0.02 235 / 0.6) 50%, transparent 51%),
     radial-gradient(2px 2px at 50% 50%, oklch(0.98 0.02 250 / 0.85) 50%, transparent 51%),
     radial-gradient(1px 1px at 72% 8%, oklch(0.97 0.02 250 / 0.65) 50%, transparent 51%);
-  background-size: 420px 420px;
+  background-size: 297px 297px;
   background-repeat: repeat;
   animation: twinkle 5s ease-in-out infinite;
 }
