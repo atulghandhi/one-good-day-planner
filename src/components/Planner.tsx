@@ -16,6 +16,7 @@ import { TaskSection } from "./TaskSection";
 import { ResetDialog } from "./ResetDialog";
 import { ThemePicker } from "./ThemePicker";
 import { WeekView } from "./WeekView";
+import { GlitterRain } from "./GlitterRain";
 import kirbyImg from "@/assets/kirby.png";
 
 const WEEK_LAYOUT_ID = "date-to-week-card";
@@ -122,7 +123,9 @@ export function Planner() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen">
+      <GlitterRain />
+
       {/* Floating playful blobs */}
       <div
         aria-hidden
@@ -499,36 +502,12 @@ export function Planner() {
         layoutId={WEEK_LAYOUT_ID}
       />
 
-      {/* Glitter rain — blossom theme only (CSS-gated) */}
-      <div className="glitter-rain" aria-hidden>
-        {Array.from({ length: 32 }).map((_, i) => {
-          const left = (i * 97) % 100;
-          const delay = (i * 0.37) % 6;
-          const duration = 5 + ((i * 1.3) % 6);
-          const size = 4 + ((i * 2) % 6);
-          const hue = [350, 30, 320, 50, 340][i % 5];
-          return (
-            <span
-              key={i}
-              style={{
-                left: `${left}%`,
-                width: `${size}px`,
-                height: `${size}px`,
-                background: `oklch(0.92 0.22 ${hue})`,
-                animationDelay: `${delay}s`,
-                animationDuration: `${duration}s`,
-              }}
-            />
-          );
-        })}
-      </div>
-
-      {/* Kirby — sits on the bottom of pink (blossom) theme only */}
+      {/* Kirby — sits at bottom of page (scroll to find!) on sakura + blossom themes */}
       <img
         src={kirbyImg}
         alt=""
         aria-hidden
-        className="kirby pointer-events-none fixed bottom-0 left-4 z-10 h-40 md:h-52 w-auto select-none"
+        className="kirby pointer-events-none absolute bottom-0 left-2 sm:left-4 z-10 h-20 sm:h-32 md:h-44 lg:h-52 w-auto select-none"
       />
     </div>
   );

@@ -303,10 +303,11 @@ html[data-theme="blossom"] body::after {
   50% { opacity: 1; transform: translateY(-2px); }
 }
 
-/* ----- Kirby + glitter rain (blossom theme only) ----- */
+/* ----- Kirby + glitter (sakura + blossom themes) ----- */
 
 .kirby { display: none; }
-html[data-theme="blossom"] .kirby {
+html[data-theme="blossom"] .kirby,
+html[data-theme="sakura"] .kirby {
   display: block;
   filter: drop-shadow(0 8px 16px oklch(0.7 0.15 350 / 0.35));
   animation: kirby-bob 4s ease-in-out infinite;
@@ -317,39 +318,9 @@ html[data-theme="blossom"] .kirby {
   50% { transform: translateY(-6px) rotate(1deg); }
 }
 
-/* Glitter rain — falling sparkles, blossom only */
-.glitter-rain {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-  display: none;
-}
-html[data-theme="blossom"] .glitter-rain { display: block; }
+/* Canvas glitter — visible only on sakura + blossom */
+.glitter-canvas { display: none; }
+html[data-theme="blossom"] .glitter-canvas,
+html[data-theme="sakura"] .glitter-canvas { display: block; }
 
-.glitter-rain span {
-  position: absolute;
-  top: -20px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: oklch(0.92 0.22 350);
-  box-shadow: 0 0 8px oklch(1 0.25 340 / 0.95), 0 0 14px oklch(1 0.25 340 / 0.6);
-  opacity: 0;
-  animation: glitter-fall linear infinite;
-}
-
-@keyframes glitter-fall {
-  0% {
-    transform: translateY(-20px) translateX(0) rotate(0deg);
-    opacity: 0;
-  }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% {
-    transform: translateY(105vh) translateX(40px) rotate(360deg);
-    opacity: 0;
-  }
-}
 
