@@ -123,7 +123,9 @@ export function Planner() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen">
+      <GlitterRain />
+
       {/* Floating playful blobs */}
       <div
         aria-hidden
