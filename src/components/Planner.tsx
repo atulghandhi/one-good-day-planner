@@ -15,6 +15,10 @@ import { PillInput } from "./PillInput";
 import { TaskSection } from "./TaskSection";
 import { ResetDialog } from "./ResetDialog";
 import { ThemePicker } from "./ThemePicker";
+import { WeekView } from "./WeekView";
+import kirbyImg from "@/assets/kirby.png";
+
+const WEEK_LAYOUT_ID = "date-to-week-card";
 
 function todayLabel() {
   return new Date().toLocaleDateString(undefined, {
@@ -42,6 +46,7 @@ export function Planner() {
   const [state, setState] = useState<PlannerState>(EMPTY_STATE);
   const [hydrated, setHydrated] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [weekOpen, setWeekOpen] = useState(false);
   const [dateLabel, setDateLabel] = useState("");
 
   useEffect(() => {
@@ -136,10 +141,19 @@ export function Planner() {
         {/* Header */}
         <div className="mb-10 flex items-start justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-card/70 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-soft backdrop-blur">
+            <motion.button
+              type="button"
+              onClick={() => setWeekOpen(true)}
+              layoutId={WEEK_LAYOUT_ID}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+              className="inline-flex items-center gap-2 rounded-full bg-card/70 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-soft backdrop-blur cursor-pointer hover:bg-card/90"
+              aria-label="Open weekly view"
+            >
               <Sparkles className="h-3.5 w-3.5 text-[color:var(--mit)]" />
               {dateLabel || "\u00A0"}
-            </div>
+            </motion.button>
             <h1 className="mt-4 font-display text-4xl md:text-5xl tracking-tight">
               One good day.
             </h1>
@@ -477,6 +491,44 @@ export function Planner() {
         open={confirmOpen}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={handleReset}
+      />
+
+      <WeekView
+        open={weekOpen}
+        onClose={() => setWeekOpen(false)}
+        layoutId={WEEK_LAYOUT_ID}
+      />
+
+      {/* Glitter rain — blossom theme only (CSS-gated) */}
+      <div className="glitter-rain" aria-hidden>
+        {Array.from({ length: 32 }).map((_, i) => {
+          const left = (i * 97) % 100;
+          const delay = (i * 0.37) % 6;
+          const duration = 5 + ((i * 1.3) % 6);
+          const size = 4 + ((i * 2) % 6);
+          const hue = [350, 30, 320, 50, 340][i % 5];
+          return (
+            <span
+              key={i}
+              style={{
+                left: `${left}%`,
+                width: `${size}px`,
+                height: `${size}px`,
+                background: `oklch(0.92 0.22 ${hue})`,
+                animationDelay: `${delay}s`,
+                animationDuration: `${duration}s`,
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* Kirby — sits on the bottom of pink (blossom) theme only */}
+      <img
+        src={kirbyImg}
+        alt=""
+        aria-hidden
+        className="kirby pointer-events-none fixed bottom-0 left-4 z-10 h-40 md:h-52 w-auto select-none"
       />
     </div>
   );
