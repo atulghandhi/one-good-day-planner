@@ -205,7 +205,7 @@ html[data-theme="starry"] body::before {
     radial-gradient(1.2px 1.2px at 18% 48%, oklch(0.97 0.02 235 / 0.6) 50%, transparent 51%),
     radial-gradient(2px 2px at 50% 50%, oklch(0.98 0.02 250 / 0.85) 50%, transparent 51%),
     radial-gradient(1px 1px at 72% 8%, oklch(0.97 0.02 250 / 0.65) 50%, transparent 51%);
-  background-size: 420px 420px;
+  background-size: 297px 297px;
   background-repeat: repeat;
   animation: twinkle 5s ease-in-out infinite;
 }
@@ -232,7 +232,7 @@ html[data-theme="starry"] body::after {
     radial-gradient(1.6px 1.6px at 18% 48%, oklch(1 0.04 235 / 1) 50%, transparent 51%),
     radial-gradient(2.4px 2.4px at 50% 50%, oklch(1 0.04 250 / 1) 50%, transparent 51%),
     radial-gradient(1.4px 1.4px at 72% 8%, oklch(1 0.04 250 / 1) 50%, transparent 51%);
-  background-size: 420px 420px;
+  background-size: 297px 297px;
   background-repeat: repeat;
   -webkit-mask-image: radial-gradient(circle 220px at var(--mx) var(--my), black 0%, transparent 70%);
   mask-image: radial-gradient(circle 220px at var(--mx) var(--my), black 0%, transparent 70%);
@@ -306,7 +306,6 @@ html[data-theme="blossom"] body::after {
 /* ----- Kirby + glitter (sakura + blossom themes) ----- */
 
 .kirby { display: none; }
-html[data-theme="blossom"] .kirby,
 html[data-theme="sakura"] .kirby {
   display: block;
   filter: drop-shadow(0 8px 16px oklch(0.7 0.15 350 / 0.35));
@@ -318,9 +317,8 @@ html[data-theme="sakura"] .kirby {
   50% { transform: translateY(-6px) rotate(1deg); }
 }
 
-/* Canvas glitter — visible only on sakura + blossom */
+/* Canvas glitter — visible only on sakura */
 .glitter-canvas { display: none; }
-html[data-theme="blossom"] .glitter-canvas,
 html[data-theme="sakura"] .glitter-canvas { display: block; }
 
 
