@@ -499,6 +499,30 @@ export function Planner() {
         layoutId={WEEK_LAYOUT_ID}
       />
 
+      {/* Glitter rain — blossom theme only (CSS-gated) */}
+      <div className="glitter-rain" aria-hidden>
+        {Array.from({ length: 32 }).map((_, i) => {
+          const left = (i * 97) % 100;
+          const delay = (i * 0.37) % 6;
+          const duration = 5 + ((i * 1.3) % 6);
+          const size = 4 + ((i * 2) % 6);
+          const hue = [350, 30, 320, 50, 340][i % 5];
+          return (
+            <span
+              key={i}
+              style={{
+                left: `${left}%`,
+                width: `${size}px`,
+                height: `${size}px`,
+                background: `oklch(0.92 0.22 ${hue})`,
+                animationDelay: `${delay}s`,
+                animationDuration: `${duration}s`,
+              }}
+            />
+          );
+        })}
+      </div>
+
       {/* Kirby — sits on the bottom of pink (blossom) theme only */}
       <img
         src={kirbyImg}
