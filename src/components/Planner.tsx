@@ -15,6 +15,10 @@ import { PillInput } from "./PillInput";
 import { TaskSection } from "./TaskSection";
 import { ResetDialog } from "./ResetDialog";
 import { ThemePicker } from "./ThemePicker";
+import { WeekView } from "./WeekView";
+import kirbyImg from "@/assets/kirby.png";
+
+const WEEK_LAYOUT_ID = "date-to-week-card";
 
 function todayLabel() {
   return new Date().toLocaleDateString(undefined, {
