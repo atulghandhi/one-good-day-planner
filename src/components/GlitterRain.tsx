@@ -25,7 +25,6 @@ type Flake = {
 };
 
 const FLAKE_HUES = [340, 320, 30, 50, 290, 200];
-const SETTLE_FADE_MS = 600;
 
 export function GlitterRain() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
