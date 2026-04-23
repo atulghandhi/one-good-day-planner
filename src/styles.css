@@ -306,7 +306,6 @@ html[data-theme="blossom"] body::after {
 /* ----- Kirby + glitter (sakura + blossom themes) ----- */
 
 .kirby { display: none; }
-html[data-theme="blossom"] .kirby,
 html[data-theme="sakura"] .kirby {
   display: block;
   filter: drop-shadow(0 8px 16px oklch(0.7 0.15 350 / 0.35));
@@ -318,9 +317,8 @@ html[data-theme="sakura"] .kirby {
   50% { transform: translateY(-6px) rotate(1deg); }
 }
 
-/* Canvas glitter — visible only on sakura + blossom */
+/* Canvas glitter — visible only on sakura */
 .glitter-canvas { display: none; }
-html[data-theme="blossom"] .glitter-canvas,
 html[data-theme="sakura"] .glitter-canvas { display: block; }
 
 
