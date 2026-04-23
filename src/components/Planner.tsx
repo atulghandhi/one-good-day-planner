@@ -141,10 +141,19 @@ export function Planner() {
         {/* Header */}
         <div className="mb-10 flex items-start justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-card/70 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-soft backdrop-blur">
+            <motion.button
+              type="button"
+              onClick={() => setWeekOpen(true)}
+              layoutId={WEEK_LAYOUT_ID}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+              className="inline-flex items-center gap-2 rounded-full bg-card/70 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-soft backdrop-blur cursor-pointer hover:bg-card/90"
+              aria-label="Open weekly view"
+            >
               <Sparkles className="h-3.5 w-3.5 text-[color:var(--mit)]" />
               {dateLabel || "\u00A0"}
-            </div>
+            </motion.button>
             <h1 className="mt-4 font-display text-4xl md:text-5xl tracking-tight">
               One good day.
             </h1>
