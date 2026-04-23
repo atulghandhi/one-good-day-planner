@@ -492,6 +492,20 @@ export function Planner() {
         onCancel={() => setConfirmOpen(false)}
         onConfirm={handleReset}
       />
+
+      <WeekView
+        open={weekOpen}
+        onClose={() => setWeekOpen(false)}
+        layoutId={WEEK_LAYOUT_ID}
+      />
+
+      {/* Kirby — sits on the bottom of pink (blossom) theme only */}
+      <img
+        src={kirbyImg}
+        alt=""
+        aria-hidden
+        className="kirby pointer-events-none fixed bottom-0 left-4 z-10 h-40 md:h-52 w-auto select-none"
+      />
     </div>
   );
 }
