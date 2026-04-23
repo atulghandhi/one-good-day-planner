@@ -16,6 +16,7 @@ import { TaskSection } from "./TaskSection";
 import { ResetDialog } from "./ResetDialog";
 import { ThemePicker } from "./ThemePicker";
 import { WeekView } from "./WeekView";
+import { GlitterRain } from "./GlitterRain";
 import kirbyImg from "@/assets/kirby.png";
 
 const WEEK_LAYOUT_ID = "date-to-week-card";
