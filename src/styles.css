@@ -232,7 +232,7 @@ html[data-theme="starry"] body::after {
     radial-gradient(1.6px 1.6px at 18% 48%, oklch(1 0.04 235 / 1) 50%, transparent 51%),
     radial-gradient(2.4px 2.4px at 50% 50%, oklch(1 0.04 250 / 1) 50%, transparent 51%),
     radial-gradient(1.4px 1.4px at 72% 8%, oklch(1 0.04 250 / 1) 50%, transparent 51%);
-  background-size: 420px 420px;
+  background-size: 297px 297px;
   background-repeat: repeat;
   -webkit-mask-image: radial-gradient(circle 220px at var(--mx) var(--my), black 0%, transparent 70%);
   mask-image: radial-gradient(circle 220px at var(--mx) var(--my), black 0%, transparent 70%);
