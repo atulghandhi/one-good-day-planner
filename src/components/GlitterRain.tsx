@@ -56,6 +56,15 @@ export function GlitterRain() {
     };
     window.addEventListener("pointermove", onMove, { passive: true });
 
+    const onScroll = () => {
+      for (const f of flakesRef.current) {
+        if (f.settled && f.vanishing === 0) {
+          f.vanishing = 0.001;
+        }
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+
     // Spawn helpers
     const spawn = () => {
       const W = window.innerWidth;
