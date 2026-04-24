@@ -248,7 +248,7 @@ export function smallConfetti(
   source?: HTMLElement | null,
 ) {
   if (currentTheme() === "starry") {
-    shootingStars(3);
+    shootingStars(14);
     return;
   }
   const colors = toneColors(tone);
