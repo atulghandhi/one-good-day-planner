@@ -1,4 +1,5 @@
 import confetti from "canvas-confetti";
+import kirbyImg from "@/assets/kirby.png";
 
 function readVar(name: string): string {
   if (typeof document === "undefined") return "#ff7eb6";
@@ -8,8 +9,21 @@ function readVar(name: string): string {
   return v || "#ff7eb6";
 }
 
+function currentTheme(): string {
+  if (typeof document === "undefined") return "blossom";
+  return document.documentElement.getAttribute("data-theme") || "blossom";
+}
+
 // canvas-confetti accepts CSS color strings, including oklch().
 function toneColors(tone: "mit" | "should" | "could"): string[] {
+  const theme = currentTheme();
+  if (theme === "sakura") {
+    // Multicoloured rainbow palette for sakura
+    return [
+      "#ff5d8f", "#ffb3c6", "#ffd166", "#06d6a0",
+      "#118ab2", "#9b5de5", "#f15bb5", "#fee440",
+    ];
+  }
   const base = readVar(`--${tone}`);
   const sun = readVar("--sun");
   const sky = readVar("--sky");
@@ -22,39 +36,183 @@ function toneColors(tone: "mit" | "should" | "could"): string[] {
   return [base, other, sun, sky];
 }
 
+/* ---------------- Kirby confetti shape (sakura only) ---------------- */
+
+let kirbyShape: confetti.Shape | null = null;
+let kirbyShapePromise: Promise<confetti.Shape | null> | null = null;
+
+function loadKirbyShape(): Promise<confetti.Shape | null> {
+  if (kirbyShape) return Promise.resolve(kirbyShape);
+  if (kirbyShapePromise) return kirbyShapePromise;
+  kirbyShapePromise = new Promise((resolve) => {
+    if (typeof Image === "undefined" || !confetti.shapeFromImage) {
+      resolve(null);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        // ~3x size of a normal confetti piece (scalar ~3)
+        kirbyShape = confetti.shapeFromImage({ src: kirbyImg, width: 24, height: 24 });
+        resolve(kirbyShape);
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = kirbyImg;
+  });
+  return kirbyShapePromise;
+}
+
+if (typeof window !== "undefined") {
+  // Preload kirby shape so first burst includes kirbies
+  void loadKirbyShape();
+}
+
+/* ---------------- Shooting stars (starry theme) ---------------- */
+
+function shootingStars(count: number) {
+  if (typeof document === "undefined") return;
+  const layer = ensureStarLayer();
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => spawnShootingStar(layer), i * 80 + Math.random() * 60);
+  }
+}
+
+function ensureStarLayer(): HTMLDivElement {
+  let el = document.getElementById("shooting-star-layer") as HTMLDivElement | null;
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "shooting-star-layer";
+    el.style.position = "fixed";
+    el.style.inset = "0";
+    el.style.pointerEvents = "none";
+    el.style.zIndex = "60";
+    el.style.overflow = "hidden";
+    document.body.appendChild(el);
+  }
+  return el;
+}
+
+function spawnShootingStar(layer: HTMLDivElement) {
+  const star = document.createElement("div");
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  // Start somewhere in upper-left region, travel toward lower-right
+  const startX = Math.random() * w * 0.6 - 100;
+  const startY = Math.random() * h * 0.4;
+  const dx = 600 + Math.random() * 500;
+  const dy = 300 + Math.random() * 300;
+  const len = 80 + Math.random() * 80;
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  const dur = 700 + Math.random() * 500;
+
+  star.style.position = "absolute";
+  star.style.left = `${startX}px`;
+  star.style.top = `${startY}px`;
+  star.style.width = `${len}px`;
+  star.style.height = "2px";
+  star.style.background =
+    "linear-gradient(90deg, transparent, #fff 60%, #b6d4ff)";
+  star.style.borderRadius = "999px";
+  star.style.transform = `rotate(${angle}deg)`;
+  star.style.transformOrigin = "left center";
+  star.style.boxShadow = "0 0 8px #fff, 0 0 16px #9ec5ff";
+  star.style.opacity = "0";
+  star.style.willChange = "transform, opacity";
+  star.style.transition = `transform ${dur}ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity ${dur}ms ease-out`;
+
+  layer.appendChild(star);
+
+  // kick off transition next frame
+  requestAnimationFrame(() => {
+    star.style.opacity = "1";
+    star.style.transform = `translate(${dx}px, ${dy}px) rotate(${angle}deg)`;
+    setTimeout(() => {
+      star.style.opacity = "0";
+    }, dur * 0.7);
+  });
+
+  setTimeout(() => {
+    star.remove();
+  }, dur + 200);
+}
+
+/* ---------------- Public API ---------------- */
+
 export function bigConfetti() {
+  if (currentTheme() === "starry") {
+    shootingStars(14);
+    return;
+  }
   const colors = toneColors("mit");
+  const isSakura = currentTheme() === "sakura";
   const end = Date.now() + 700;
-  const fire = () => {
+
+  const fire = async () => {
+    const shape = isSakura ? await loadKirbyShape() : null;
+
+    const baseOpts = { colors, ticks: 220 };
+
     confetti({
+      ...baseOpts,
       particleCount: 70,
       spread: 75,
       startVelocity: 55,
       origin: { x: 0.2, y: 0.7 },
-      colors,
       scalar: 1.1,
-      ticks: 220,
     });
     confetti({
+      ...baseOpts,
       particleCount: 70,
       spread: 75,
       startVelocity: 55,
       origin: { x: 0.8, y: 0.7 },
-      colors,
       scalar: 1.1,
-      ticks: 220,
     });
     confetti({
+      ...baseOpts,
       particleCount: 120,
       spread: 110,
       startVelocity: 45,
       origin: { x: 0.5, y: 0.6 },
-      colors,
       scalar: 1.3,
-      ticks: 260,
     });
+
+    if (shape) {
+      // Kirby pieces — ~3x scalar, launched from same cannons
+      const kirbyOpts = {
+        shapes: [shape],
+        scalar: 3,
+        ticks: 260,
+        gravity: 1,
+      };
+      confetti({
+        ...kirbyOpts,
+        particleCount: 6,
+        spread: 75,
+        startVelocity: 55,
+        origin: { x: 0.2, y: 0.7 },
+      });
+      confetti({
+        ...kirbyOpts,
+        particleCount: 6,
+        spread: 75,
+        startVelocity: 55,
+        origin: { x: 0.8, y: 0.7 },
+      });
+      confetti({
+        ...kirbyOpts,
+        particleCount: 10,
+        spread: 110,
+        startVelocity: 45,
+        origin: { x: 0.5, y: 0.6 },
+      });
+    }
   };
-  fire();
+  void fire();
   setTimeout(() => {
     if (Date.now() < end) {
       confetti({
@@ -72,7 +230,12 @@ export function smallConfetti(
   tone: "mit" | "should" | "could",
   source?: HTMLElement | null,
 ) {
+  if (currentTheme() === "starry") {
+    shootingStars(3);
+    return;
+  }
   const colors = toneColors(tone);
+  const isSakura = currentTheme() === "sakura";
   let origin = { x: 0.5, y: 0.5 };
   if (source && typeof window !== "undefined") {
     const r = source.getBoundingClientRect();
@@ -91,4 +254,20 @@ export function smallConfetti(
     ticks: 140,
     gravity: 1,
   });
+
+  if (isSakura) {
+    void loadKirbyShape().then((shape) => {
+      if (!shape) return;
+      confetti({
+        shapes: [shape],
+        particleCount: 2,
+        spread: 65,
+        startVelocity: 32,
+        origin,
+        scalar: 2.5,
+        ticks: 180,
+        gravity: 1,
+      });
+    });
+  }
 }
