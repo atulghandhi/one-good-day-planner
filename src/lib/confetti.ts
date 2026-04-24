@@ -80,7 +80,7 @@ function shootingStars(count: number) {
   if (typeof document === "undefined") return;
   const layer = ensureStarLayer();
   for (let i = 0; i < count; i++) {
-    setTimeout(() => spawnShootingStar(layer), i * 80 + Math.random() * 60);
+    setTimeout(() => spawnShootingStar(layer), i * 25 + Math.random() * 80);
   }
 }
 
