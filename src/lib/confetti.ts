@@ -38,7 +38,7 @@ function toneColors(tone: "mit" | "should" | "could"): string[] {
 
 /* ---------------- Kirby confetti shape (sakura only) ---------------- */
 
-type AnyShape = unknown;
+type AnyShape = confetti.Shape;
 let kirbyShape: AnyShape | null = null;
 let kirbyShapePromise: Promise<AnyShape | null> | null = null;
 
