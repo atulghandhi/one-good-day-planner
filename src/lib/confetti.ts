@@ -161,7 +161,7 @@ function spawnShootingStar(layer: HTMLDivElement) {
 
 export function bigConfetti() {
   if (currentTheme() === "starry") {
-    shootingStars(14);
+    shootingStars(80);
     return;
   }
   const colors = toneColors("mit");
