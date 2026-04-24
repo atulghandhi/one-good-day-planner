@@ -38,14 +38,18 @@ function toneColors(tone: "mit" | "should" | "could"): string[] {
 
 /* ---------------- Kirby confetti shape (sakura only) ---------------- */
 
-let kirbyShape: confetti.Shape | null = null;
-let kirbyShapePromise: Promise<confetti.Shape | null> | null = null;
+type AnyShape = unknown;
+let kirbyShape: AnyShape | null = null;
+let kirbyShapePromise: Promise<AnyShape | null> | null = null;
 
-function loadKirbyShape(): Promise<confetti.Shape | null> {
+function loadKirbyShape(): Promise<AnyShape | null> {
   if (kirbyShape) return Promise.resolve(kirbyShape);
   if (kirbyShapePromise) return kirbyShapePromise;
+  const shapeFromImage = (confetti as unknown as {
+    shapeFromImage?: (opts: { src: string; width?: number; height?: number }) => AnyShape;
+  }).shapeFromImage;
   kirbyShapePromise = new Promise((resolve) => {
-    if (typeof Image === "undefined" || !confetti.shapeFromImage) {
+    if (typeof Image === "undefined" || !shapeFromImage) {
       resolve(null);
       return;
     }
@@ -53,8 +57,7 @@ function loadKirbyShape(): Promise<confetti.Shape | null> {
     img.crossOrigin = "anonymous";
     img.onload = () => {
       try {
-        // ~3x size of a normal confetti piece (scalar ~3)
-        kirbyShape = confetti.shapeFromImage({ src: kirbyImg, width: 24, height: 24 });
+        kirbyShape = shapeFromImage({ src: kirbyImg, width: 24, height: 24 });
         resolve(kirbyShape);
       } catch {
         resolve(null);
