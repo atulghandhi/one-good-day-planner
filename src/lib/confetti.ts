@@ -80,7 +80,7 @@ function shootingStars(count: number) {
   if (typeof document === "undefined") return;
   const layer = ensureStarLayer();
   for (let i = 0; i < count; i++) {
-    setTimeout(() => spawnShootingStar(layer), i * 80 + Math.random() * 60);
+    setTimeout(() => spawnShootingStar(layer), i * 25 + Math.random() * 80);
   }
 }
 
@@ -103,39 +103,53 @@ function spawnShootingStar(layer: HTMLDivElement) {
   const star = document.createElement("div");
   const w = window.innerWidth;
   const h = window.innerHeight;
-  // Start somewhere in upper-left region, travel toward lower-right
-  const startX = Math.random() * w * 0.6 - 100;
-  const startY = Math.random() * h * 0.4;
-  const dx = 600 + Math.random() * 500;
-  const dy = 300 + Math.random() * 300;
-  const len = 80 + Math.random() * 80;
-  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-  const dur = 700 + Math.random() * 500;
+
+  // Travel distance must exceed the screen diagonal so stars exit past edges
+  const diag = Math.hypot(w, h);
+  const travel = diag * 1.2 + 400;
+
+  // Angle roughly toward lower-right, with variation
+  const angleRad = (Math.PI / 6) + (Math.random() * Math.PI) / 3; // 30°..90°
+  const dx = Math.cos(angleRad) * travel;
+  const dy = Math.sin(angleRad) * travel;
+
+  // Start off-screen top/left so the full streak crosses the viewport
+  const startX = Math.random() * w * 0.9 - w * 0.25;
+  const startY = Math.random() * h * 0.6 - h * 0.3;
+
+  const len = 70 + Math.random() * 140;
+  const angleDeg = (angleRad * 180) / Math.PI;
+
+  // Vary speed: faster stars = shorter duration
+  const dur = 500 + Math.random() * 1100;
+
+  // Vary brightness
+  const brightness = 0.45 + Math.random() * 0.55;
+  const glow = 6 + Math.random() * 18;
 
   star.style.position = "absolute";
   star.style.left = `${startX}px`;
   star.style.top = `${startY}px`;
   star.style.width = `${len}px`;
-  star.style.height = "2px";
+  star.style.height = `${1 + Math.random() * 1.5}px`;
   star.style.background =
-    "linear-gradient(90deg, transparent, #fff 60%, #b6d4ff)";
+    "linear-gradient(90deg, transparent, rgba(255,255,255,0.95) 60%, #b6d4ff)";
   star.style.borderRadius = "999px";
-  star.style.transform = `rotate(${angle}deg)`;
+  star.style.transform = `rotate(${angleDeg}deg)`;
   star.style.transformOrigin = "left center";
-  star.style.boxShadow = "0 0 8px #fff, 0 0 16px #9ec5ff";
+  star.style.boxShadow = `0 0 ${glow}px rgba(255,255,255,${brightness}), 0 0 ${glow * 2}px rgba(158,197,255,${brightness * 0.7})`;
   star.style.opacity = "0";
   star.style.willChange = "transform, opacity";
-  star.style.transition = `transform ${dur}ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity ${dur}ms ease-out`;
+  star.style.transition = `transform ${dur}ms linear, opacity ${dur}ms ease-out`;
 
   layer.appendChild(star);
 
-  // kick off transition next frame
   requestAnimationFrame(() => {
-    star.style.opacity = "1";
-    star.style.transform = `translate(${dx}px, ${dy}px) rotate(${angle}deg)`;
+    star.style.opacity = String(brightness);
+    star.style.transform = `translate(${dx}px, ${dy}px) rotate(${angleDeg}deg)`;
     setTimeout(() => {
       star.style.opacity = "0";
-    }, dur * 0.7);
+    }, dur * 0.85);
   });
 
   setTimeout(() => {
@@ -147,7 +161,7 @@ function spawnShootingStar(layer: HTMLDivElement) {
 
 export function bigConfetti() {
   if (currentTheme() === "starry") {
-    shootingStars(14);
+    shootingStars(80);
     return;
   }
   const colors = toneColors("mit");
@@ -234,7 +248,7 @@ export function smallConfetti(
   source?: HTMLElement | null,
 ) {
   if (currentTheme() === "starry") {
-    shootingStars(3);
+    shootingStars(14);
     return;
   }
   const colors = toneColors(tone);
