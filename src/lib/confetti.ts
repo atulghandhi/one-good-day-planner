@@ -360,6 +360,10 @@ export function smallConfetti(
     shootingStars(14);
     return;
   }
+  if (currentTheme() === "forest") {
+    fallingLeaves(tone === "mit" ? 30 : 14);
+    return;
+  }
   const colors = toneColors(tone);
   const isSakura = currentTheme() === "sakura";
   let origin = { x: 0.5, y: 0.5 };
