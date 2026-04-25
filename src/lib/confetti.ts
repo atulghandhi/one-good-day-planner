@@ -261,9 +261,6 @@ function spawnLeaf(layer: HTMLDivElement) {
 
   setTimeout(() => leaf.remove(), dur + 100);
 }
-
-// (leaf speed tripled: was 3500–7000ms, now ~1166–2333ms)
-function _leafSpeedTripled() {
 }
 
 /* ---------------- Public API ---------------- */
