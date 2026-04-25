@@ -100,61 +100,99 @@ function ensureStarLayer(): HTMLDivElement {
 }
 
 function spawnShootingStar(layer: HTMLDivElement) {
-  const star = document.createElement("div");
   const w = window.innerWidth;
   const h = window.innerHeight;
 
-  // Travel distance must exceed the screen diagonal so stars exit past edges
-  const diag = Math.hypot(w, h);
-  const travel = diag * 1.2 + 400;
-
-  // Angle roughly toward lower-right, with variation
-  const angleRad = (Math.PI / 6) + (Math.random() * Math.PI) / 3; // 30°..90°
+  // Horizontal travel: left -> right, with slight downward drift
+  const driftDeg = (Math.random() - 0.5) * 16; // -8°..+8°
+  const angleRad = (driftDeg * Math.PI) / 180;
+  const travel = w + 600;
   const dx = Math.cos(angleRad) * travel;
   const dy = Math.sin(angleRad) * travel;
 
-  // Start off-screen top/left so the full streak crosses the viewport
-  const startX = Math.random() * w * 0.9 - w * 0.25;
-  const startY = Math.random() * h * 0.6 - h * 0.3;
+  // Start off the left edge, anywhere vertically
+  const startX = -300 - Math.random() * 200;
+  const startY = Math.random() * h;
 
-  const len = 70 + Math.random() * 140;
-  const angleDeg = (angleRad * 180) / Math.PI;
+  const len = 90 + Math.random() * 160;
+  const angleDeg = driftDeg;
 
-  // Vary speed: faster stars = shorter duration
-  const dur = 500 + Math.random() * 1100;
+  // Vary speed
+  const dur = 450 + Math.random() * 900;
 
-  // Vary brightness
-  const brightness = 0.45 + Math.random() * 0.55;
-  const glow = 6 + Math.random() * 18;
+  // Brighter overall
+  const brightness = 0.85 + Math.random() * 0.15;
+  const glow = 12 + Math.random() * 22;
+  const thickness = 1.5 + Math.random() * 2;
 
+  // Head of the star
+  const star = document.createElement("div");
   star.style.position = "absolute";
   star.style.left = `${startX}px`;
   star.style.top = `${startY}px`;
   star.style.width = `${len}px`;
-  star.style.height = `${1 + Math.random() * 1.5}px`;
+  star.style.height = `${thickness}px`;
   star.style.background =
-    "linear-gradient(90deg, transparent, rgba(255,255,255,0.95) 60%, #b6d4ff)";
+    "linear-gradient(90deg, transparent, rgba(255,255,255,1) 70%, #ffffff)";
   star.style.borderRadius = "999px";
   star.style.transform = `rotate(${angleDeg}deg)`;
   star.style.transformOrigin = "left center";
-  star.style.boxShadow = `0 0 ${glow}px rgba(255,255,255,${brightness}), 0 0 ${glow * 2}px rgba(158,197,255,${brightness * 0.7})`;
+  star.style.boxShadow = `0 0 ${glow}px rgba(255,255,255,${brightness}), 0 0 ${glow * 2.2}px rgba(180,210,255,${brightness * 0.8}), 0 0 ${glow * 3.5}px rgba(140,180,255,${brightness * 0.5})`;
   star.style.opacity = "0";
   star.style.willChange = "transform, opacity";
   star.style.transition = `transform ${dur}ms linear, opacity ${dur}ms ease-out`;
 
   layer.appendChild(star);
 
+  // Persistent streak/trail trace that fades over ~1s
+  // We sample positions during the flight and draw a long, fading line from start to current head.
+  const trailLifetime = 1000;
+  const sampleInterval = 35;
+  const samples: HTMLDivElement[] = [];
+
   requestAnimationFrame(() => {
     star.style.opacity = String(brightness);
     star.style.transform = `translate(${dx}px, ${dy}px) rotate(${angleDeg}deg)`;
-    setTimeout(() => {
-      star.style.opacity = "0";
-    }, dur * 0.85);
   });
+
+  // Spawn fading trail segments along the path
+  const startTime = performance.now();
+  const trailTimer = window.setInterval(() => {
+    const t = (performance.now() - startTime) / dur;
+    if (t >= 1) {
+      window.clearInterval(trailTimer);
+      return;
+    }
+    const cx = startX + dx * t;
+    const cy = startY + dy * t;
+    const seg = document.createElement("div");
+    seg.style.position = "absolute";
+    seg.style.left = `${cx}px`;
+    seg.style.top = `${cy}px`;
+    seg.style.width = `${thickness * 1.4}px`;
+    seg.style.height = `${thickness * 1.4}px`;
+    seg.style.borderRadius = "999px";
+    seg.style.background = "rgba(255,255,255,0.95)";
+    seg.style.boxShadow = `0 0 ${glow * 0.6}px rgba(255,255,255,${brightness * 0.9}), 0 0 ${glow * 1.4}px rgba(180,210,255,${brightness * 0.55})`;
+    seg.style.opacity = "1";
+    seg.style.willChange = "opacity";
+    seg.style.transition = `opacity ${trailLifetime}ms linear`;
+    layer.appendChild(seg);
+    samples.push(seg);
+    requestAnimationFrame(() => {
+      seg.style.opacity = "0";
+    });
+    window.setTimeout(() => seg.remove(), trailLifetime + 50);
+  }, sampleInterval);
+
+  setTimeout(() => {
+    star.style.opacity = "0";
+  }, dur * 0.9);
 
   setTimeout(() => {
     star.remove();
-  }, dur + 200);
+    window.clearInterval(trailTimer);
+  }, dur + trailLifetime + 100);
 }
 
 /* ---------------- Public API ---------------- */
