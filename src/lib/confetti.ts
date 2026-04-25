@@ -117,8 +117,8 @@ function spawnShootingStar(layer: HTMLDivElement) {
   const len = 90 + Math.random() * 160;
   const angleDeg = driftDeg;
 
-  // Vary speed
-  const dur = 450 + Math.random() * 900;
+  // Vary speed (2x faster)
+  const dur = 225 + Math.random() * 450;
 
   // Brighter overall
   const brightness = 0.85 + Math.random() * 0.15;
