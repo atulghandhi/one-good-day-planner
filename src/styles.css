@@ -286,17 +286,15 @@ html[data-theme="forest"] body::before {
   z-index: 0;
   background-image:
     url("/forest-ivy.png"),
-    url("/forest-ivy.png"),
     url("/forest-trees.png");
-  background-position: left -20px top -40px, right -20px top -40px, center bottom;
-  background-repeat: repeat-y, repeat-y, repeat-x;
-  background-size: 160px auto, 160px auto, auto 38vh;
-  /* Tint to forest-shade green via blend so the silhouettes feel like part of the scene */
+  background-position: left -20px top -40px, center bottom;
+  background-repeat: repeat-y, repeat-x;
+  background-size: 160px auto, auto 38vh;
   filter: brightness(0.55) saturate(0.85);
   opacity: 0.9;
 }
 
-/* Mirror the right-side ivy so leaves hang inward from the right edge */
+/* Mirrored ivy on right edge */
 html[data-theme="forest"] body::after {
   content: "";
   position: fixed;
@@ -307,7 +305,7 @@ html[data-theme="forest"] body::after {
   pointer-events: none;
   z-index: 0;
   background-image: url("/forest-ivy.png");
-  background-position: right -20px top -40px;
+  background-position: left -20px top -40px;
   background-repeat: repeat-y;
   background-size: 160px auto;
   transform: scaleX(-1);
