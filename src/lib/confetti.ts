@@ -233,7 +233,7 @@ function spawnLeaf(layer: HTMLDivElement) {
   const startY = -40;
   const endY = h + 60;
   const drift = (Math.random() - 0.5) * 300;
-  const dur = 3500 + Math.random() * 3500;
+  const dur = 1166 + Math.random() * 1166;
   const spin = (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 720);
   const color = LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)];
 
