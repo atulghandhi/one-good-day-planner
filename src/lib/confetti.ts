@@ -261,7 +261,6 @@ function spawnLeaf(layer: HTMLDivElement) {
 
   setTimeout(() => leaf.remove(), dur + 100);
 }
-}
 
 /* ---------------- Public API ---------------- */
 
