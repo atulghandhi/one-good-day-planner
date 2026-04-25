@@ -276,4 +276,23 @@ html[data-theme="sakura"] .kirby {
 .glitter-canvas { display: none; }
 html[data-theme="sakura"] .glitter-canvas { display: block; }
 
+/* ----- Forest theme: trees on sides, ivy along bottom ----- */
+/* Shade just slightly lighter than the forest bg (oklch(0.18 0.03 150)) so silhouettes blend like shadow */
 
+html[data-theme="forest"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    /* left tree */
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 900' preserveAspectRatio='xMinYMax meet'><g fill='%23253826'><rect x='30' y='450' width='28' height='450' rx='6'/><path d='M44 470 C 80 440 110 400 130 360 C 90 380 70 380 60 370 C 100 340 140 300 150 250 C 110 280 80 280 70 260 C 110 220 150 170 160 110 C 120 150 90 150 78 130 C 110 90 130 50 132 10 C 100 60 60 110 30 170 C 35 150 38 130 36 120 C 0 200 -10 320 18 430 Z'/><ellipse cx='44' cy='470' rx='80' ry='14' opacity='0.35'/></g></svg>"),
+    /* right tree */
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 900' preserveAspectRatio='xMaxYMax meet'><g fill='%23253826'><rect x='162' y='480' width='26' height='420' rx='6'/><path d='M176 500 C 140 470 110 430 95 390 C 130 405 155 405 165 395 C 125 365 90 325 80 275 C 115 305 145 305 155 285 C 115 245 80 195 70 135 C 105 170 135 170 148 150 C 115 110 95 70 92 30 C 125 80 165 130 195 190 C 192 170 190 150 192 140 C 220 220 230 340 205 450 Z'/><ellipse cx='176' cy='500' rx='75' ry='13' opacity='0.35'/></g></svg>"),
+    /* bottom ivy strip */
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 160' preserveAspectRatio='xMidYMax slice'><g fill='%23253826'><path d='M0 160 L1200 160 L1200 130 C 1140 130 1110 110 1090 95 C 1075 115 1050 120 1030 105 C 1015 125 985 130 960 115 C 945 130 915 130 895 110 C 875 130 845 128 825 108 C 800 130 770 128 745 105 C 720 130 690 128 665 105 C 640 130 605 128 580 105 C 555 130 520 128 495 105 C 470 130 440 128 415 108 C 395 128 365 130 345 110 C 325 130 295 130 275 110 C 255 130 225 128 205 108 C 180 128 150 128 125 105 C 105 125 75 128 55 110 C 35 128 15 125 0 110 Z'/><g opacity='0.85'><circle cx='90' cy='100' r='14'/><circle cx='95' cy='92' r='10'/><circle cx='220' cy='98' r='12'/><circle cx='340' cy='102' r='13'/><circle cx='460' cy='98' r='11'/><circle cx='590' cy='100' r='14'/><circle cx='710' cy='98' r='12'/><circle cx='830' cy='100' r='13'/><circle cx='960' cy='102' r='14'/><circle cx='1080' cy='98' r='12'/></g></g></svg>");
+  background-position: left bottom, right bottom, center bottom;
+  background-repeat: no-repeat, no-repeat, repeat-x;
+  background-size: auto 90vh, auto 90vh, 1200px 160px;
+}
