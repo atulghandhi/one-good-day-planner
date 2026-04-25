@@ -276,8 +276,7 @@ html[data-theme="sakura"] .kirby {
 .glitter-canvas { display: none; }
 html[data-theme="sakura"] .glitter-canvas { display: block; }
 
-/* ----- Forest theme: ivy vines down the sides, realistic tree silhouettes along bottom ----- */
-/* Shade just slightly lighter than the forest bg so silhouettes blend like shadow */
+/* ----- Forest theme: hanging ivy down the sides, realistic forest tree line at bottom ----- */
 
 html[data-theme="forest"] body::before {
   content: "";
@@ -286,13 +285,32 @@ html[data-theme="forest"] body::before {
   pointer-events: none;
   z-index: 0;
   background-image:
-    /* left ivy vine — sinuous stem hugging the edge with leaves sprouting inward */
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 600' preserveAspectRatio='xMinYMid slice'><g fill='none' stroke='%23253826' stroke-width='3' stroke-linecap='round'><path d='M14 0 C 22 40 8 80 18 120 C 28 160 10 200 22 240 C 32 280 12 320 24 360 C 34 400 14 440 26 480 C 36 520 18 560 28 600'/><path d='M18 60 C 28 56 36 60 42 70' /><path d='M22 180 C 34 178 44 184 50 196'/><path d='M22 300 C 34 298 44 304 50 316'/><path d='M24 420 C 36 418 46 424 52 436'/><path d='M26 540 C 38 538 48 544 54 556'/></g><g fill='%23253826'><path d='M40 64 C 56 56 70 60 76 74 C 70 86 56 90 40 80 C 38 76 38 70 40 64 Z'/><path d='M48 192 C 64 184 78 188 84 202 C 78 214 64 218 48 208 C 46 204 46 198 48 192 Z'/><path d='M48 312 C 64 304 78 308 84 322 C 78 334 64 338 48 328 C 46 324 46 318 48 312 Z'/><path d='M50 432 C 66 424 80 428 86 442 C 80 454 66 458 50 448 C 48 444 48 438 50 432 Z'/><path d='M52 552 C 68 544 82 548 88 562 C 82 574 68 578 52 568 C 50 564 50 558 52 552 Z'/><path d='M30 8 C 44 4 56 10 60 22 C 54 32 42 34 30 26 C 28 22 28 14 30 8 Z'/><path d='M28 120 C 42 116 54 122 58 134 C 52 144 40 146 28 138 C 26 134 26 126 28 120 Z'/><path d='M30 240 C 44 236 56 242 60 254 C 54 264 42 266 30 258 C 28 254 28 246 30 240 Z'/><path d='M30 360 C 44 356 56 362 60 374 C 54 384 42 386 30 378 C 28 374 28 366 30 360 Z'/><path d='M30 480 C 44 476 56 482 60 494 C 54 504 42 506 30 498 C 28 494 28 486 30 480 Z'/></g></svg>"),
-    /* right ivy vine — mirrored */
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 600' preserveAspectRatio='xMaxYMid slice'><g fill='none' stroke='%23253826' stroke-width='3' stroke-linecap='round'><path d='M76 0 C 68 40 82 80 72 120 C 62 160 80 200 68 240 C 58 280 78 320 66 360 C 56 400 76 440 64 480 C 54 520 72 560 62 600'/><path d='M72 60 C 62 56 54 60 48 70'/><path d='M68 180 C 56 178 46 184 40 196'/><path d='M68 300 C 56 298 46 304 40 316'/><path d='M66 420 C 54 418 44 424 38 436'/><path d='M64 540 C 52 538 42 544 36 556'/></g><g fill='%23253826'><path d='M50 64 C 34 56 20 60 14 74 C 20 86 34 90 50 80 C 52 76 52 70 50 64 Z'/><path d='M42 192 C 26 184 12 188 6 202 C 12 214 26 218 42 208 C 44 204 44 198 42 192 Z'/><path d='M42 312 C 26 304 12 308 6 322 C 12 334 26 338 42 328 C 44 324 44 318 42 312 Z'/><path d='M40 432 C 24 424 10 428 4 442 C 10 454 24 458 40 448 C 42 444 42 438 40 432 Z'/><path d='M38 552 C 22 544 8 548 2 562 C 8 574 22 578 38 568 C 40 564 40 558 38 552 Z'/><path d='M60 8 C 46 4 34 10 30 22 C 36 32 48 34 60 26 C 62 22 62 14 60 8 Z'/><path d='M62 120 C 48 116 36 122 32 134 C 38 144 50 146 62 138 C 64 134 64 126 62 120 Z'/><path d='M60 240 C 46 236 34 242 30 254 C 36 264 48 266 60 258 C 62 254 62 246 60 240 Z'/><path d='M60 360 C 46 356 34 362 30 374 C 36 384 48 386 60 378 C 62 374 62 366 60 360 Z'/><path d='M60 480 C 46 476 34 482 30 494 C 36 504 48 506 60 498 C 62 494 62 486 60 480 Z'/></g></svg>"),
-    /* bottom — realistic tree silhouettes (mixed pines and broadleaf) */
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1400 360' preserveAspectRatio='xMidYMax slice'><g fill='%23253826'><rect x='0' y='340' width='1400' height='20'/><!-- broadleaf 1 --><path d='M120 340 L120 230 Q 118 220 122 220 L 122 340 Z'/><path d='M70 230 C 60 200 70 170 95 160 C 90 140 105 120 125 122 C 145 118 165 135 162 158 C 185 162 195 195 180 220 C 195 232 188 258 165 260 C 155 280 130 285 115 270 C 100 285 75 280 68 258 C 50 250 52 225 70 230 Z'/><!-- pine 1 --><path d='M260 340 L256 200 L264 200 Z'/><path d='M260 100 L230 180 L245 178 L220 230 L240 228 L210 280 L310 280 L280 228 L300 230 L275 178 L290 180 Z'/><!-- broadleaf 2 (large) --><path d='M460 340 L460 200 Q 458 188 462 188 L 462 340 Z'/><path d='M390 200 C 370 165 385 125 420 118 C 425 90 460 75 490 90 C 520 78 555 95 555 130 C 590 138 600 180 575 205 C 595 220 585 255 555 258 C 545 280 510 285 488 270 C 470 290 435 285 425 262 C 395 262 380 230 390 200 Z'/><!-- pine 2 small --><path d='M640 340 L636 240 L644 240 Z'/><path d='M640 170 L620 230 L630 228 L612 270 L668 270 L650 228 L660 230 Z'/><!-- pine 3 tall --><path d='M760 340 L756 180 L764 180 Z'/><path d='M760 60 L730 150 L745 148 L720 200 L740 198 L710 250 L690 300 L830 300 L810 250 L780 198 L800 200 L775 148 L790 150 Z'/><!-- broadleaf 3 --><path d='M940 340 L940 240 Q 938 230 942 230 L 942 340 Z'/><path d='M895 240 C 880 215 895 188 920 182 C 925 162 948 150 970 160 C 992 152 1015 168 1012 188 C 1035 195 1040 222 1020 238 C 1035 250 1025 275 1000 275 C 990 290 965 295 950 280 C 935 292 910 285 905 268 C 885 264 880 245 895 240 Z'/><!-- pine 4 --><path d='M1120 340 L1116 220 L1124 220 Z'/><path d='M1120 130 L1095 195 L1108 193 L1085 240 L1102 238 L1080 285 L1160 285 L1138 238 L1155 240 L1132 193 L1145 195 Z'/><!-- broadleaf 4 --><path d='M1280 340 L1280 220 Q 1278 210 1282 210 L 1282 340 Z'/><path d='M1230 220 C 1218 195 1232 168 1255 162 C 1260 145 1280 135 1300 145 C 1320 138 1340 152 1338 172 C 1358 178 1364 200 1346 215 C 1360 226 1352 248 1330 250 C 1322 264 1300 268 1287 256 C 1272 268 1250 262 1245 247 C 1228 244 1222 226 1230 220 Z'/><!-- shrubs along ground --><ellipse cx='30' cy='338' rx='40' ry='10'/><ellipse cx='360' cy='338' rx='35' ry='9'/><ellipse cx='580' cy='338' rx='45' ry='10'/><ellipse cx='870' cy='338' rx='38' ry='9'/><ellipse cx='1050' cy='338' rx='50' ry='11'/><ellipse cx='1380' cy='338' rx='42' ry='10'/></g></svg>");
-  background-position: left top, right top, center bottom;
+    url("/forest-ivy.png"),
+    url("/forest-ivy.png"),
+    url("/forest-trees.png");
+  background-position: left -20px top -40px, right -20px top -40px, center bottom;
   background-repeat: repeat-y, repeat-y, repeat-x;
-  background-size: 90px 600px, 90px 600px, 1400px auto;
+  background-size: 160px auto, 160px auto, auto 38vh;
+  /* Tint to forest-shade green via blend so the silhouettes feel like part of the scene */
+  filter: brightness(0.55) saturate(0.85);
+  opacity: 0.9;
+}
+
+/* Mirror the right-side ivy so leaves hang inward from the right edge */
+html[data-theme="forest"] body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 180px;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("/forest-ivy.png");
+  background-position: right -20px top -40px;
+  background-repeat: repeat-y;
+  background-size: 160px auto;
+  transform: scaleX(-1);
+  filter: brightness(0.55) saturate(0.85);
+  opacity: 0.9;
 }
