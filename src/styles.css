@@ -308,3 +308,73 @@ html[data-theme="forest"] body::after {
   background-size: 180px 720px;
   transform: scaleX(-1);
 }
+
+/* MIT rich-text editor */
+.mit-editor .ProseMirror {
+  min-height: 1.6em;
+  outline: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.mit-editor .ProseMirror p {
+  margin: 0;
+  line-height: 1.45;
+}
+.mit-editor .ProseMirror p + p,
+.mit-editor .ProseMirror p + ul,
+.mit-editor .ProseMirror p + blockquote,
+.mit-editor .ProseMirror p + pre,
+.mit-editor .ProseMirror ul + p,
+.mit-editor .ProseMirror blockquote + p,
+.mit-editor .ProseMirror pre + p {
+  margin-top: 0.45rem;
+}
+.mit-editor .ProseMirror ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin: 0;
+}
+.mit-editor .ProseMirror ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+  margin: 0;
+}
+.mit-editor .ProseMirror li > p { margin: 0; }
+.mit-editor .ProseMirror blockquote {
+  border-left: 3px solid color-mix(in oklab, var(--mit) 60%, transparent);
+  padding-left: 0.75rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+  margin: 0;
+}
+.mit-editor .ProseMirror code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+  background: color-mix(in oklab, var(--muted) 70%, transparent);
+  padding: 0.05em 0.35em;
+  border-radius: 0.35rem;
+}
+.mit-editor .ProseMirror pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: color-mix(in oklab, var(--foreground) 92%, var(--background));
+  color: var(--background);
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.85rem;
+  font-size: 0.85em;
+  overflow-x: auto;
+  margin: 0;
+}
+.mit-editor .ProseMirror pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+.mit-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  font-family: var(--font-sans);
+  letter-spacing: normal;
+}
