@@ -191,43 +191,46 @@ export function Planner() {
             <label className="mb-3 block px-2 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--mit-foreground)]">
               ★ The one thing
             </label>
-            <PillInput
-              tone="mit"
-              size="lg"
+            <MitEditor
               value={state.mit}
-              onChange={(e) =>
+              autoFocus
+              done={state.mitDone}
+              onChange={(html) =>
                 setState((s) => {
-                  const text = e.target.value;
                   const needsSub =
-                    text.trim().length > 0 && s.mitSubs.length === 0;
+                    mitHasContent(html) && s.mitSubs.length === 0;
                   return {
                     ...s,
-                    mit: text,
+                    mit: html,
                     mitSubs: needsSub
                       ? [{ text: "", done: false }]
                       : s.mitSubs,
                   };
                 })
               }
-              onKeyDown={(e) => {
-                if (
-                  (e.key === "Enter" || (e.key === "Tab" && !e.shiftKey)) &&
-                  state.mit.trim().length > 0
-                ) {
-                  e.preventDefault();
-                  // Focus first sub-step input (will be created by onChange if needed)
-                  requestAnimationFrame(() => {
-                    const root = e.currentTarget?.closest("section");
-                    const sub = root?.querySelector<HTMLInputElement>(
-                      "ul input:not([readonly])",
-                    );
-                    sub?.focus();
-                  });
-                }
+              onAdvance={() => {
+                if (!mitHasContent(state.mit)) return;
+                // Ensure a sub-step exists, then focus it (poll for it to mount).
+                setState((s) =>
+                  s.mitSubs.length === 0
+                    ? { ...s, mitSubs: [{ text: "", done: false }] }
+                    : s,
+                );
+                let tries = 0;
+                const focusFirst = () => {
+                  const sub = document.querySelector<HTMLInputElement>(
+                    'section ul input:not([readonly])',
+                  );
+                  if (sub) {
+                    sub.focus();
+                    return;
+                  }
+                  if (tries++ < 20) requestAnimationFrame(focusFirst);
+                };
+                requestAnimationFrame(focusFirst);
               }}
               onBlur={flushSave}
               placeholder="What would make today a win?"
-              autoFocus
             />
 
             {state.mit.trim().length > 0 && !state.mitDone && (
