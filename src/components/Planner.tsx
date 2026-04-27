@@ -12,6 +12,7 @@ import {
 import { useDebouncedEffect } from "@/hooks/use-debounce";
 import { bigConfetti, smallConfetti } from "@/lib/confetti";
 import { PillInput } from "./PillInput";
+import { MitEditor, mitHasContent } from "./MitEditor";
 import { TaskSection } from "./TaskSection";
 import { ResetDialog } from "./ResetDialog";
 import { ThemePicker } from "./ThemePicker";
