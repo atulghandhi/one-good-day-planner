@@ -62,6 +62,7 @@ export function MitEditor({
     ],
     content: value || "",
     editable: !done,
+    immediatelyRender: false,
     autofocus: autoFocus ? "end" : false,
     editorProps: {
       attributes: {
