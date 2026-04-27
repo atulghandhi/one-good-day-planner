@@ -12,6 +12,7 @@ import {
 import { useDebouncedEffect } from "@/hooks/use-debounce";
 import { bigConfetti, smallConfetti } from "@/lib/confetti";
 import { PillInput } from "./PillInput";
+import { MitEditor, mitHasContent } from "./MitEditor";
 import { TaskSection } from "./TaskSection";
 import { ResetDialog } from "./ResetDialog";
 import { ThemePicker } from "./ThemePicker";
@@ -102,7 +103,7 @@ export function Planner() {
     if (hydrated) void saveState(state);
   };
 
-  const showSubs = state.mit.trim().length > 0;
+  const showSubs = mitHasContent(state.mit);
 
   // Sort sub-steps so completed ones drop to the bottom (preserve original index for keys + edits)
   const orderedSubs = useMemo(
@@ -190,46 +191,49 @@ export function Planner() {
             <label className="mb-3 block px-2 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--mit-foreground)]">
               ★ The one thing
             </label>
-            <PillInput
-              tone="mit"
-              size="lg"
+            <MitEditor
               value={state.mit}
-              onChange={(e) =>
+              autoFocus
+              done={state.mitDone}
+              onChange={(html) =>
                 setState((s) => {
-                  const text = e.target.value;
                   const needsSub =
-                    text.trim().length > 0 && s.mitSubs.length === 0;
+                    mitHasContent(html) && s.mitSubs.length === 0;
                   return {
                     ...s,
-                    mit: text,
+                    mit: html,
                     mitSubs: needsSub
                       ? [{ text: "", done: false }]
                       : s.mitSubs,
                   };
                 })
               }
-              onKeyDown={(e) => {
-                if (
-                  (e.key === "Enter" || (e.key === "Tab" && !e.shiftKey)) &&
-                  state.mit.trim().length > 0
-                ) {
-                  e.preventDefault();
-                  // Focus first sub-step input (will be created by onChange if needed)
-                  requestAnimationFrame(() => {
-                    const root = e.currentTarget?.closest("section");
-                    const sub = root?.querySelector<HTMLInputElement>(
-                      "ul input:not([readonly])",
-                    );
-                    sub?.focus();
-                  });
-                }
+              onAdvance={() => {
+                if (!mitHasContent(state.mit)) return;
+                // Ensure a sub-step exists, then focus it (poll for it to mount).
+                setState((s) =>
+                  s.mitSubs.length === 0
+                    ? { ...s, mitSubs: [{ text: "", done: false }] }
+                    : s,
+                );
+                let tries = 0;
+                const focusFirst = () => {
+                  const sub = document.querySelector<HTMLInputElement>(
+                    'section ul input:not([readonly])',
+                  );
+                  if (sub) {
+                    sub.focus();
+                    return;
+                  }
+                  if (tries++ < 20) requestAnimationFrame(focusFirst);
+                };
+                requestAnimationFrame(focusFirst);
               }}
               onBlur={flushSave}
               placeholder="What would make today a win?"
-              autoFocus
             />
 
-            {state.mit.trim().length > 0 && !state.mitDone && (
+            {mitHasContent(state.mit) && !state.mitDone && (
               <div className="mt-3 flex justify-end px-2">
                 <motion.button
                   type="button"
@@ -332,6 +336,12 @@ export function Planner() {
                                     return;
                                   }
                                   if (sub.text.trim().length > 0) {
+                                    const list = e.currentTarget?.closest("ul");
+                                    const expectedCount = (list
+                                      ? list.querySelectorAll<HTMLInputElement>(
+                                          "input:not([readonly])",
+                                        ).length
+                                      : 0) + 1;
                                     setState((s) => ({
                                       ...s,
                                       mitSubs: [
@@ -339,18 +349,23 @@ export function Planner() {
                                         { text: "", done: false },
                                       ],
                                     }));
-                                    requestAnimationFrame(() => {
-                                      const list =
-                                        e.currentTarget?.closest("ul");
-                                      const inputs = list
+                                    let tries = 0;
+                                    const focusNew = () => {
+                                      const after = list
                                         ? Array.from(
                                             list.querySelectorAll<HTMLInputElement>(
                                               "input:not([readonly])",
                                             ),
                                           )
                                         : [];
-                                      inputs[inputs.length - 1]?.focus();
-                                    });
+                                      if (after.length >= expectedCount) {
+                                        after[after.length - 1]?.focus();
+                                        return;
+                                      }
+                                      if (tries++ < 20)
+                                        requestAnimationFrame(focusNew);
+                                    };
+                                    requestAnimationFrame(focusNew);
                                   }
                                   return;
                                 }
