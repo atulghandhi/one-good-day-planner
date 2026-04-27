@@ -336,6 +336,12 @@ export function Planner() {
                                     return;
                                   }
                                   if (sub.text.trim().length > 0) {
+                                    const list = e.currentTarget?.closest("ul");
+                                    const expectedCount = (list
+                                      ? list.querySelectorAll<HTMLInputElement>(
+                                          "input:not([readonly])",
+                                        ).length
+                                      : 0) + 1;
                                     setState((s) => ({
                                       ...s,
                                       mitSubs: [
@@ -343,18 +349,23 @@ export function Planner() {
                                         { text: "", done: false },
                                       ],
                                     }));
-                                    requestAnimationFrame(() => {
-                                      const list =
-                                        e.currentTarget?.closest("ul");
-                                      const inputs = list
+                                    let tries = 0;
+                                    const focusNew = () => {
+                                      const after = list
                                         ? Array.from(
                                             list.querySelectorAll<HTMLInputElement>(
                                               "input:not([readonly])",
                                             ),
                                           )
                                         : [];
-                                      inputs[inputs.length - 1]?.focus();
-                                    });
+                                      if (after.length >= expectedCount) {
+                                        after[after.length - 1]?.focus();
+                                        return;
+                                      }
+                                      if (tries++ < 20)
+                                        requestAnimationFrame(focusNew);
+                                    };
+                                    requestAnimationFrame(focusNew);
                                   }
                                   return;
                                 }
