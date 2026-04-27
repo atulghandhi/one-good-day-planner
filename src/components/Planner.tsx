@@ -233,7 +233,7 @@ export function Planner() {
               placeholder="What would make today a win?"
             />
 
-            {state.mit.trim().length > 0 && !state.mitDone && (
+            {mitHasContent(state.mit) && !state.mitDone && (
               <div className="mt-3 flex justify-end px-2">
                 <motion.button
                   type="button"
