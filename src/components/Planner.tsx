@@ -103,7 +103,7 @@ export function Planner() {
     if (hydrated) void saveState(state);
   };
 
-  const showSubs = state.mit.trim().length > 0;
+  const showSubs = mitHasContent(state.mit);
 
   // Sort sub-steps so completed ones drop to the bottom (preserve original index for keys + edits)
   const orderedSubs = useMemo(
