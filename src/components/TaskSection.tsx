@@ -146,8 +146,14 @@ export function TaskSection({
                         return;
                       }
                       if (value.trim().length > 0) {
+                        const expectedCount = (list
+                          ? list.querySelectorAll<HTMLInputElement>(
+                              "input:not([readonly])",
+                            ).length
+                          : 0) + 1;
                         add();
-                        requestAnimationFrame(() => {
+                        let tries = 0;
+                        const focusNew = () => {
                           const after = list
                             ? Array.from(
                                 list.querySelectorAll<HTMLInputElement>(
@@ -155,8 +161,13 @@ export function TaskSection({
                                 ),
                               )
                             : [];
-                          after[after.length - 1]?.focus();
-                        });
+                          if (after.length >= expectedCount) {
+                            after[after.length - 1]?.focus();
+                            return;
+                          }
+                          if (tries++ < 20) requestAnimationFrame(focusNew);
+                        };
+                        requestAnimationFrame(focusNew);
                       }
                       return;
                     }
