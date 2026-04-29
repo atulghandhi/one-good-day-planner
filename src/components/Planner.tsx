@@ -339,6 +339,7 @@ export function Planner() {
                               value={sub.text}
                               done={sub.done}
                               readOnly={sub.done}
+                              data-mit-sub-index={i}
                               onChange={(e) => {
                                 const next = [...state.mitSubs];
                                 next[i] = { ...next[i], text: e.target.value };
