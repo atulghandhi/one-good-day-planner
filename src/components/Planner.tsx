@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Plus, RotateCcw, Sparkles, X } from "lucide-react";
 import {
@@ -50,6 +50,33 @@ export function Planner() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [weekOpen, setWeekOpen] = useState(false);
   const [dateLabel, setDateLabel] = useState("");
+  const pendingMitFocusRef = useRef<number | null>(null);
+  const [pendingMitFocusTick, setPendingMitFocusTick] = useState(0);
+
+  // After render, focus the pending MIT sub input by its data-index attribute.
+  useEffect(() => {
+    const target = pendingMitFocusRef.current;
+    if (target === null) return;
+    let tries = 0;
+    const tryFocus = () => {
+      const el = document.querySelector<HTMLInputElement>(
+        `input[data-mit-sub-index="${target}"]`,
+      );
+      if (el && !el.readOnly) {
+        el.focus();
+        pendingMitFocusRef.current = null;
+        return;
+      }
+      if (tries++ < 30) requestAnimationFrame(tryFocus);
+      else pendingMitFocusRef.current = null;
+    };
+    requestAnimationFrame(tryFocus);
+  }, [pendingMitFocusTick, state.mitSubs.length]);
+
+  const requestMitFocus = (index: number) => {
+    pendingMitFocusRef.current = index;
+    setPendingMitFocusTick((t) => t + 1);
+  };
 
   useEffect(() => {
     setDateLabel(todayLabel());
@@ -210,24 +237,12 @@ export function Planner() {
               }
               onAdvance={() => {
                 if (!mitHasContent(state.mit)) return;
-                // Ensure a sub-step exists, then focus it (poll for it to mount).
+                requestMitFocus(0);
                 setState((s) =>
                   s.mitSubs.length === 0
                     ? { ...s, mitSubs: [{ text: "", done: false }] }
                     : s,
                 );
-                let tries = 0;
-                const focusFirst = () => {
-                  const sub = document.querySelector<HTMLInputElement>(
-                    'section ul input:not([readonly])',
-                  );
-                  if (sub) {
-                    sub.focus();
-                    return;
-                  }
-                  if (tries++ < 20) requestAnimationFrame(focusFirst);
-                };
-                requestAnimationFrame(focusFirst);
               }}
               onBlur={flushSave}
               placeholder="What would make today a win?"
@@ -324,6 +339,7 @@ export function Planner() {
                               value={sub.text}
                               done={sub.done}
                               readOnly={sub.done}
+                              data-mit-sub-index={i}
                               onChange={(e) => {
                                 const next = [...state.mitSubs];
                                 next[i] = { ...next[i], text: e.target.value };
@@ -336,12 +352,8 @@ export function Planner() {
                                     return;
                                   }
                                   if (sub.text.trim().length > 0) {
-                                    const list = e.currentTarget?.closest("ul");
-                                    const expectedCount = (list
-                                      ? list.querySelectorAll<HTMLInputElement>(
-                                          "input:not([readonly])",
-                                        ).length
-                                      : 0) + 1;
+                                    const newIndex = state.mitSubs.length;
+                                    requestMitFocus(newIndex);
                                     setState((s) => ({
                                       ...s,
                                       mitSubs: [
@@ -349,23 +361,6 @@ export function Planner() {
                                         { text: "", done: false },
                                       ],
                                     }));
-                                    let tries = 0;
-                                    const focusNew = () => {
-                                      const after = list
-                                        ? Array.from(
-                                            list.querySelectorAll<HTMLInputElement>(
-                                              "input:not([readonly])",
-                                            ),
-                                          )
-                                        : [];
-                                      if (after.length >= expectedCount) {
-                                        after[after.length - 1]?.focus();
-                                        return;
-                                      }
-                                      if (tries++ < 20)
-                                        requestAnimationFrame(focusNew);
-                                    };
-                                    requestAnimationFrame(focusNew);
                                   }
                                   return;
                                 }
