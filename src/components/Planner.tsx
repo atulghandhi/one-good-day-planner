@@ -50,6 +50,27 @@ export function Planner() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [weekOpen, setWeekOpen] = useState(false);
   const [dateLabel, setDateLabel] = useState("");
+  const pendingMitFocusRef = useRef<number | null>(null);
+
+  // After render, focus the pending MIT sub input by its data-index attribute.
+  useEffect(() => {
+    const target = pendingMitFocusRef.current;
+    if (target === null) return;
+    let tries = 0;
+    const tryFocus = () => {
+      const el = document.querySelector<HTMLInputElement>(
+        `input[data-mit-sub-index="${target}"]`,
+      );
+      if (el && !el.readOnly) {
+        el.focus();
+        pendingMitFocusRef.current = null;
+        return;
+      }
+      if (tries++ < 30) requestAnimationFrame(tryFocus);
+      else pendingMitFocusRef.current = null;
+    };
+    requestAnimationFrame(tryFocus);
+  }, [state.mitSubs.length]);
 
   useEffect(() => {
     setDateLabel(todayLabel());
