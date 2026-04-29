@@ -352,12 +352,8 @@ export function Planner() {
                                     return;
                                   }
                                   if (sub.text.trim().length > 0) {
-                                    const list = e.currentTarget?.closest("ul");
-                                    const expectedCount = (list
-                                      ? list.querySelectorAll<HTMLInputElement>(
-                                          "input:not([readonly])",
-                                        ).length
-                                      : 0) + 1;
+                                    const newIndex = state.mitSubs.length;
+                                    requestMitFocus(newIndex);
                                     setState((s) => ({
                                       ...s,
                                       mitSubs: [
@@ -365,23 +361,6 @@ export function Planner() {
                                         { text: "", done: false },
                                       ],
                                     }));
-                                    let tries = 0;
-                                    const focusNew = () => {
-                                      const after = list
-                                        ? Array.from(
-                                            list.querySelectorAll<HTMLInputElement>(
-                                              "input:not([readonly])",
-                                            ),
-                                          )
-                                        : [];
-                                      if (after.length >= expectedCount) {
-                                        after[after.length - 1]?.focus();
-                                        return;
-                                      }
-                                      if (tries++ < 20)
-                                        requestAnimationFrame(focusNew);
-                                    };
-                                    requestAnimationFrame(focusNew);
                                   }
                                   return;
                                 }
