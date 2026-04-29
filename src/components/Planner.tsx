@@ -231,24 +231,12 @@ export function Planner() {
               }
               onAdvance={() => {
                 if (!mitHasContent(state.mit)) return;
-                // Ensure a sub-step exists, then focus it (poll for it to mount).
+                pendingMitFocusRef.current = 0;
                 setState((s) =>
                   s.mitSubs.length === 0
                     ? { ...s, mitSubs: [{ text: "", done: false }] }
                     : s,
                 );
-                let tries = 0;
-                const focusFirst = () => {
-                  const sub = document.querySelector<HTMLInputElement>(
-                    'section ul input:not([readonly])',
-                  );
-                  if (sub) {
-                    sub.focus();
-                    return;
-                  }
-                  if (tries++ < 20) requestAnimationFrame(focusFirst);
-                };
-                requestAnimationFrame(focusFirst);
               }}
               onBlur={flushSave}
               placeholder="What would make today a win?"
