@@ -51,6 +51,7 @@ export function Planner() {
   const [weekOpen, setWeekOpen] = useState(false);
   const [dateLabel, setDateLabel] = useState("");
   const pendingMitFocusRef = useRef<number | null>(null);
+  const [pendingMitFocusTick, setPendingMitFocusTick] = useState(0);
 
   // After render, focus the pending MIT sub input by its data-index attribute.
   useEffect(() => {
@@ -70,7 +71,12 @@ export function Planner() {
       else pendingMitFocusRef.current = null;
     };
     requestAnimationFrame(tryFocus);
-  }, [state.mitSubs.length]);
+  }, [pendingMitFocusTick, state.mitSubs.length]);
+
+  const requestMitFocus = (index: number) => {
+    pendingMitFocusRef.current = index;
+    setPendingMitFocusTick((t) => t + 1);
+  };
 
   useEffect(() => {
     setDateLabel(todayLabel());
