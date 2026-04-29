@@ -103,96 +103,93 @@ function spawnShootingStar(layer: HTMLDivElement) {
   const w = window.innerWidth;
   const h = window.innerHeight;
 
-  // Horizontal travel: left -> right, with slight downward drift
-  const driftDeg = (Math.random() - 0.5) * 16; // -8°..+8°
-  const angleRad = (driftDeg * Math.PI) / 180;
-  const travel = w + 600;
+  // Diagonal travel: top-left-ish to bottom-right-ish, like a real shooting star
+  const angleDeg = 18 + Math.random() * 14; // 18°..32° downward
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const travel = Math.hypot(w, h) + 400;
   const dx = Math.cos(angleRad) * travel;
   const dy = Math.sin(angleRad) * travel;
 
-  // Start off the left edge, anywhere vertically
-  const startX = -300 - Math.random() * 200;
-  const startY = Math.random() * h;
+  // Start somewhere near the top, off-screen left
+  const startX = -200 - Math.random() * 200;
+  const startY = -100 + Math.random() * (h * 0.55);
 
-  const len = 90 + Math.random() * 160;
-  const angleDeg = driftDeg;
+  // Faster — quick streak
+  const dur = 700 + Math.random() * 600;
+  const headSize = 5 + Math.random() * 4;
+  const tailLen = 140 + Math.random() * 220;
+  const brightness = 0.9 + Math.random() * 0.1;
 
-  // Vary speed (2x faster)
-  const dur = 225 + Math.random() * 450;
-
-  // Brighter overall
-  const brightness = 0.85 + Math.random() * 0.15;
-  const glow = 12 + Math.random() * 22;
-  const thickness = 1.5 + Math.random() * 2;
-
-  // Head of the star
+  // Container that translates as one unit (head + tail + sparkle cross)
   const star = document.createElement("div");
   star.style.position = "absolute";
   star.style.left = `${startX}px`;
   star.style.top = `${startY}px`;
-  star.style.width = `${len}px`;
-  star.style.height = `${thickness}px`;
-  star.style.background =
-    "linear-gradient(90deg, transparent, rgba(255,255,255,1) 70%, #ffffff)";
-  star.style.borderRadius = "999px";
-  star.style.transform = `rotate(${angleDeg}deg)`;
-  star.style.transformOrigin = "left center";
-  star.style.boxShadow = `0 0 ${glow}px rgba(255,255,255,${brightness}), 0 0 ${glow * 2.2}px rgba(180,210,255,${brightness * 0.8}), 0 0 ${glow * 3.5}px rgba(140,180,255,${brightness * 0.5})`;
-  star.style.opacity = "0";
+  star.style.width = "0";
+  star.style.height = "0";
   star.style.willChange = "transform, opacity";
-  star.style.transition = `transform ${dur}ms linear, opacity ${dur}ms ease-out`;
+  star.style.transition = `transform ${dur}ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity ${dur}ms ease-out`;
+  star.style.opacity = "0";
+  star.style.transform = `rotate(${angleDeg}deg)`;
+
+  // Tail: tapered streak fading to transparent BEHIND the head
+  const tail = document.createElement("div");
+  tail.style.position = "absolute";
+  tail.style.right = "0";
+  tail.style.top = `${-headSize * 0.35}px`;
+  tail.style.width = `${tailLen}px`;
+  tail.style.height = `${headSize * 0.7}px`;
+  tail.style.background = `linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(170,200,255,${brightness * 0.15}) 30%,
+    rgba(220,230,255,${brightness * 0.55}) 70%,
+    rgba(255,255,255,${brightness}) 100%)`;
+  tail.style.borderRadius = "999px";
+  tail.style.filter = `blur(0.5px)`;
+  star.appendChild(tail);
+
+  // Head: bright round glow
+  const head = document.createElement("div");
+  head.style.position = "absolute";
+  head.style.right = `${-headSize * 0.4}px`;
+  head.style.top = `${-headSize * 0.5}px`;
+  head.style.width = `${headSize * 1.6}px`;
+  head.style.height = `${headSize * 1.6}px`;
+  head.style.borderRadius = "50%";
+  head.style.background = `radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(220,235,255,0.95) 35%, rgba(160,200,255,0.5) 65%, rgba(120,170,255,0) 100%)`;
+  head.style.boxShadow = `0 0 ${headSize * 3}px rgba(255,255,255,${brightness}), 0 0 ${headSize * 6}px rgba(180,210,255,${brightness * 0.7}), 0 0 ${headSize * 12}px rgba(140,180,255,${brightness * 0.35})`;
+  star.appendChild(head);
+
+  // Cross sparkle on the head — gives it that twinkling star shape
+  const sparkleSize = headSize * 6;
+  const sparkle = document.createElement("div");
+  sparkle.style.position = "absolute";
+  sparkle.style.right = `${-sparkleSize / 2 + headSize * 0.4}px`;
+  sparkle.style.top = `${-sparkleSize / 2 + headSize * 0.3}px`;
+  sparkle.style.width = `${sparkleSize}px`;
+  sparkle.style.height = `${sparkleSize}px`;
+  sparkle.style.background = `
+    radial-gradient(ellipse 50% 4% at 50% 50%, rgba(255,255,255,${brightness}) 0%, rgba(255,255,255,0) 70%),
+    radial-gradient(ellipse 4% 50% at 50% 50%, rgba(255,255,255,${brightness}) 0%, rgba(255,255,255,0) 70%)`;
+  sparkle.style.opacity = "0.9";
+  star.appendChild(sparkle);
 
   layer.appendChild(star);
 
-  // Persistent streak/trail trace that fades over ~1s
-  // We sample positions during the flight and draw a long, fading line from start to current head.
-  const trailLifetime = 1000;
-  const sampleInterval = 35;
-  const samples: HTMLDivElement[] = [];
-
+  // Animate: fade in fast, translate, fade out near end
   requestAnimationFrame(() => {
     star.style.opacity = String(brightness);
     star.style.transform = `translate(${dx}px, ${dy}px) rotate(${angleDeg}deg)`;
   });
 
-  // Spawn fading trail segments along the path
-  const startTime = performance.now();
-  const trailTimer = window.setInterval(() => {
-    const t = (performance.now() - startTime) / dur;
-    if (t >= 1) {
-      window.clearInterval(trailTimer);
-      return;
-    }
-    const cx = startX + dx * t;
-    const cy = startY + dy * t;
-    const seg = document.createElement("div");
-    seg.style.position = "absolute";
-    seg.style.left = `${cx}px`;
-    seg.style.top = `${cy}px`;
-    seg.style.width = `${thickness * 1.4}px`;
-    seg.style.height = `${thickness * 1.4}px`;
-    seg.style.borderRadius = "999px";
-    seg.style.background = "rgba(255,255,255,0.95)";
-    seg.style.boxShadow = `0 0 ${glow * 0.6}px rgba(255,255,255,${brightness * 0.9}), 0 0 ${glow * 1.4}px rgba(180,210,255,${brightness * 0.55})`;
-    seg.style.opacity = "1";
-    seg.style.willChange = "opacity";
-    seg.style.transition = `opacity ${trailLifetime}ms linear`;
-    layer.appendChild(seg);
-    samples.push(seg);
-    requestAnimationFrame(() => {
-      seg.style.opacity = "0";
-    });
-    window.setTimeout(() => seg.remove(), trailLifetime + 50);
-  }, sampleInterval);
-
+  // Fade out in last 30%
   setTimeout(() => {
     star.style.opacity = "0";
-  }, dur * 0.9);
+  }, dur * 0.7);
 
   setTimeout(() => {
     star.remove();
-    window.clearInterval(trailTimer);
-  }, dur + trailLifetime + 100);
+  }, dur + 100);
 }
 
 /* ---------------- Falling leaves (forest theme) ---------------- */
