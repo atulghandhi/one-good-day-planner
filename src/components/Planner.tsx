@@ -237,7 +237,7 @@ export function Planner() {
               }
               onAdvance={() => {
                 if (!mitHasContent(state.mit)) return;
-                pendingMitFocusRef.current = 0;
+                requestMitFocus(0);
                 setState((s) =>
                   s.mitSubs.length === 0
                     ? { ...s, mitSubs: [{ text: "", done: false }] }
