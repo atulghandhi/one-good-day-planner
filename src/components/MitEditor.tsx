@@ -67,9 +67,9 @@ export function MitEditor({
     editorProps: {
       attributes: {
         class: cn(
-          "mit-prose w-full bg-card text-card-foreground outline-none transition-all",
+          "mit-prose w-full bg-card text-[color:var(--mit-foreground)] outline-none transition-all",
           "rounded-[1.5rem] border border-border/60 shadow-soft",
-          "px-5 py-3 my-6 text-base font-display tracking-tight",
+          "px-5 py-3 my-6 text-lg font-sans font-medium tracking-tight",
           "focus:shadow-pop focus:-translate-y-[1px] focus:ring-4 focus:ring-[color:var(--mit)]/60",
           done && "line-through text-muted-foreground/70 bg-muted/40 shadow-none",
         ),
