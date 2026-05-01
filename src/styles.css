@@ -378,3 +378,14 @@ html[data-theme="forest"] body::after {
   font-family: var(--font-sans);
   letter-spacing: normal;
 }
+/* Done state — strike + grey out all inner content */
+.mit-prose.line-through .ProseMirror,
+.mit-prose.line-through .ProseMirror p,
+.mit-prose.line-through .ProseMirror li,
+.mit-prose.line-through .ProseMirror blockquote,
+.mit-prose.line-through .ProseMirror code,
+.mit-prose.line-through .ProseMirror pre {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  color: color-mix(in oklab, var(--muted-foreground) 80%, transparent);
+}
