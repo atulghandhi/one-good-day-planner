@@ -9,8 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as BrainstormRouteImport } from './routes/brainstorm'
 import { Route as IndexRouteImport } from './routes/index'
 
+const BrainstormRoute = BrainstormRouteImport.update({
+  id: '/brainstorm',
+  path: '/brainstorm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +25,39 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/brainstorm': typeof BrainstormRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/brainstorm': typeof BrainstormRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/brainstorm': typeof BrainstormRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/brainstorm'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/brainstorm'
+  id: '__root__' | '/' | '/brainstorm'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BrainstormRoute: typeof BrainstormRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/brainstorm': {
+      id: '/brainstorm'
+      path: '/brainstorm'
+      fullPath: '/brainstorm'
+      preLoaderRoute: typeof BrainstormRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +70,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BrainstormRoute: BrainstormRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
