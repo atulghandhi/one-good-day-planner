@@ -49,6 +49,7 @@ export function Brainstorm() {
   const [state, setState] = useState<BrainstormState>(EMPTY);
   const [hydrated, setHydrated] = useState(false);
   const [draft, setDraft] = useState("");
+  const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -85,13 +86,9 @@ export function Brainstorm() {
   const addIdea = () => {
     const text = draft.trim();
     if (!text) return;
-    setState((s) => ({
-      ...s,
-      ideas: [
-        ...s.ideas,
-        { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, text },
-      ],
-    }));
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    setState((s) => ({ ...s, ideas: [...s.ideas, { id, text }] }));
+    setLastAddedId(id);
     setDraft("");
     requestAnimationFrame(() => inputRef.current?.focus());
   };
@@ -126,18 +123,9 @@ export function Brainstorm() {
           <ThemePicker />
         </div>
 
-        <div className="mb-4 text-center">
-          <h1 className="font-display text-3xl md:text-4xl tracking-tight">
-            Brainstorm
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Type an idea, hit enter, watch it orbit.
-          </p>
-        </div>
-
-        {/* Canvas */}
-        <div className="relative mx-auto aspect-square w-full max-w-[680px] rounded-[2rem] bg-card/50 backdrop-blur shadow-pop overflow-hidden">
-          {/* SVG lines from center to each node */}
+        {/* Canvas — open, no card */}
+        <div className="relative mx-auto aspect-square w-full max-w-[680px]">
+          {/* SVG curved lines from center to each node */}
           <svg
             className="absolute inset-0 h-full w-full pointer-events-none"
             viewBox="0 0 100 100"
@@ -145,32 +133,47 @@ export function Brainstorm() {
           >
             {state.ideas.map((idea, i) => {
               const { x, y } = nodePosition(i, state.ideas.length);
+              // Quadratic control point offset perpendicular to the chord for a gentle curve
+              const dx = x - 50;
+              const dy = y - 50;
+              const mx = (50 + x) / 2;
+              const my = (50 + y) / 2;
+              // perpendicular vector
+              const len = Math.sqrt(dx * dx + dy * dy) || 1;
+              const px = -dy / len;
+              const py = dx / len;
+              const curveAmt = 6 * (i % 2 === 0 ? 1 : -1);
+              const cx = mx + px * curveAmt;
+              const cy = my + py * curveAmt;
+              const isNew = idea.id === lastAddedId;
               return (
-                <motion.line
+                <motion.path
                   key={idea.id}
-                  x1={50}
-                  y1={50}
-                  x2={x}
-                  y2={y}
+                  d={`M 50 50 Q ${cx} ${cy} ${x} ${y}`}
+                  fill="none"
                   stroke="currentColor"
                   strokeWidth={0.25}
                   strokeLinecap="round"
                   className="text-[color:var(--mit)] opacity-60"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.6 }}
-                  transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+                  transition={{
+                    duration: isNew ? 0.7 : 0.5,
+                    delay: isNew ? 0.35 : 0,
+                    ease: [0.32, 0.72, 0, 1],
+                  }}
                 />
               );
             })}
           </svg>
 
-          {/* Center editable title */}
+          {/* Center editable title — bigger oval, lighter border */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-              className="rounded-full bg-gradient-mit p-1 shadow-pop"
+              className="rounded-full bg-gradient-mit p-[2px] shadow-soft"
             >
               <input
                 value={state.title}
@@ -178,7 +181,7 @@ export function Brainstorm() {
                   setState((s) => ({ ...s, title: e.target.value }))
                 }
                 onFocus={(e) => e.currentTarget.select()}
-                className="w-44 rounded-full bg-card/95 px-5 py-3 text-center font-display text-xl font-semibold tracking-tight text-foreground outline-none focus:ring-2 focus:ring-[color:var(--mit)]"
+                className="w-64 rounded-full bg-card/95 px-8 py-5 text-center font-display text-2xl font-semibold tracking-tight text-foreground outline-none focus:ring-2 focus:ring-[color:var(--mit)]"
                 aria-label="Brainstorm title"
               />
             </motion.div>
@@ -188,22 +191,26 @@ export function Brainstorm() {
           <AnimatePresence>
             {state.ideas.map((idea, i) => {
               const { x, y } = nodePosition(i, state.ideas.length);
+              const isNew = idea.id === lastAddedId;
               return (
                 <motion.div
                   key={idea.id}
                   className="group absolute z-20 -translate-x-1/2 -translate-y-1/2"
                   style={{ left: `${x}%`, top: `${y}%` }}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
+                  initial={
+                    isNew
+                      ? { x: `calc(${50 - x}% )`, y: `calc(${110 - y}% )`, scale: 0.6, opacity: 0 }
+                      : { scale: 0, opacity: 0 }
+                  }
+                  animate={{ x: 0, y: 0, scale: 1, opacity: 1 }}
                   exit={{ scale: 0, opacity: 0 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 260,
-                    damping: 18,
-                    delay: 0.15,
-                  }}
+                  transition={
+                    isNew
+                      ? { duration: 0.9, ease: [0.22, 1, 0.36, 1] }
+                      : { type: "spring", stiffness: 260, damping: 18 }
+                  }
                 >
-                  <div className="relative max-w-[160px] rounded-2xl bg-card px-3 py-2 text-center text-sm font-medium text-foreground shadow-pop">
+                  <div className="relative max-w-[160px] rounded-2xl bg-card/90 backdrop-blur px-3 py-2 text-center text-sm font-medium text-foreground shadow-soft">
                     {idea.text}
                     <button
                       type="button"
@@ -222,7 +229,7 @@ export function Brainstorm() {
 
         {/* Input */}
         <div className="mx-auto mt-6 max-w-md">
-          <div className="rounded-full bg-gradient-mit p-1 shadow-pop">
+          <div className="rounded-full bg-gradient-mit p-[2px] shadow-soft">
             <input
               ref={inputRef}
               value={draft}
@@ -238,9 +245,6 @@ export function Brainstorm() {
               autoFocus
             />
           </div>
-          <p className="mt-2 text-center text-xs text-muted-foreground">
-            Saved automatically · click an idea to remove
-          </p>
         </div>
       </main>
     </div>
