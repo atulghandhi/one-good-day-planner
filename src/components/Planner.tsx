@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Plus, RotateCcw, Sparkles, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Brain, Check, Plus, RotateCcw, Sparkles, X } from "lucide-react";
 import {
   EMPTY_STATE,
   type PlannerState,
@@ -486,6 +487,18 @@ export function Planner() {
             onChange={(coulds) => setState((s) => ({ ...s, coulds }))}
             placeholder="Something you could do…"
           />
+        </div>
+
+        <div className="mt-10 flex justify-center">
+          <Link
+            to="/brainstorm"
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-mit p-1 shadow-pop transition-transform hover:scale-105"
+          >
+            <span className="inline-flex items-center gap-2 rounded-full bg-card/90 px-5 py-2.5 text-sm font-semibold text-foreground">
+              <Brain className="h-4 w-4 text-[color:var(--mit)]" />
+              Brainstorm
+            </span>
+          </Link>
         </div>
 
         <footer className="mt-12 flex flex-col items-center gap-1.5 text-center text-xs text-muted-foreground">
