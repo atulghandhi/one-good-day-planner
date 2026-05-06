@@ -155,6 +155,7 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     min-height: 100%;
+    overflow-x: hidden;
   }
 
   body {
