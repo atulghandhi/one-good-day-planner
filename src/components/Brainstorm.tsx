@@ -1,14 +1,21 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
 import { ArrowLeft, X } from "lucide-react";
 import { GlitterRain } from "./GlitterRain";
 import { ThemePicker } from "./ThemePicker";
 
-type Idea = { id: string; text: string };
+type Idea = {
+  id: string;
+  text: string;
+  // Custom position after drag (relative to canvas, in px). If undefined, auto layout.
+  cx?: number;
+  cy?: number;
+  clusterId?: string;
+};
 type BrainstormState = { title: string; ideas: Idea[] };
 
-const STORAGE_KEY = "one-good-day:brainstorm:v1";
+const STORAGE_KEY = "one-good-day:brainstorm:v2";
 const EMPTY: BrainstormState = { title: "Options", ideas: [] };
 
 function loadBrainstorm(): BrainstormState {
@@ -32,12 +39,12 @@ function saveBrainstorm(s: BrainstormState) {
 }
 
 // ---- Layout ----------------------------------------------------------------
-// Estimate the rendered size of an idea card from its text.
 const MAX_CARD_W = 220;
-const CHAR_W = 8.2; // approx px per char at text-sm
+const CHAR_W = 8.2;
 const PAD_X = 28;
 const LINE_H = 22;
 const PAD_Y = 22;
+const CLUSTER_DIST = 130; // px — drag-to-cluster threshold
 
 function estimateCardSize(text: string): { w: number; h: number } {
   const oneLine = text.length * CHAR_W + PAD_X;
@@ -61,69 +68,238 @@ function rectsOverlap(a: Placed, b: Placed, margin = 18): boolean {
 
 const GOLDEN_DEG = 137.50776;
 
+function autoPlace(
+  index: number,
+  size: { w: number; h: number },
+  W: number,
+  H: number,
+  centerBox: Placed,
+  others: Placed[],
+): Placed {
+  const cx = W / 2;
+  const cy = H / 2;
+  const baseR = Math.max(centerBox.w, centerBox.h) / 2 + 60;
+  const maxR = Math.min(W, H) / 2 - 30;
+  const baseAngle = (index * GOLDEN_DEG - 90) * (Math.PI / 180);
+  for (let r = baseR; r <= maxR; r += 14) {
+    const jitterSteps = [0, 0.18, -0.18, 0.36, -0.36, 0.54, -0.54, 0.72, -0.72];
+    for (const j of jitterSteps) {
+      const a = baseAngle + j;
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+      const rect: Placed = { x, y, w: size.w, h: size.h };
+      if (
+        x - size.w / 2 < 16 ||
+        x + size.w / 2 > W - 16 ||
+        y - size.h / 2 < 16 ||
+        y + size.h / 2 > H - 16
+      )
+        continue;
+      if (rectsOverlap(rect, centerBox, 24)) continue;
+      let bad = false;
+      for (const p of others) {
+        if (rectsOverlap(rect, p, 18)) {
+          bad = true;
+          break;
+        }
+      }
+      if (bad) continue;
+      return rect;
+    }
+  }
+  const a = baseAngle;
+  return {
+    x: cx + Math.cos(a) * maxR,
+    y: cy + Math.sin(a) * maxR,
+    w: size.w,
+    h: size.h,
+  };
+}
+
 function layoutIdeas(
   ideas: Idea[],
   W: number,
   H: number,
   centerBox: Placed,
 ): Placed[] {
-  const cx = W / 2;
-  const cy = H / 2;
   const placed: Placed[] = [];
-  // Smallest viable starting radius: just outside the center box.
-  const baseR = Math.max(centerBox.w, centerBox.h) / 2 + 60;
-  const maxR = Math.min(W, H) / 2 - 30;
-
   ideas.forEach((idea, i) => {
     const size = estimateCardSize(idea.text);
-    let placedRect: Placed | null = null;
-    // Try multiple angle offsets per radius, increasing radius until fit.
-    const baseAngle = (i * GOLDEN_DEG - 90) * (Math.PI / 180);
-    outer: for (let r = baseR; r <= maxR; r += 14) {
-      // Try jittered angles around the golden-angle base.
-      const jitterSteps = [0, 0.18, -0.18, 0.36, -0.36, 0.54, -0.54, 0.72, -0.72];
-      for (const j of jitterSteps) {
-        const a = baseAngle + j;
-        const x = cx + Math.cos(a) * r;
-        const y = cy + Math.sin(a) * r;
-        const rect: Placed = { x, y, w: size.w, h: size.h };
-        // Bounds check (with margin).
-        if (
-          x - size.w / 2 < 16 ||
-          x + size.w / 2 > W - 16 ||
-          y - size.h / 2 < 16 ||
-          y + size.h / 2 > H - 16
-        ) {
-          continue;
-        }
-        // Center collision.
-        if (rectsOverlap(rect, centerBox, 24)) continue;
-        // Other ideas collision.
-        let bad = false;
-        for (const p of placed) {
-          if (rectsOverlap(rect, p, 18)) {
-            bad = true;
-            break;
-          }
-        }
-        if (bad) continue;
-        placedRect = rect;
-        break outer;
-      }
+    if (idea.cx != null && idea.cy != null) {
+      placed.push({ x: idea.cx, y: idea.cy, w: size.w, h: size.h });
+    } else {
+      placed.push(autoPlace(i, size, W, H, centerBox, placed));
     }
-    // Fallback: place at maxR even if it overlaps slightly.
-    if (!placedRect) {
-      const a = baseAngle;
-      placedRect = {
-        x: cx + Math.cos(a) * maxR,
-        y: cy + Math.sin(a) * maxR,
-        w: size.w,
-        h: size.h,
-      };
-    }
-    placed.push(placedRect);
   });
   return placed;
+}
+
+// ---- Idea node (separated to use hooks per-card) --------------------------
+
+type IdeaNodeProps = {
+  idea: Idea;
+  placement: Placed;
+  isNew: boolean;
+  isFocused: boolean;
+  isDimmed: boolean;
+  isEditing: boolean;
+  parallaxX: number;
+  parallaxY: number;
+  fromX: number;
+  fromY: number;
+  driftSeed: number;
+  onRemove: () => void;
+  onPromote: () => void;
+  onStartEdit: () => void;
+  onCommitEdit: (text: string) => void;
+  onDrag: (x: number, y: number) => void;
+  onDragEnd: (x: number, y: number) => void;
+};
+
+function IdeaNode({
+  idea,
+  placement,
+  isNew,
+  isFocused,
+  isDimmed,
+  isEditing,
+  parallaxX,
+  parallaxY,
+  fromX,
+  fromY,
+  driftSeed,
+  onRemove,
+  onPromote,
+  onStartEdit,
+  onCommitEdit,
+  onDrag,
+  onDragEnd,
+}: IdeaNodeProps) {
+  const [draftText, setDraftText] = useState(idea.text);
+  useEffect(() => setDraftText(idea.text), [idea.text]);
+
+  // Per-idea drift offsets — small bobbing.
+  const driftX = useMemo(() => 6 + (driftSeed % 5), [driftSeed]);
+  const driftY = useMemo(() => 8 + ((driftSeed * 7) % 6), [driftSeed]);
+  const driftDur = useMemo(() => 5 + (driftSeed % 4), [driftSeed]);
+  const phase = useMemo(() => (driftSeed % 100) / 25, [driftSeed]);
+
+  const commit = () => {
+    const t = draftText.trim();
+    if (t) onCommitEdit(t);
+    else setDraftText(idea.text);
+  };
+
+  return (
+    <motion.div
+      className="group absolute z-20"
+      style={{
+        left: placement.x,
+        top: placement.y,
+        x: "-50%",
+        y: "-50%",
+        maxWidth: MAX_CARD_W,
+      }}
+      drag
+      dragMomentum={false}
+      dragElastic={0}
+      onDrag={(_, info) => {
+        const nx = placement.x + info.offset.x;
+        const ny = placement.y + info.offset.y;
+        onDrag(nx, ny);
+      }}
+      onDragEnd={(_, info) => {
+        const nx = placement.x + info.offset.x;
+        const ny = placement.y + info.offset.y;
+        onDragEnd(nx, ny);
+      }}
+      initial={
+        isNew
+          ? { x: `calc(-50% + ${fromX}px)`, y: `calc(-50% + ${fromY}px)`, scale: 0.7, opacity: 0 }
+          : { scale: 0, opacity: 0 }
+      }
+      animate={{
+        x: `calc(-50% + ${parallaxX}px)`,
+        y: `calc(-50% + ${parallaxY}px)`,
+        scale: isFocused ? 1.18 : 1,
+        opacity: isDimmed ? 0.25 : 1,
+      }}
+      exit={{ scale: 0, opacity: 0 }}
+      transition={
+        isNew
+          ? { duration: 0.9, ease: [0.22, 1, 0.36, 1] }
+          : { type: "spring", stiffness: 220, damping: 22 }
+      }
+      whileHover={{ rotate: [-1.2, 1.2, 0], transition: { duration: 0.5 } }}
+    >
+      {/* Inner wrapper handles the slow bobbing drift independently */}
+      <motion.div
+        animate={{
+          x: [0, driftX, -driftX * 0.7, driftX * 0.4, 0],
+          y: [0, -driftY, driftY * 0.6, -driftY * 0.3, 0],
+        }}
+        transition={{
+          duration: driftDur,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: phase,
+        }}
+      >
+        <div
+          onClick={(e) => {
+            if (isEditing) return;
+            e.stopPropagation();
+            onPromote();
+          }}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            onStartEdit();
+          }}
+          className="relative cursor-pointer rounded-2xl bg-card/90 px-3 py-2 text-center text-sm font-medium text-foreground shadow-soft backdrop-blur transition-shadow hover:shadow-lg"
+          style={
+            isFocused
+              ? { boxShadow: "0 0 0 2px color-mix(in oklab, var(--mit) 60%, transparent), 0 12px 40px -8px color-mix(in oklab, var(--mit) 40%, transparent)" }
+              : undefined
+          }
+        >
+          {isEditing ? (
+            <input
+              autoFocus
+              value={draftText}
+              onChange={(e) => setDraftText(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commit();
+                } else if (e.key === "Escape") {
+                  setDraftText(idea.text);
+                  onCommitEdit(idea.text);
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full bg-transparent text-center outline-none"
+              style={{ minWidth: 60 }}
+            />
+          ) : (
+            idea.text
+          )}
+          <button
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="absolute -right-2 -top-2 grid h-5 w-5 place-items-center rounded-full bg-background/90 text-muted-foreground opacity-0 shadow-soft transition group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground"
+            aria-label="Remove idea"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
 }
 
 // ---- Component -------------------------------------------------------------
@@ -133,9 +309,20 @@ export function Brainstorm() {
   const [hydrated, setHydrated] = useState(false);
   const [draft, setDraft] = useState("");
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  // Live drag override: id -> {x,y} so curved lines follow during drag.
+  const [dragLive, setDragLive] = useState<{ id: string; x: number; y: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
+
+  // Mouse position for parallax (relative to canvas center).
+  const mxRaw = useMotionValue(0);
+  const myRaw = useMotionValue(0);
+  const mx = useSpring(mxRaw, { stiffness: 60, damping: 18, mass: 0.6 });
+  const my = useSpring(myRaw, { stiffness: 60, damping: 18, mass: 0.6 });
+  const [parallax, setParallax] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     setState(loadBrainstorm());
@@ -146,7 +333,7 @@ export function Brainstorm() {
     if (hydrated) saveBrainstorm(state);
   }, [state, hydrated]);
 
-  // Mouse spotlight tracking
+  // Mouse spotlight + parallax tracking
   useEffect(() => {
     let raf = 0;
     let px = 0;
@@ -159,6 +346,16 @@ export function Brainstorm() {
         raf = 0;
         document.documentElement.style.setProperty("--mx", `${px}px`);
         document.documentElement.style.setProperty("--my", `${py}px`);
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (rect) {
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          // Normalise to -1..1 then scale to small px shift.
+          const nx = (px - cx) / (rect.width / 2);
+          const ny = (py - cy) / (rect.height / 2);
+          mxRaw.set(-nx * 14);
+          myRaw.set(-ny * 14);
+        }
       });
     };
     window.addEventListener("pointermove", onMove, { passive: true });
@@ -166,22 +363,29 @@ export function Brainstorm() {
       window.removeEventListener("pointermove", onMove);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [mxRaw, myRaw]);
+
+  // Subscribe to spring values and propagate to state for re-render.
+  useEffect(() => {
+    const u1 = mx.on("change", (v) => setParallax((p) => ({ ...p, x: v })));
+    const u2 = my.on("change", (v) => setParallax((p) => ({ ...p, y: v })));
+    return () => {
+      u1();
+      u2();
+    };
+  }, [mx, my]);
 
   // Measure canvas size.
   useLayoutEffect(() => {
     if (!canvasRef.current) return;
     const el = canvasRef.current;
-    const update = () => {
-      setSize({ w: el.clientWidth, h: el.clientHeight });
-    };
+    const update = () => setSize({ w: el.clientWidth, h: el.clientHeight });
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  // Center "Options" oval — approximate size for layout.
   const centerBox: Placed = useMemo(
     () => ({ x: size.w / 2, y: size.h / 2, w: 280, h: 84 }),
     [size.w, size.h],
@@ -189,8 +393,15 @@ export function Brainstorm() {
 
   const placements = useMemo(() => {
     if (size.w === 0 || size.h === 0) return [] as Placed[];
-    return layoutIdeas(state.ideas, size.w, size.h, centerBox);
-  }, [state.ideas, size.w, size.h, centerBox]);
+    const base = layoutIdeas(state.ideas, size.w, size.h, centerBox);
+    if (dragLive) {
+      const i = state.ideas.findIndex((x) => x.id === dragLive.id);
+      if (i >= 0) {
+        base[i] = { ...base[i], x: dragLive.x, y: dragLive.y };
+      }
+    }
+    return base;
+  }, [state.ideas, size.w, size.h, centerBox, dragLive]);
 
   const addIdea = () => {
     const text = draft.trim();
@@ -204,16 +415,95 @@ export function Brainstorm() {
 
   const removeIdea = (id: string) => {
     setState((s) => ({ ...s, ideas: s.ideas.filter((i) => i.id !== id) }));
+    if (focusedId === id) setFocusedId(null);
+    if (editingId === id) setEditingId(null);
   };
+
+  const commitEdit = (id: string, text: string) => {
+    setState((s) => ({
+      ...s,
+      ideas: s.ideas.map((i) => (i.id === id ? { ...i, text } : i)),
+    }));
+    setEditingId(null);
+  };
+
+  const handleDragEnd = (id: string, x: number, y: number) => {
+    // Detect cluster: is this idea now near any other idea?
+    const idx = state.ideas.findIndex((i) => i.id === id);
+    let nearestId: string | null = null;
+    let nearestDist = Infinity;
+    placements.forEach((p, i) => {
+      if (i === idx) return;
+      const dx = p.x - x;
+      const dy = p.y - y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearestId = state.ideas[i].id;
+      }
+    });
+
+    setState((s) => {
+      const ideas = s.ideas.map((i) =>
+        i.id === id ? { ...i, cx: x, cy: y } : i,
+      );
+      if (nearestId && nearestDist < CLUSTER_DIST) {
+        const target = ideas.find((i) => i.id === nearestId);
+        const cluster = target?.clusterId ?? `c-${Date.now().toString(36)}`;
+        return {
+          ...s,
+          ideas: ideas.map((i) =>
+            i.id === id || i.id === nearestId ? { ...i, clusterId: cluster } : i,
+          ),
+        };
+      }
+      // Dragged away from prior cluster → clear if no longer near anyone.
+      return {
+        ...s,
+        ideas: ideas.map((i) => (i.id === id ? { ...i, clusterId: undefined } : i)),
+      };
+    });
+    setDragLive(null);
+  };
+
+  // Compute cluster halos: bounding circle per clusterId.
+  const clusterHalos = useMemo(() => {
+    const groups: Record<string, { x: number; y: number; w: number; h: number }[]> = {};
+    state.ideas.forEach((idea, i) => {
+      if (!idea.clusterId) return;
+      const p = placements[i];
+      if (!p) return;
+      (groups[idea.clusterId] ||= []).push(p);
+    });
+    return Object.entries(groups)
+      .filter(([, arr]) => arr.length >= 2)
+      .map(([id, arr]) => {
+        const xs = arr.map((p) => p.x);
+        const ys = arr.map((p) => p.y);
+        const minX = Math.min(...arr.map((p) => p.x - p.w / 2));
+        const maxX = Math.max(...arr.map((p) => p.x + p.w / 2));
+        const minY = Math.min(...arr.map((p) => p.y - p.h / 2));
+        const maxY = Math.max(...arr.map((p) => p.y + p.h / 2));
+        const cx = (minX + maxX) / 2;
+        const cy = (minY + maxY) / 2;
+        const r = Math.max(maxX - minX, maxY - minY) / 2 + 32;
+        return { id, cx, cy, r, count: xs.length + ys.length };
+      });
+  }, [state.ideas, placements]);
 
   const cx = size.w / 2;
   const cy = size.h / 2;
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden">
+    <div
+      className="relative h-screen w-screen overflow-hidden"
+      onClick={() => {
+        // Click on empty canvas clears focus
+        if (focusedId) setFocusedId(null);
+      }}
+    >
       <GlitterRain />
 
-      {/* Floating playful blobs */}
       <div
         aria-hidden
         className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[color:var(--could)] opacity-60 blur-3xl"
@@ -223,7 +513,7 @@ export function Brainstorm() {
         className="pointer-events-none absolute bottom-0 -right-24 h-80 w-80 rounded-full bg-[color:var(--mit)] opacity-50 blur-3xl"
       />
 
-      {/* Top bar — overlay */}
+      {/* Top bar */}
       <div className="absolute left-0 right-0 top-0 z-30 flex items-center justify-between px-5 py-4">
         <Link
           to="/"
@@ -237,107 +527,163 @@ export function Brainstorm() {
 
       {/* Full-page canvas */}
       <div ref={canvasRef} className="relative h-full w-full">
-        {/* SVG curved lines */}
+        {/* SVG: cluster halos + curved lines + animated shimmer */}
         {size.w > 0 && (
           <svg
             className="pointer-events-none absolute inset-0 h-full w-full"
             width={size.w}
             height={size.h}
           >
+            <defs>
+              <linearGradient id="lineShimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
+                <stop offset="50%" stopColor="currentColor" stopOpacity="1" />
+                <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+
+            {/* Cluster halos */}
+            {clusterHalos.map((h) => (
+              <motion.circle
+                key={h.id}
+                cx={h.cx}
+                cy={h.cy}
+                r={h.r}
+                fill="currentColor"
+                className="text-[color:var(--should)]"
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 0.12, scale: 1 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                style={{ transformOrigin: `${h.cx}px ${h.cy}px`, filter: "blur(14px)" }}
+              />
+            ))}
+
             {state.ideas.map((idea, i) => {
               const p = placements[i];
               if (!p) return null;
-              const dx = p.x - cx;
-              const dy = p.y - cy;
+              // Apply parallax to endpoint so line tracks the visually shifted card.
+              const px2 = p.x + parallax.x;
+              const py2 = p.y + parallax.y;
+              const dx = px2 - cx;
+              const dy = py2 - cy;
               const len = Math.sqrt(dx * dx + dy * dy) || 1;
-              // Perpendicular offset for a gentle curve.
-              const px = -dy / len;
-              const py = dx / len;
+              const perpX = -dy / len;
+              const perpY = dx / len;
               const curveAmt = Math.min(60, len * 0.18) * (i % 2 === 0 ? 1 : -1);
-              const mx = (cx + p.x) / 2 + px * curveAmt;
-              const my = (cy + p.y) / 2 + py * curveAmt;
+              const mxp = (cx + px2) / 2 + perpX * curveAmt;
+              const myp = (cy + py2) / 2 + perpY * curveAmt;
               const isNew = idea.id === lastAddedId;
+              const d = `M ${cx} ${cy} Q ${mxp} ${myp} ${px2} ${py2}`;
               return (
-                <motion.path
-                  key={idea.id}
-                  d={`M ${cx} ${cy} Q ${mx} ${my} ${p.x} ${p.y}`}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1}
-                  strokeLinecap="round"
-                  className="text-[color:var(--mit)] opacity-50"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 0.5 }}
-                  transition={{
-                    duration: isNew ? 0.7 : 0.5,
-                    delay: isNew ? 0.35 : 0,
-                    ease: [0.32, 0.72, 0, 1],
-                  }}
-                />
+                <g key={idea.id}>
+                  {/* Base line */}
+                  <motion.path
+                    d={d}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1}
+                    strokeLinecap="round"
+                    className="text-[color:var(--mit)] opacity-50"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 0.5 }}
+                    transition={{
+                      duration: isNew ? 0.7 : 0.4,
+                      delay: isNew ? 0.35 : 0,
+                      ease: [0.32, 0.72, 0, 1],
+                    }}
+                  />
+                  {/* Shimmer overlay flowing from center outward */}
+                  <motion.path
+                    d={d}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    className="text-[color:var(--mit)]"
+                    style={{ pathLength: 0.18 }}
+                    initial={{ pathOffset: 0, opacity: 0 }}
+                    animate={{ pathOffset: [0, 1], opacity: [0, 0.7, 0] }}
+                    transition={{
+                      duration: 3.2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: (i % 5) * 0.4,
+                    }}
+                  />
+                </g>
               );
             })}
           </svg>
         )}
 
-        {/* Center editable title — bigger oval, lighter border */}
+        {/* Center editable title — breathing gradient pulse */}
         <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="rounded-full bg-gradient-mit p-[2px] shadow-soft"
+            animate={{ scale: [1, 1.035, 1], opacity: 1 }}
+            transition={{
+              scale: { duration: 4.5, repeat: Infinity, ease: "easeInOut" },
+              opacity: { duration: 0.4 },
+            }}
+            className="relative rounded-full bg-gradient-mit p-[2px] shadow-soft"
+            style={{
+              filter: "drop-shadow(0 0 24px color-mix(in oklab, var(--mit) 35%, transparent))",
+            }}
           >
+            {/* Soft outer glow that pulses */}
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-full bg-gradient-mit"
+              animate={{ opacity: [0.25, 0.5, 0.25], scale: [1, 1.15, 1] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+              style={{ filter: "blur(20px)", zIndex: -1 }}
+            />
             <input
               value={state.title}
               onChange={(e) =>
                 setState((s) => ({ ...s, title: e.target.value }))
               }
               onFocus={(e) => e.currentTarget.select()}
+              onClick={(e) => e.stopPropagation()}
               className="w-72 rounded-full bg-card/95 px-8 py-5 text-center font-display text-2xl font-semibold tracking-tight text-foreground outline-none focus:ring-2 focus:ring-[color:var(--mit)]"
               aria-label="Brainstorm title"
             />
           </motion.div>
         </div>
 
-        {/* Idea nodes — absolutely placed by computed layout */}
+        {/* Idea nodes */}
         <AnimatePresence>
           {state.ideas.map((idea, i) => {
             const p = placements[i];
             if (!p) return null;
             const isNew = idea.id === lastAddedId;
-            // Animate from input position (bottom center) up to its slot.
             const fromX = cx - p.x;
             const fromY = (size.h - 60) - p.y;
+            const seed =
+              idea.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) || i + 1;
             return (
-              <motion.div
+              <IdeaNode
                 key={idea.id}
-                className="group absolute z-20 -translate-x-1/2 -translate-y-1/2"
-                style={{ left: p.x, top: p.y, maxWidth: MAX_CARD_W }}
-                initial={
-                  isNew
-                    ? { x: fromX, y: fromY, scale: 0.7, opacity: 0 }
-                    : { scale: 0, opacity: 0 }
+                idea={idea}
+                placement={p}
+                isNew={isNew}
+                isFocused={focusedId === idea.id}
+                isDimmed={focusedId !== null && focusedId !== idea.id}
+                isEditing={editingId === idea.id}
+                parallaxX={parallax.x}
+                parallaxY={parallax.y}
+                fromX={fromX}
+                fromY={fromY}
+                driftSeed={seed}
+                onRemove={() => removeIdea(idea.id)}
+                onPromote={() =>
+                  setFocusedId((f) => (f === idea.id ? null : idea.id))
                 }
-                animate={{ x: 0, y: 0, scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={
-                  isNew
-                    ? { duration: 0.9, ease: [0.22, 1, 0.36, 1] }
-                    : { type: "spring", stiffness: 260, damping: 18 }
-                }
-              >
-                <div className="relative rounded-2xl bg-card/90 px-3 py-2 text-center text-sm font-medium text-foreground shadow-soft backdrop-blur">
-                  {idea.text}
-                  <button
-                    type="button"
-                    onClick={() => removeIdea(idea.id)}
-                    className="absolute -right-2 -top-2 grid h-5 w-5 place-items-center rounded-full bg-background/90 text-muted-foreground opacity-0 shadow-soft transition group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground"
-                    aria-label="Remove idea"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              </motion.div>
+                onStartEdit={() => setEditingId(idea.id)}
+                onCommitEdit={(t) => commitEdit(idea.id, t)}
+                onDrag={(x, y) => setDragLive({ id: idea.id, x, y })}
+                onDragEnd={(x, y) => handleDragEnd(idea.id, x, y)}
+              />
             );
           })}
         </AnimatePresence>
@@ -350,6 +696,7 @@ export function Brainstorm() {
             ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
