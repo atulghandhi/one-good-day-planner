@@ -392,14 +392,8 @@ export function Brainstorm() {
   const placements = useMemo(() => {
     if (size.w === 0 || size.h === 0) return [] as Placed[];
     const base = layoutIdeas(state.ideas, size.w, size.h, centerBox);
-    if (dragLive) {
-      const i = state.ideas.findIndex((x) => x.id === dragLive.id);
-      if (i >= 0) {
-        base[i] = { ...base[i], x: dragLive.x, y: dragLive.y };
-      }
-    }
     return base;
-  }, [state.ideas, size.w, size.h, centerBox, dragLive]);
+  }, [state.ideas, size.w, size.h, centerBox]);
 
   const addIdea = () => {
     const text = draft.trim();
