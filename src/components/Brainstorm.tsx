@@ -815,6 +815,18 @@ export function Brainstorm() {
           />
         </div>
       </div>
+
+      <ResetDialog
+        open={confirmOpen}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setState(EMPTY);
+          setFocusedId(null);
+          setEditingId(null);
+          setDragLive(null);
+          setConfirmOpen(false);
+        }}
+      />
     </div>
   );
 }
