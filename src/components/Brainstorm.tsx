@@ -64,6 +64,115 @@ const PAGE_THEME_VIEWPORT_STROKE: Record<string, string> = {
   starry: "currentColor",
 };
 
+type SketchPalette = {
+  paper: string;
+  paperAccent: string;
+  card: string;
+  ink: string;
+  doodle: string;
+  marker: string;
+  markerDark: string;
+  markerGlow: string;
+  ringHighlight: string;
+  line: string;
+  shadow: string;
+  placeholder: string;
+  textShadow: string;
+};
+
+const SKETCH_PALETTES: Record<string, SketchPalette> = {
+  sakura: {
+    paper: "#fff7f6",
+    paperAccent: "rgba(204, 115, 159, 0.12)",
+    card: "#fffdf9",
+    ink: "#25151f",
+    doodle: "#2f1828",
+    marker: "#e8a4c8",
+    markerDark: "#b96c9d",
+    markerGlow: "rgba(232, 164, 200, 0.46)",
+    ringHighlight: "rgba(255, 255, 255, 0.72)",
+    line: "#2b1d25",
+    shadow: "rgba(37, 21, 31, 0.14)",
+    placeholder: "rgba(37, 21, 31, 0.48)",
+    textShadow: "rgba(37, 21, 31, 0.24)",
+  },
+  blossom: {
+    paper: "#fff8ef",
+    paperAccent: "rgba(148, 216, 180, 0.11)",
+    card: "#fffaf4",
+    ink: "#171311",
+    doodle: "#171311",
+    marker: "#94d8b4",
+    markerDark: "#62b98f",
+    markerGlow: "rgba(148, 216, 180, 0.58)",
+    ringHighlight: "rgba(255, 255, 255, 0.72)",
+    line: "#24201c",
+    shadow: "rgba(23, 19, 17, 0.14)",
+    placeholder: "rgba(23, 19, 17, 0.45)",
+    textShadow: "rgba(23, 19, 17, 0.22)",
+  },
+  meadow: {
+    paper: "#fffbe8",
+    paperAccent: "rgba(214, 166, 35, 0.13)",
+    card: "#fffdf1",
+    ink: "#242113",
+    doodle: "#292310",
+    marker: "#edcf69",
+    markerDark: "#ad7f17",
+    markerGlow: "rgba(237, 207, 105, 0.5)",
+    ringHighlight: "rgba(255, 255, 255, 0.7)",
+    line: "#302712",
+    shadow: "rgba(48, 39, 18, 0.15)",
+    placeholder: "rgba(36, 33, 19, 0.48)",
+    textShadow: "rgba(48, 39, 18, 0.22)",
+  },
+  nebula: {
+    paper: "#130d20",
+    paperAccent: "rgba(245, 93, 199, 0.14)",
+    card: "#21172f",
+    ink: "#fff2ff",
+    doodle: "#f5ddff",
+    marker: "#ff6fcf",
+    markerDark: "#65d6ff",
+    markerGlow: "rgba(255, 111, 207, 0.36)",
+    ringHighlight: "rgba(255, 255, 255, 0.28)",
+    line: "#fff2ff",
+    shadow: "rgba(0, 0, 0, 0.34)",
+    placeholder: "rgba(255, 242, 255, 0.5)",
+    textShadow: "rgba(0, 0, 0, 0.45)",
+  },
+  forest: {
+    paper: "#101912",
+    paperAccent: "rgba(150, 205, 124, 0.12)",
+    card: "#19251b",
+    ink: "#f5efd7",
+    doodle: "#efe7c9",
+    marker: "#93cf82",
+    markerDark: "#d0b565",
+    markerGlow: "rgba(147, 207, 130, 0.32)",
+    ringHighlight: "rgba(255, 245, 211, 0.24)",
+    line: "#f5efd7",
+    shadow: "rgba(0, 0, 0, 0.32)",
+    placeholder: "rgba(245, 239, 215, 0.48)",
+    textShadow: "rgba(0, 0, 0, 0.44)",
+  },
+  starry: {
+    paper: "#0b1024",
+    paperAccent: "rgba(126, 201, 255, 0.13)",
+    card: "#151d35",
+    ink: "#f0f7ff",
+    doodle: "#e7f1ff",
+    marker: "#7ec9ff",
+    markerDark: "#b8a0ff",
+    markerGlow: "rgba(126, 201, 255, 0.34)",
+    ringHighlight: "rgba(255, 255, 255, 0.25)",
+    line: "#f0f7ff",
+    shadow: "rgba(0, 0, 0, 0.36)",
+    placeholder: "rgba(240, 247, 255, 0.5)",
+    textShadow: "rgba(0, 0, 0, 0.46)",
+  },
+};
+
 type Placed = { x: number; y: number; w: number; h: number };
 
 type ShapeTheme = {
@@ -92,11 +201,9 @@ const SHAPE_THEMES: Record<ShapeKey, ShapeTheme> = {
   },
   blob: {
     fontFamily:
-      '"Marker Felt", "Chalkboard SE", "Bradley Hand", "Comic Sans MS", cursive, ui-sans-serif, system-ui, sans-serif',
-    cardClassName:
-      "border-2 border-foreground/45 bg-card/95 shadow-[2px_3px_0_color-mix(in_oklab,var(--foreground)_16%,transparent)]",
-    controlClassName:
-      "border-2 border-foreground/45 bg-card/90 shadow-[2px_3px_0_color-mix(in_oklab,var(--foreground)_16%,transparent)]",
+      '"Marker Felt", "Chalkboard SE", "Comic Sans MS", "Bradley Hand", cursive, ui-sans-serif, system-ui, sans-serif',
+    cardClassName: "shadow-[3px_4px_0_rgba(23,19,17,0.12)]",
+    controlClassName: "border-2 shadow-[3px_4px_0_rgba(23,19,17,0.16)]",
     lineMode: "sketch",
   },
 };
@@ -428,11 +535,98 @@ function connectorPathFromPoints(
   return `M ${start.x} ${start.y} Q ${mx} ${my} ${end.x} ${end.y}`;
 }
 
-function controlStyle(shape: ShapeKey, theme: ShapeTheme): React.CSSProperties {
-  return {
+function controlStyle(
+  shape: ShapeKey,
+  theme: ShapeTheme,
+  sketchPalette?: SketchPalette,
+): React.CSSProperties {
+  const base = {
     ...shapeStyle(shape),
     fontFamily: theme.fontFamily,
   };
+
+  if (shape !== "blob" || !sketchPalette) return base;
+
+  return {
+    ...base,
+    backgroundColor: sketchPalette.card,
+    borderColor: sketchPalette.ink,
+    boxShadow: `3px 4px 0 ${sketchPalette.shadow}`,
+    color: sketchPalette.ink,
+  };
+}
+
+function SketchDoodles({ palette }: { palette: SketchPalette }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      style={{ color: palette.doodle }}
+    >
+      <svg className="absolute -left-4 top-4 h-36 w-36" viewBox="0 0 144 144" fill="none">
+        {Array.from({ length: 18 }).map((_, index) => (
+          <path
+            key={index}
+            d={`M ${12 + (index % 5) * 21} ${10 + Math.floor(index / 5) * 24} q ${5 + (index % 3)} ${-6 + (index % 4) * 3} ${11 + (index % 2) * 3} 1`}
+            stroke="currentColor"
+            strokeWidth="5"
+            strokeLinecap="round"
+            opacity="0.9"
+          />
+        ))}
+      </svg>
+      <svg className="absolute right-5 top-4 h-24 w-52" viewBox="0 0 208 96" fill="none">
+        <path
+          d="M8 54 C22 8 36 88 50 24 C64 -6 78 82 92 18 C108 -10 120 82 134 18 C148 -8 162 82 176 18 C190 -4 198 52 204 38"
+          stroke="currentColor"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <svg className="absolute bottom-0 -left-2 h-28 w-72" viewBox="0 0 288 112" fill="none">
+        <path
+          d="M2 72 C24 14 54 118 76 54 C98 -8 118 112 143 62 C168 12 180 110 205 72 C230 34 252 102 286 58"
+          stroke="currentColor"
+          strokeWidth="4"
+          strokeLinecap="round"
+          opacity="0.9"
+        />
+      </svg>
+      <svg className="absolute bottom-12 right-8 h-48 w-48" viewBox="0 0 192 192" fill="none">
+        <path
+          d="M38 44 C30 26 58 18 68 40 C76 18 104 28 94 50 C84 72 58 82 38 44Z"
+          fill="currentColor"
+        />
+        <path
+          d="M116 70 C110 56 132 50 140 66 C146 50 168 58 160 76 C152 94 132 100 116 70Z"
+          fill="currentColor"
+        />
+        {Array.from({ length: 16 }).map((_, index) => (
+          <path
+            key={index}
+            d={`M ${28 + (index % 4) * 38} ${112 + Math.floor(index / 4) * 18} q 7 -9 14 0`}
+            stroke="currentColor"
+            strokeWidth="5"
+            strokeLinecap="round"
+          />
+        ))}
+      </svg>
+      <svg className="absolute left-6 top-1/3 h-28 w-28" viewBox="0 0 112 112" fill="none">
+        <path
+          d="M56 6 C61 38 73 50 106 56 C73 62 61 74 56 106 C51 74 39 62 6 56 C39 50 51 38 56 6Z"
+          stroke="currentColor"
+          strokeWidth="3"
+        />
+        <path
+          d="M86 10 V42 M70 26 H102"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+      </svg>
+    </div>
+  );
 }
 
 type IdeaNodeProps = {
@@ -441,6 +635,7 @@ type IdeaNodeProps = {
   depth: number;
   shape: ShapeKey;
   theme: ShapeTheme;
+  sketchPalette: SketchPalette;
   isNew: boolean;
   isFocused: boolean;
   isEditing: boolean;
@@ -458,6 +653,7 @@ function IdeaNode({
   depth,
   shape,
   theme,
+  sketchPalette,
   isNew,
   isFocused,
   isEditing,
@@ -479,32 +675,41 @@ function IdeaNode({
   };
 
   const canvasPoint = toCanvasPoint(placement);
+  const isSketch = shape === "blob";
   const level = depthLevel(depth);
-  const fontSize = ideaFontSize(level);
-  const fontWeight = Math.max(520, 650 - level * 45);
+  const fontSize = isSketch ? Math.max(12.5, 15.5 - level * 1.15) : ideaFontSize(level);
+  const fontWeight = isSketch ? Math.max(600, 800 - level * 55) : Math.max(520, 650 - level * 45);
   const focusScale = Math.max(1.025, 1.08 - level * 0.012);
   const focusRing = Math.max(1, 2 - level * 0.22);
-  const focusedShadow = `0 0 0 ${focusRing}px color-mix(in oklab, var(--mit) ${Math.max(
-    38,
-    62 - level * 6,
-  )}%, transparent), 0 ${Math.max(8, 14 - level)}px ${Math.max(
-    22,
-    42 - level * 5,
-  )}px -12px color-mix(in oklab, var(--mit) ${Math.max(20, 44 - level * 6)}%, transparent)`;
-  const restingShadow =
-    level === 0
+  const focusedShadow = isSketch
+    ? `0 0 0 ${Math.max(2, focusRing)}px ${sketchPalette.ink}, 0 0 0 ${Math.max(
+        8,
+        12 - level,
+      )}px ${sketchPalette.markerGlow}, 5px 7px 0 ${sketchPalette.shadow}`
+    : `0 0 0 ${focusRing}px color-mix(in oklab, var(--mit) ${Math.max(
+        38,
+        62 - level * 6,
+      )}%, transparent), 0 ${Math.max(8, 14 - level)}px ${Math.max(
+        22,
+        42 - level * 5,
+      )}px -12px color-mix(in oklab, var(--mit) ${Math.max(20, 44 - level * 6)}%, transparent)`;
+  const restingShadow = isSketch
+    ? `3px 4px 0 ${sketchPalette.shadow}`
+    : level === 0
       ? undefined
       : `0 ${Math.max(5, 8 - level)}px ${Math.max(
           12,
           20 - level * 2,
         )}px -16px color-mix(in oklab, var(--foreground) 22%, transparent)`;
-  const nestedBorder =
-    level > 0
+  const nestedBorder = isSketch
+    ? "0 solid transparent"
+    : level > 0
       ? `${shape === "blob" ? Math.max(1.25, 2.2 - level * 0.25) : 1}px solid color-mix(in oklab, var(--foreground) ${Math.max(
           14,
           shape === "blob" ? 40 - level * 4 : 22 - level * 2,
         )}%, transparent)`
       : undefined;
+  const ringWidth = Math.max(3, 7 - level * 0.8);
 
   return (
     <div
@@ -538,7 +743,7 @@ function IdeaNode({
             onStartEdit();
           }}
           className={cn(
-            "relative flex min-h-11 select-none items-center justify-center px-3 py-2 text-center text-sm font-medium text-foreground transition-shadow",
+            "relative flex min-h-11 select-none items-center justify-center overflow-visible px-3 py-2 text-center text-sm font-medium text-foreground transition-shadow",
             isDragging ? "cursor-grabbing" : "cursor-grab",
             theme.cardClassName,
           )}
@@ -552,8 +757,47 @@ function IdeaNode({
             lineHeight: 1.2,
             border: nestedBorder,
             boxShadow: isFocused ? focusedShadow : restingShadow,
+            backgroundColor: isSketch ? sketchPalette.card : undefined,
+            color: isSketch ? sketchPalette.ink : undefined,
           }}
         >
+          {isSketch && (
+            <>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute"
+                style={{
+                  ...shapeStyle(shape),
+                  inset: -10 + level,
+                  border: `${ringWidth}px solid ${sketchPalette.marker}`,
+                  opacity: isFocused ? 0.9 : 0.72,
+                  transform: `rotate(${(idea.id.charCodeAt(0) % 7) - 3}deg) scaleX(1.03)`,
+                }}
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute"
+                style={{
+                  ...shapeStyle(shape),
+                  inset: -5 + level,
+                  border: `${Math.max(2, ringWidth * 0.48)}px solid ${sketchPalette.markerDark}`,
+                  opacity: isFocused ? 0.5 : 0.32,
+                  transform: `rotate(${(idea.id.charCodeAt(idea.id.length - 1) % 9) - 4}deg) scaleY(1.04)`,
+                }}
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute"
+                style={{
+                  ...shapeStyle(shape),
+                  inset: -2 + level,
+                  border: `2px solid ${sketchPalette.ringHighlight}`,
+                  opacity: 0.62,
+                  transform: "rotate(-2deg) scaleX(0.98)",
+                }}
+              />
+            </>
+          )}
           {isEditing ? (
             <input
               autoFocus
@@ -576,9 +820,9 @@ function IdeaNode({
             />
           ) : (
             <span
-              className="max-w-full break-words"
+              className={cn("relative z-10 max-w-full break-words", isSketch && "uppercase")}
               style={{
-                textShadow: shape === "blob" ? "0.35px 0.25px 0 currentColor" : undefined,
+                textShadow: isSketch ? `0.7px 0.55px 0 ${sketchPalette.textShadow}` : undefined,
               }}
             >
               {idea.text}
@@ -828,6 +1072,7 @@ export function Brainstorm() {
 
   const shape = state.shape;
   const theme = SHAPE_THEMES[shape];
+  const sketchPalette = SKETCH_PALETTES[pageTheme] ?? SKETCH_PALETTES.blossom;
 
   const syncTitleHeight = useCallback((element: HTMLTextAreaElement) => {
     element.style.height = "auto";
@@ -1337,16 +1582,29 @@ export function Brainstorm() {
     <div
       ref={rootRef}
       className="relative h-screen w-screen overflow-hidden"
-      style={{ fontFamily: theme.fontFamily }}
+      style={{
+        fontFamily: theme.fontFamily,
+        background:
+          shape === "blob"
+            ? `radial-gradient(circle at 28% 18%, ${sketchPalette.paperAccent}, transparent 24%), radial-gradient(circle at 74% 76%, ${sketchPalette.markerGlow}, transparent 22%), ${sketchPalette.paper}`
+            : undefined,
+        color: shape === "blob" ? sketchPalette.ink : undefined,
+      }}
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[color:var(--could)] opacity-45 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute bottom-0 -right-24 h-80 w-80 rounded-full bg-[color:var(--mit)] opacity-42 blur-3xl"
-      />
+      {shape === "blob" ? (
+        <SketchDoodles palette={sketchPalette} />
+      ) : (
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[color:var(--could)] opacity-45 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 -right-24 h-80 w-80 rounded-full bg-[color:var(--mit)] opacity-42 blur-3xl"
+          />
+        </>
+      )}
 
       <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-5 py-4">
         <Link
@@ -1355,7 +1613,7 @@ export function Brainstorm() {
             "inline-flex items-center gap-2 px-4 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-card/90",
             theme.controlClassName,
           )}
-          style={controlStyle(shape, theme)}
+          style={controlStyle(shape, theme, sketchPalette)}
           onClick={(event) => event.stopPropagation()}
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -1366,11 +1624,11 @@ export function Brainstorm() {
             buttonClassName={cn("h-10 w-10 transition hover:bg-card/90", theme.controlClassName)}
             iconClassName="h-4 w-4"
             buttonStyle={{
-              ...controlStyle(shape, theme),
+              ...controlStyle(shape, theme, sketchPalette),
               height: 40,
               width: 40,
             }}
-            panelStyle={controlStyle(shape, theme)}
+            panelStyle={controlStyle(shape, theme, sketchPalette)}
             swatchShapeStyle={shapeStyle(shape)}
           />
           <motion.button
@@ -1386,7 +1644,7 @@ export function Brainstorm() {
               "grid h-10 w-10 place-items-center text-foreground",
               theme.controlClassName,
             )}
-            style={controlStyle(shape, theme)}
+            style={controlStyle(shape, theme, sketchPalette)}
             aria-label="Reset brainstorm"
           >
             <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
@@ -1411,6 +1669,28 @@ export function Brainstorm() {
           width={viewportSize.w}
           height={viewportSize.h}
         >
+          {shape === "blob" && (
+            <defs>
+              <marker
+                id="sketch-arrowhead"
+                markerWidth="14"
+                markerHeight="14"
+                refX="12"
+                refY="7"
+                orient="auto"
+                markerUnits="strokeWidth"
+              >
+                <path
+                  d="M 1 1 L 12 7 L 1 13"
+                  fill="none"
+                  stroke={sketchPalette.line}
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </marker>
+            </defs>
+          )}
           {state.ideas.map((idea, index) => {
             const to = displayPlacements[index];
             if (!to) return null;
@@ -1426,17 +1706,9 @@ export function Brainstorm() {
             const path = connectorPathFromPoints(start, end, theme.lineMode, index);
             const lineLevel = depthLevel(depthById.get(idea.id) ?? 0);
             const lineScale = Math.max(0.58, 1 - lineLevel * 0.11);
-            const sketchPaths =
-              shape === "blob"
-                ? [
-                    path,
-                    connectorPathFromPoints(start, end, "sketch", index + 13),
-                    connectorPathFromPoints(start, end, "sketch", index + 29),
-                  ]
-                : [];
             return (
               <g key={idea.id}>
-                {isSelectedOutgoing && (
+                {isSelectedOutgoing && shape !== "blob" && (
                   <motion.path
                     d={path}
                     fill="none"
@@ -1454,40 +1726,37 @@ export function Brainstorm() {
                     }}
                   />
                 )}
-                {sketchPaths.map((sketchPath, sketchIndex) => (
-                  <path
-                    key={sketchIndex}
-                    d={sketchPath}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={(sketchIndex === 0 ? 5 : 3.4) * lineScale}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={sketchIndex === 0 ? "text-[color:var(--should)]" : "text-foreground"}
-                    opacity={sketchIndex === 0 ? 0.18 : 0.12}
-                  />
-                ))}
                 <motion.path
                   d={path}
                   fill="none"
-                  stroke="currentColor"
+                  stroke={shape === "blob" ? sketchPalette.line : "currentColor"}
                   strokeWidth={
                     (isSelectedOutgoing
-                      ? 3.4
+                      ? shape === "blob"
+                        ? 3
+                        : 3.4
                       : shape === "boxy"
                         ? 1.5
                         : shape === "blob"
-                          ? 2.8
+                          ? 2.2
                           : 2) * lineScale
                   }
                   strokeLinecap={shape === "boxy" ? "square" : "round"}
                   strokeLinejoin={shape === "boxy" ? "miter" : "round"}
+                  markerEnd={shape === "blob" ? "url(#sketch-arrowhead)" : undefined}
                   className={cn(
-                    "text-[color:var(--mit)]",
-                    isSelectedOutgoing ? "opacity-95" : "opacity-55",
+                    shape !== "blob" && "text-[color:var(--mit)]",
+                    isSelectedOutgoing
+                      ? "opacity-95"
+                      : shape === "blob"
+                        ? "opacity-75"
+                        : "opacity-55",
                   )}
                   initial={isNew ? { pathLength: 0, opacity: 0 } : false}
-                  animate={{ pathLength: 1, opacity: isSelectedOutgoing ? 0.95 : 0.55 }}
+                  animate={{
+                    pathLength: 1,
+                    opacity: isSelectedOutgoing ? 0.95 : shape === "blob" ? 0.75 : 0.55,
+                  }}
                   transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
                 />
               </g>
@@ -1516,13 +1785,52 @@ export function Brainstorm() {
             onClick={(event) => event.stopPropagation()}
           >
             <div
-              className="relative bg-gradient-mit p-[2px]"
+              className={cn(
+                "relative",
+                shape === "blob" ? "bg-transparent p-[10px]" : "bg-gradient-mit p-[2px]",
+              )}
               style={{
                 ...shapeStyle(shape),
                 filter:
-                  "drop-shadow(10px 12px 18px color-mix(in oklab, var(--mit) 24%, transparent)) drop-shadow(2px 4px 8px color-mix(in oklab, var(--foreground) 10%, transparent))",
+                  shape === "blob"
+                    ? "none"
+                    : "drop-shadow(10px 12px 18px color-mix(in oklab, var(--mit) 24%, transparent)) drop-shadow(2px 4px 8px color-mix(in oklab, var(--foreground) 10%, transparent))",
               }}
             >
+              {shape === "blob" && (
+                <>
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                      ...shapeStyle(shape),
+                      border: `8px solid ${sketchPalette.marker}`,
+                      opacity: 0.78,
+                      transform: "rotate(-1.7deg) scaleX(1.03)",
+                    }}
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-1"
+                    style={{
+                      ...shapeStyle(shape),
+                      border: `4px solid ${sketchPalette.markerDark}`,
+                      opacity: 0.34,
+                      transform: "rotate(1.4deg) scaleY(1.04)",
+                    }}
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-3"
+                    style={{
+                      ...shapeStyle(shape),
+                      border: `2px solid ${sketchPalette.ringHighlight}`,
+                      opacity: 0.68,
+                      transform: "rotate(-2deg) scaleX(0.98)",
+                    }}
+                  />
+                </>
+              )}
               <textarea
                 ref={titleRef}
                 value={state.title}
@@ -1550,10 +1858,22 @@ export function Brainstorm() {
                 }}
                 maxLength={MAX_TITLE_CHARS}
                 rows={1}
-                className="block min-h-[4.5rem] max-h-[6.625rem] w-[22rem] resize-none overflow-hidden bg-card/95 px-8 py-5 text-center text-2xl font-semibold leading-[1.15] text-foreground outline-none focus:ring-2 focus:ring-[color:var(--mit)]"
+                className={cn(
+                  "block min-h-[4.5rem] max-h-[6.625rem] resize-none overflow-hidden text-center outline-none",
+                  shape === "blob"
+                    ? "relative z-10 w-[22rem] px-5 py-4 text-4xl font-black uppercase leading-[0.96] focus:ring-0"
+                    : "w-[22rem] bg-card/95 px-8 py-5 text-2xl font-semibold leading-[1.15] text-foreground focus:ring-2 focus:ring-[color:var(--mit)]",
+                )}
                 style={{
                   ...shapeStyle(shape),
-                  fontFamily: theme.fontFamily,
+                  backgroundColor: shape === "blob" ? sketchPalette.card : undefined,
+                  color: shape === "blob" ? sketchPalette.ink : undefined,
+                  fontFamily:
+                    shape === "blob"
+                      ? '"Marker Felt", "Arial Black", "Chalkboard SE", "Comic Sans MS", ui-sans-serif, system-ui, sans-serif'
+                      : theme.fontFamily,
+                  textShadow:
+                    shape === "blob" ? `1.3px 1.1px 0 ${sketchPalette.textShadow}` : undefined,
                 }}
                 aria-label="Brainstorm title"
               />
@@ -1570,7 +1890,7 @@ export function Brainstorm() {
                     "absolute left-1/2 top-full mt-4 flex -translate-x-1/2 gap-1.5 p-2 shadow-pop backdrop-blur",
                     theme.controlClassName,
                   )}
-                  style={controlStyle(shape, theme)}
+                  style={controlStyle(shape, theme, sketchPalette)}
                   onClick={(event) => event.stopPropagation()}
                 >
                   {SHAPES.map((candidate) => (
@@ -1619,6 +1939,7 @@ export function Brainstorm() {
                   depth={depthById.get(idea.id) ?? 0}
                   shape={shape}
                   theme={theme}
+                  sketchPalette={sketchPalette}
                   isNew={idea.id === lastAddedId}
                   isFocused={focusedId === idea.id}
                   isEditing={editingId === idea.id}
@@ -1660,7 +1981,7 @@ export function Brainstorm() {
             "grid h-10 w-10 place-items-center text-foreground transition hover:bg-card/90",
             theme.controlClassName,
           )}
-          style={controlStyle(shape, theme)}
+          style={controlStyle(shape, theme, sketchPalette)}
           onClick={() => zoomBy(1.16)}
           aria-label="Zoom in"
         >
@@ -1672,7 +1993,7 @@ export function Brainstorm() {
             "grid h-10 w-10 place-items-center text-foreground transition hover:bg-card/90",
             theme.controlClassName,
           )}
-          style={controlStyle(shape, theme)}
+          style={controlStyle(shape, theme, sketchPalette)}
           onClick={() => zoomBy(0.86)}
           aria-label="Zoom out"
         >
@@ -1684,7 +2005,7 @@ export function Brainstorm() {
             "grid h-10 w-10 place-items-center text-foreground transition hover:bg-card/90",
             theme.controlClassName,
           )}
-          style={controlStyle(shape, theme)}
+          style={controlStyle(shape, theme, sketchPalette)}
           onClick={fitChart}
           aria-label="Fit brainstorm"
         >
@@ -1696,7 +2017,37 @@ export function Brainstorm() {
         className="absolute bottom-6 left-1/2 z-40 w-full max-w-md -translate-x-1/2 px-5"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="bg-gradient-mit p-[2px] shadow-soft" style={shapeStyle(shape)}>
+        <div
+          className={cn(
+            "relative",
+            shape === "blob" ? "bg-transparent p-[7px]" : "bg-gradient-mit p-[2px] shadow-soft",
+          )}
+          style={shapeStyle(shape)}
+        >
+          {shape === "blob" && (
+            <>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  ...shapeStyle(shape),
+                  border: `6px solid ${sketchPalette.marker}`,
+                  opacity: 0.72,
+                  transform: "rotate(-1.5deg)",
+                }}
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-1"
+                style={{
+                  ...shapeStyle(shape),
+                  border: `3px solid ${sketchPalette.markerDark}`,
+                  opacity: 0.32,
+                  transform: "rotate(1.2deg)",
+                }}
+              />
+            </>
+          )}
           <input
             ref={inputRef}
             value={draft}
@@ -1710,9 +2061,17 @@ export function Brainstorm() {
             placeholder={
               focusedId ? "Add a linked idea, press Enter..." : "Add an idea, press Enter..."
             }
-            className="w-full bg-card/95 px-5 py-3 text-base font-medium text-foreground outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[color:var(--mit)]"
+            className={cn(
+              "relative z-10 w-full px-5 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-[color:var(--mit)]",
+              shape === "blob"
+                ? "placeholder:text-[color:var(--sketch-placeholder)]"
+                : "bg-card/95 text-foreground placeholder:text-muted-foreground",
+            )}
             style={{
               ...shapeStyle(shape),
+              backgroundColor: shape === "blob" ? sketchPalette.card : undefined,
+              color: shape === "blob" ? sketchPalette.ink : undefined,
+              ["--sketch-placeholder" as string]: sketchPalette.placeholder,
               fontFamily: theme.fontFamily,
               textAlign: shape === "blob" ? "center" : "left",
             }}
