@@ -1,4 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 
@@ -30,17 +31,36 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "One Good Day" },
-      { name: "description", content: "One Good Day - lightweight daily planning app with 'most important task', 'shoulds' and 'coulds'. Daily planner for ADHD or increased productivity." },
-      { name: "author", content: "Lovable" },
+      {
+        name: "description",
+        content:
+          "One Good Day - lightweight daily planning app with 'most important task', 'shoulds' and 'coulds'. Daily planner for ADHD or increased productivity.",
+      },
+      { name: "author", content: "One Good Day" },
       { property: "og:title", content: "One Good Day" },
-      { property: "og:description", content: "One Good Day - lightweight daily planning app with 'most important task', 'shoulds' and 'coulds'. Daily planner for ADHD or increased productivity." },
+      {
+        property: "og:description",
+        content:
+          "One Good Day - lightweight daily planning app with 'most important task', 'shoulds' and 'coulds'. Daily planner for ADHD or increased productivity.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "One Good Day" },
-      { name: "twitter:description", content: "One Good Day - lightweight daily planning app with 'most important task', 'shoulds' and 'coulds'. Daily planner for ADHD or increased productivity." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6a970a7c-e24a-4730-855f-66d78997ef2a/id-preview-4495c1b8--a71304b9-30e3-438d-a99c-7d32d9297f2c.lovable.app-1776685159283.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6a970a7c-e24a-4730-855f-66d78997ef2a/id-preview-4495c1b8--a71304b9-30e3-438d-a99c-7d32d9297f2c.lovable.app-1776685159283.png" },
+      {
+        name: "twitter:description",
+        content:
+          "One Good Day - lightweight daily planning app with 'most important task', 'shoulds' and 'coulds'. Daily planner for ADHD or increased productivity.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6a970a7c-e24a-4730-855f-66d78997ef2a/id-preview-4495c1b8--a71304b9-30e3-438d-a99c-7d32d9297f2c.lovable.app-1776685159283.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6a970a7c-e24a-4730-855f-66d78997ef2a/id-preview-4495c1b8--a71304b9-30e3-438d-a99c-7d32d9297f2c.lovable.app-1776685159283.png",
+      },
     ],
     links: [
       {
@@ -69,5 +89,41 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <>
+      <LovableBadgeBlocker />
+      <Outlet />
+    </>
+  );
+}
+
+function LovableBadgeBlocker() {
+  useEffect(() => {
+    const looksLikeLovableBadge = (element: Element) => {
+      if (!(element instanceof HTMLElement)) return false;
+      const text = element.innerText?.trim().toLowerCase() ?? "";
+      const href = element instanceof HTMLAnchorElement ? element.href.toLowerCase() : "";
+      const aria = element.getAttribute("aria-label")?.toLowerCase() ?? "";
+      return (
+        text.includes("edit with lovable") ||
+        aria.includes("edit with lovable") ||
+        href.includes("lovable.dev")
+      );
+    };
+
+    const removeLovableBadges = () => {
+      document.querySelectorAll("a, button, iframe, div").forEach((element) => {
+        if (!looksLikeLovableBadge(element)) return;
+        const host = element.closest("div") ?? element;
+        host.remove();
+      });
+    };
+
+    removeLovableBadges();
+    const observer = new MutationObserver(removeLovableBadges);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
+  return null;
 }

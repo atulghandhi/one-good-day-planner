@@ -1,15 +1,25 @@
 import { useEffect, useRef, useState } from "react";
+import type React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Paintbrush } from "lucide-react";
-import {
-  THEMES,
-  THEME_ORDER,
-  type ThemeKey,
-  applyTheme,
-  loadSavedTheme,
-} from "@/lib/themes";
+import { THEMES, THEME_ORDER, type ThemeKey, applyTheme, loadSavedTheme } from "@/lib/themes";
+import { cn } from "@/lib/utils";
 
-export function ThemePicker() {
+type ThemePickerProps = {
+  buttonClassName?: string;
+  iconClassName?: string;
+  buttonStyle?: React.CSSProperties;
+  panelStyle?: React.CSSProperties;
+  swatchShapeStyle?: React.CSSProperties;
+};
+
+export function ThemePicker({
+  buttonClassName,
+  iconClassName,
+  buttonStyle,
+  panelStyle,
+  swatchShapeStyle,
+}: ThemePickerProps = {}) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<ThemeKey>("blossom");
   const closeTimer = useRef<number | null>(null);
@@ -52,7 +62,12 @@ export function ThemePicker() {
         whileHover={{ rotate: -12, scale: 1.05 }}
         whileTap={{ scale: 0.92 }}
         transition={{ type: "spring", stiffness: 300, damping: 18 }}
-        className="grid h-12 w-12 place-items-center rounded-full border border-white/40 bg-card/40 text-foreground shadow-soft backdrop-blur-md"
+        className={cn(
+          "grid place-items-center text-foreground",
+          buttonClassName ??
+            "h-12 w-12 rounded-full bg-card shadow-pop transition hover:bg-card/90",
+        )}
+        style={buttonStyle}
         aria-label="Change theme"
         type="button"
         onFocus={() => {
@@ -61,7 +76,7 @@ export function ThemePicker() {
         }}
         onBlur={scheduleClose}
       >
-        <Paintbrush className="h-5 w-5" strokeWidth={2.5} />
+        <Paintbrush className={cn("h-5 w-5", iconClassName)} strokeWidth={2.5} />
       </motion.button>
 
       <AnimatePresence>
@@ -73,6 +88,7 @@ export function ThemePicker() {
             exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="absolute right-0 top-14 z-30 flex flex-col gap-2 rounded-2xl border border-white/40 bg-card/40 p-2.5 shadow-pop backdrop-blur-xl"
+            style={panelStyle}
           >
             {THEME_ORDER.map((key, i) => {
               const t = THEMES[key].tokens;
@@ -96,11 +112,9 @@ export function ThemePicker() {
                   title={THEMES[key].name}
                   aria-label={`${THEMES[key].name} theme`}
                   className={`h-9 w-9 rounded-xl ring-2 ring-offset-2 ring-offset-transparent transition-shadow ${
-                    isActive
-                      ? "ring-foreground/70 shadow-pop"
-                      : "ring-transparent shadow-soft"
+                    isActive ? "ring-foreground/70 shadow-pop" : "ring-transparent shadow-soft"
                   }`}
-                  style={{ background: swatch }}
+                  style={{ background: swatch, ...swatchShapeStyle }}
                 />
               );
             })}
