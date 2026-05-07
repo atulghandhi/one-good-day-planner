@@ -295,7 +295,8 @@ function IdeaNode({
           </button>
         </div>
       </motion.div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
 
