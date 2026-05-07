@@ -1,9 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, RotateCcw, X } from "lucide-react";
 import { GlitterRain } from "./GlitterRain";
 import { ThemePicker } from "./ThemePicker";
+import { ResetDialog } from "./ResetDialog";
+
+type ShapeKey = "pill" | "rounded" | "boxy" | "spiky" | "hex" | "blob";
 
 type Idea = {
   id: string;
@@ -13,10 +16,44 @@ type Idea = {
   cy?: number;
   clusterId?: string;
 };
-type BrainstormState = { title: string; ideas: Idea[] };
+type BrainstormState = { title: string; ideas: Idea[]; shape?: ShapeKey };
 
 const STORAGE_KEY = "one-good-day:brainstorm:v2";
-const EMPTY: BrainstormState = { title: "Options", ideas: [] };
+const EMPTY: BrainstormState = { title: "Options", ideas: [], shape: "pill" };
+
+const SHAPES: { key: ShapeKey; label: string }[] = [
+  { key: "pill", label: "Pill" },
+  { key: "rounded", label: "Rounded" },
+  { key: "boxy", label: "Boxy" },
+  { key: "spiky", label: "Spiky" },
+  { key: "hex", label: "Hexagon" },
+  { key: "blob", label: "Blob" },
+];
+
+function shapeStyle(shape: ShapeKey): React.CSSProperties {
+  switch (shape) {
+    case "pill":
+      return { borderRadius: 9999 };
+    case "rounded":
+      return { borderRadius: 24 };
+    case "boxy":
+      return { borderRadius: 4 };
+    case "spiky":
+      return {
+        borderRadius: 0,
+        clipPath:
+          "polygon(0% 50%, 6% 25%, 18% 30%, 25% 8%, 40% 22%, 50% 0%, 60% 22%, 75% 8%, 82% 30%, 94% 25%, 100% 50%, 94% 75%, 82% 70%, 75% 92%, 60% 78%, 50% 100%, 40% 78%, 25% 92%, 18% 70%, 6% 75%)",
+      };
+    case "hex":
+      return {
+        borderRadius: 0,
+        clipPath:
+          "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
+      };
+    case "blob":
+      return { borderRadius: "62% 38% 55% 45% / 50% 60% 40% 50%" };
+  }
+}
 
 function loadBrainstorm(): BrainstormState {
   if (typeof window === "undefined") return EMPTY;
