@@ -200,6 +200,12 @@ function IdeaNode({
         maxWidth: MAX_CARD_W,
       }}
     >
+      {/* Parallax layer — never receives drag */}
+      <motion.div
+        animate={{ x: parallaxX, y: parallaxY }}
+        transition={{ type: "spring", stiffness: 60, damping: 18, mass: 0.6 }}
+      >
+      {/* Drag + entrance/focus layer */}
       <motion.div
         drag
         dragMomentum={false}
@@ -212,12 +218,10 @@ function IdeaNode({
         }}
         initial={
           isNew
-            ? { x: fromX, y: fromY, scale: 0.7, opacity: 0 }
+            ? { scale: 0.7, opacity: 0 }
             : { scale: 0, opacity: 0 }
         }
         animate={{
-          x: parallaxX,
-          y: parallaxY,
           scale: isFocused ? 1.18 : 1,
           opacity: isDimmed ? 0.25 : 1,
         }}
@@ -294,6 +298,7 @@ function IdeaNode({
             <X className="h-3 w-3" />
           </button>
         </div>
+      </motion.div>
       </motion.div>
       </motion.div>
     </div>
@@ -392,14 +397,8 @@ export function Brainstorm() {
   const placements = useMemo(() => {
     if (size.w === 0 || size.h === 0) return [] as Placed[];
     const base = layoutIdeas(state.ideas, size.w, size.h, centerBox);
-    if (dragLive) {
-      const i = state.ideas.findIndex((x) => x.id === dragLive.id);
-      if (i >= 0) {
-        base[i] = { ...base[i], x: dragLive.x, y: dragLive.y };
-      }
-    }
     return base;
-  }, [state.ideas, size.w, size.h, centerBox, dragLive]);
+  }, [state.ideas, size.w, size.h, centerBox]);
 
   const addIdea = () => {
     const text = draft.trim();
@@ -557,8 +556,11 @@ export function Brainstorm() {
             ))}
 
             {state.ideas.map((idea, i) => {
-              const p = placements[i];
-              if (!p) return null;
+              const base = placements[i];
+              if (!base) return null;
+              const p = dragLive && dragLive.id === idea.id
+                ? { ...base, x: dragLive.x, y: dragLive.y }
+                : base;
               // Apply parallax to endpoint so line tracks the visually shifted card.
               const px2 = p.x + parallax.x;
               const py2 = p.y + parallax.y;
