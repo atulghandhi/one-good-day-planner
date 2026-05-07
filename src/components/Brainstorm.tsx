@@ -556,8 +556,11 @@ export function Brainstorm() {
             ))}
 
             {state.ideas.map((idea, i) => {
-              const p = placements[i];
-              if (!p) return null;
+              const base = placements[i];
+              if (!base) return null;
+              const p = dragLive && dragLive.id === idea.id
+                ? { ...base, x: dragLive.x, y: dragLive.y }
+                : base;
               // Apply parallax to endpoint so line tracks the visually shifted card.
               const px2 = p.x + parallax.x;
               const py2 = p.y + parallax.y;
