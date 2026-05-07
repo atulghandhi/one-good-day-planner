@@ -1,9 +1,13 @@
+import type React from "react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, RotateCcw, X } from "lucide-react";
 import { GlitterRain } from "./GlitterRain";
 import { ThemePicker } from "./ThemePicker";
+import { ResetDialog } from "./ResetDialog";
+
+type ShapeKey = "pill" | "rounded" | "boxy" | "spiky" | "hex" | "blob";
 
 type Idea = {
   id: string;
@@ -13,10 +17,44 @@ type Idea = {
   cy?: number;
   clusterId?: string;
 };
-type BrainstormState = { title: string; ideas: Idea[] };
+type BrainstormState = { title: string; ideas: Idea[]; shape?: ShapeKey };
 
 const STORAGE_KEY = "one-good-day:brainstorm:v2";
-const EMPTY: BrainstormState = { title: "Options", ideas: [] };
+const EMPTY: BrainstormState = { title: "Options", ideas: [], shape: "pill" };
+
+const SHAPES: { key: ShapeKey; label: string }[] = [
+  { key: "pill", label: "Pill" },
+  { key: "rounded", label: "Rounded" },
+  { key: "boxy", label: "Boxy" },
+  { key: "spiky", label: "Spiky" },
+  { key: "hex", label: "Hexagon" },
+  { key: "blob", label: "Blob" },
+];
+
+function shapeStyle(shape: ShapeKey): React.CSSProperties {
+  switch (shape) {
+    case "pill":
+      return { borderRadius: 9999 };
+    case "rounded":
+      return { borderRadius: 24 };
+    case "boxy":
+      return { borderRadius: 4 };
+    case "spiky":
+      return {
+        borderRadius: 0,
+        clipPath:
+          "polygon(0% 50%, 6% 25%, 18% 30%, 25% 8%, 40% 22%, 50% 0%, 60% 22%, 75% 8%, 82% 30%, 94% 25%, 100% 50%, 94% 75%, 82% 70%, 75% 92%, 60% 78%, 50% 100%, 40% 78%, 25% 92%, 18% 70%, 6% 75%)",
+      };
+    case "hex":
+      return {
+        borderRadius: 0,
+        clipPath:
+          "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
+      };
+    case "blob":
+      return { borderRadius: "62% 38% 55% 45% / 50% 60% 40% 50%" };
+  }
+}
 
 function loadBrainstorm(): BrainstormState {
   if (typeof window === "undefined") return EMPTY;
@@ -316,9 +354,12 @@ export function Brainstorm() {
   const [editingId, setEditingId] = useState<string | null>(null);
   // Live drag override: id -> {x,y} so curved lines follow during drag.
   const [dragLive, setDragLive] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [centerActive, setCenterActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
+  const shape: ShapeKey = state.shape ?? "pill";
 
   // Mouse position for parallax (relative to canvas center).
   const mxRaw = useMotionValue(0);
@@ -495,8 +536,8 @@ export function Brainstorm() {
     <div
       className="relative h-screen w-screen overflow-hidden"
       onClick={() => {
-        // Click on empty canvas clears focus
         if (focusedId) setFocusedId(null);
+        if (centerActive) setCenterActive(false);
       }}
     >
       <GlitterRain />
@@ -519,7 +560,22 @@ export function Brainstorm() {
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to today
         </Link>
-        <ThemePicker />
+        <div className="flex items-center gap-2">
+          <ThemePicker />
+          <motion.button
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmOpen(true);
+            }}
+            whileHover={{ rotate: -90, scale: 1.05 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 300, damping: 18 }}
+            className="grid h-10 w-10 place-items-center rounded-full bg-card text-foreground shadow-pop"
+            aria-label="Reset brainstorm"
+          >
+            <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
+          </motion.button>
+        </div>
       </div>
 
       {/* Full-page canvas */}
@@ -617,7 +673,10 @@ export function Brainstorm() {
         )}
 
         {/* Center editable title — breathing gradient pulse */}
-        <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+        <div
+          className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
+          onClick={(e) => e.stopPropagation()}
+        >
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: [1, 1.035, 1], opacity: 1 }}
@@ -625,18 +684,21 @@ export function Brainstorm() {
               scale: { duration: 4.5, repeat: Infinity, ease: "easeInOut" },
               opacity: { duration: 0.4 },
             }}
-            className="relative rounded-full bg-gradient-mit p-[2px] shadow-soft"
+            className="relative bg-gradient-mit shadow-soft"
             style={{
+              ...shapeStyle(shape),
+              padding: centerActive ? 5 : 2,
+              transition: "padding 200ms ease",
               filter: "drop-shadow(0 0 24px color-mix(in oklab, var(--mit) 35%, transparent))",
             }}
           >
             {/* Soft outer glow that pulses */}
             <motion.div
               aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-full bg-gradient-mit"
+              className="pointer-events-none absolute inset-0 bg-gradient-mit"
               animate={{ opacity: [0.25, 0.5, 0.25], scale: [1, 1.15, 1] }}
               transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-              style={{ filter: "blur(20px)", zIndex: -1 }}
+              style={{ ...shapeStyle(shape), filter: "blur(20px)", zIndex: -1 }}
             />
             <input
               value={state.title}
@@ -644,11 +706,55 @@ export function Brainstorm() {
                 setState((s) => ({ ...s, title: e.target.value }))
               }
               onFocus={(e) => e.currentTarget.select()}
-              onClick={(e) => e.stopPropagation()}
-              className="w-72 rounded-full bg-card/95 px-8 py-5 text-center font-display text-2xl font-semibold tracking-tight text-foreground outline-none focus:ring-2 focus:ring-[color:var(--mit)]"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCenterActive((v) => !v);
+              }}
+              className="w-72 bg-card/95 px-8 py-5 text-center font-display text-2xl font-semibold tracking-tight text-foreground outline-none focus:ring-2 focus:ring-[color:var(--mit)]"
+              style={shapeStyle(shape)}
               aria-label="Brainstorm title"
             />
           </motion.div>
+
+          {/* Shape picker */}
+          <AnimatePresence>
+            {centerActive && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 280, damping: 22 }}
+                className="absolute left-1/2 top-full mt-4 -translate-x-1/2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex gap-1.5">
+                  {SHAPES.map((s) => (
+                    <button
+                      key={s.key}
+                      onClick={() =>
+                        setState((st) => ({ ...st, shape: s.key }))
+                      }
+                      className={`grid h-10 w-10 place-items-center transition ${
+                        shape === s.key
+                          ? "bg-gradient-mit text-primary-foreground shadow-soft"
+                          : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                      }`}
+                      style={{
+                        ...shapeStyle(s.key),
+                      }}
+                      aria-label={s.label}
+                      title={s.label}
+                    >
+                      <span
+                        className="block h-4 w-4 bg-current opacity-80"
+                        style={shapeStyle(s.key)}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Idea nodes */}
@@ -709,6 +815,18 @@ export function Brainstorm() {
           />
         </div>
       </div>
+
+      <ResetDialog
+        open={confirmOpen}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setState(EMPTY);
+          setFocusedId(null);
+          setEditingId(null);
+          setDragLive(null);
+          setConfirmOpen(false);
+        }}
+      />
     </div>
   );
 }
