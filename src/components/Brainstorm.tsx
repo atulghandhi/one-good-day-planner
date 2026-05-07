@@ -300,6 +300,7 @@ function IdeaNode({
         </div>
       </motion.div>
       </motion.div>
+      </motion.div>
     </div>
   );
 }
