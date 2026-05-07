@@ -354,9 +354,12 @@ export function Brainstorm() {
   const [editingId, setEditingId] = useState<string | null>(null);
   // Live drag override: id -> {x,y} so curved lines follow during drag.
   const [dragLive, setDragLive] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [centerActive, setCenterActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
+  const shape: ShapeKey = state.shape ?? "pill";
 
   // Mouse position for parallax (relative to canvas center).
   const mxRaw = useMotionValue(0);
