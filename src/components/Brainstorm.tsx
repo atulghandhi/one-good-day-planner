@@ -560,7 +560,22 @@ export function Brainstorm() {
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to today
         </Link>
-        <ThemePicker />
+        <div className="flex items-center gap-2">
+          <ThemePicker />
+          <motion.button
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmOpen(true);
+            }}
+            whileHover={{ rotate: -90, scale: 1.05 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 300, damping: 18 }}
+            className="grid h-10 w-10 place-items-center rounded-full bg-card text-foreground shadow-pop"
+            aria-label="Reset brainstorm"
+          >
+            <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
+          </motion.button>
+        </div>
       </div>
 
       {/* Full-page canvas */}
