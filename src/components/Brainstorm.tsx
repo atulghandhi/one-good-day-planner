@@ -536,8 +536,8 @@ export function Brainstorm() {
     <div
       className="relative h-screen w-screen overflow-hidden"
       onClick={() => {
-        // Click on empty canvas clears focus
         if (focusedId) setFocusedId(null);
+        if (centerActive) setCenterActive(false);
       }}
     >
       <GlitterRain />
