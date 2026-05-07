@@ -191,47 +191,44 @@ function IdeaNode({
   };
 
   return (
-    <motion.div
+    <div
       className="group absolute z-20"
       style={{
         left: placement.x,
         top: placement.y,
-        x: "-50%",
-        y: "-50%",
+        transform: "translate(-50%, -50%)",
         maxWidth: MAX_CARD_W,
       }}
-      drag
-      dragMomentum={false}
-      dragElastic={0}
-      onDrag={(_, info) => {
-        const nx = placement.x + info.offset.x;
-        const ny = placement.y + info.offset.y;
-        onDrag(nx, ny);
-      }}
-      onDragEnd={(_, info) => {
-        const nx = placement.x + info.offset.x;
-        const ny = placement.y + info.offset.y;
-        onDragEnd(nx, ny);
-      }}
-      initial={
-        isNew
-          ? { x: `calc(-50% + ${fromX}px)`, y: `calc(-50% + ${fromY}px)`, scale: 0.7, opacity: 0 }
-          : { scale: 0, opacity: 0 }
-      }
-      animate={{
-        x: `calc(-50% + ${parallaxX}px)`,
-        y: `calc(-50% + ${parallaxY}px)`,
-        scale: isFocused ? 1.18 : 1,
-        opacity: isDimmed ? 0.25 : 1,
-      }}
-      exit={{ scale: 0, opacity: 0 }}
-      transition={
-        isNew
-          ? { duration: 0.9, ease: [0.22, 1, 0.36, 1] }
-          : { type: "spring", stiffness: 220, damping: 22 }
-      }
-      whileHover={{ rotate: [-1.2, 1.2, 0], transition: { duration: 0.5 } }}
     >
+      <motion.div
+        drag
+        dragMomentum={false}
+        dragElastic={0}
+        onDrag={(_, info) => {
+          onDrag(placement.x + info.offset.x, placement.y + info.offset.y);
+        }}
+        onDragEnd={(_, info) => {
+          onDragEnd(placement.x + info.offset.x, placement.y + info.offset.y);
+        }}
+        initial={
+          isNew
+            ? { x: fromX, y: fromY, scale: 0.7, opacity: 0 }
+            : { scale: 0, opacity: 0 }
+        }
+        animate={{
+          x: parallaxX,
+          y: parallaxY,
+          scale: isFocused ? 1.18 : 1,
+          opacity: isDimmed ? 0.25 : 1,
+        }}
+        exit={{ scale: 0, opacity: 0 }}
+        transition={
+          isNew
+            ? { duration: 0.9, ease: [0.22, 1, 0.36, 1] }
+            : { type: "spring", stiffness: 220, damping: 22 }
+        }
+        whileHover={{ rotate: [-1.2, 1.2, 0], transition: { duration: 0.5 } }}
+      >
       {/* Inner wrapper handles the slow bobbing drift independently */}
       <motion.div
         animate={{
