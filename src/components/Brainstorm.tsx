@@ -200,6 +200,12 @@ function IdeaNode({
         maxWidth: MAX_CARD_W,
       }}
     >
+      {/* Parallax layer — never receives drag */}
+      <motion.div
+        animate={{ x: parallaxX, y: parallaxY }}
+        transition={{ type: "spring", stiffness: 60, damping: 18, mass: 0.6 }}
+      >
+      {/* Drag + entrance/focus layer */}
       <motion.div
         drag
         dragMomentum={false}
@@ -212,12 +218,10 @@ function IdeaNode({
         }}
         initial={
           isNew
-            ? { x: fromX, y: fromY, scale: 0.7, opacity: 0 }
+            ? { scale: 0.7, opacity: 0 }
             : { scale: 0, opacity: 0 }
         }
         animate={{
-          x: parallaxX,
-          y: parallaxY,
           scale: isFocused ? 1.18 : 1,
           opacity: isDimmed ? 0.25 : 1,
         }}
