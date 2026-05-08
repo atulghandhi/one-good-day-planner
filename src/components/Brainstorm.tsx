@@ -55,6 +55,7 @@ const LINE_H = 22;
 const PAD_Y = 24;
 const CENTER_BOX: Placed = { x: 0, y: 0, w: 360, h: 124 };
 const GOLDEN_DEG = 137.50776;
+const OUTWARD_CHILD_SLOTS = [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5];
 const PAGE_THEME_VIEWPORT_STROKE: Record<string, string> = {
   sakura: "#7c3aed",
   blossom: "#9a4f19",
@@ -62,6 +63,13 @@ const PAGE_THEME_VIEWPORT_STROKE: Record<string, string> = {
   nebula: "currentColor",
   forest: "currentColor",
   starry: "currentColor",
+};
+
+type SketchMarker = {
+  marker: string;
+  markerDark: string;
+  markerGlow: string;
+  line: string;
 };
 
 type SketchPalette = {
@@ -78,6 +86,7 @@ type SketchPalette = {
   shadow: string;
   placeholder: string;
   textShadow: string;
+  childMarkers: SketchMarker[];
 };
 
 const SKETCH_PALETTES: Record<string, SketchPalette> = {
@@ -95,6 +104,38 @@ const SKETCH_PALETTES: Record<string, SketchPalette> = {
     shadow: "rgba(37, 21, 31, 0.14)",
     placeholder: "rgba(37, 21, 31, 0.48)",
     textShadow: "rgba(37, 21, 31, 0.24)",
+    childMarkers: [
+      {
+        marker: "#e8a4c8",
+        markerDark: "#b96c9d",
+        markerGlow: "rgba(232, 164, 200, 0.46)",
+        line: "#b96c9d",
+      },
+      {
+        marker: "#c9b0ff",
+        markerDark: "#7e63d8",
+        markerGlow: "rgba(201, 176, 255, 0.38)",
+        line: "#7e63d8",
+      },
+      {
+        marker: "#f3b08f",
+        markerDark: "#bb6a43",
+        markerGlow: "rgba(243, 176, 143, 0.38)",
+        line: "#bb6a43",
+      },
+      {
+        marker: "#94d8b4",
+        markerDark: "#529c78",
+        markerGlow: "rgba(148, 216, 180, 0.38)",
+        line: "#529c78",
+      },
+      {
+        marker: "#f1d06c",
+        markerDark: "#a77919",
+        markerGlow: "rgba(241, 208, 108, 0.38)",
+        line: "#a77919",
+      },
+    ],
   },
   blossom: {
     paper: "#fff8ef",
@@ -110,6 +151,38 @@ const SKETCH_PALETTES: Record<string, SketchPalette> = {
     shadow: "rgba(23, 19, 17, 0.14)",
     placeholder: "rgba(23, 19, 17, 0.45)",
     textShadow: "rgba(23, 19, 17, 0.22)",
+    childMarkers: [
+      {
+        marker: "#94d8b4",
+        markerDark: "#62b98f",
+        markerGlow: "rgba(148, 216, 180, 0.58)",
+        line: "#4f9f79",
+      },
+      {
+        marker: "#ffb0a2",
+        markerDark: "#cf6d58",
+        markerGlow: "rgba(255, 176, 162, 0.42)",
+        line: "#bf5f4d",
+      },
+      {
+        marker: "#c6b7ff",
+        markerDark: "#7f69dd",
+        markerGlow: "rgba(198, 183, 255, 0.38)",
+        line: "#715dc9",
+      },
+      {
+        marker: "#f3d76c",
+        markerDark: "#b28b19",
+        markerGlow: "rgba(243, 215, 108, 0.38)",
+        line: "#9c7914",
+      },
+      {
+        marker: "#91d3ef",
+        markerDark: "#3b8ab4",
+        markerGlow: "rgba(145, 211, 239, 0.36)",
+        line: "#33799f",
+      },
+    ],
   },
   meadow: {
     paper: "#fffbe8",
@@ -125,6 +198,38 @@ const SKETCH_PALETTES: Record<string, SketchPalette> = {
     shadow: "rgba(48, 39, 18, 0.15)",
     placeholder: "rgba(36, 33, 19, 0.48)",
     textShadow: "rgba(48, 39, 18, 0.22)",
+    childMarkers: [
+      {
+        marker: "#edcf69",
+        markerDark: "#ad7f17",
+        markerGlow: "rgba(237, 207, 105, 0.5)",
+        line: "#9c7414",
+      },
+      {
+        marker: "#9fd2ff",
+        markerDark: "#457fb2",
+        markerGlow: "rgba(159, 210, 255, 0.38)",
+        line: "#3a719f",
+      },
+      {
+        marker: "#f5a881",
+        markerDark: "#ba653c",
+        markerGlow: "rgba(245, 168, 129, 0.36)",
+        line: "#a85a34",
+      },
+      {
+        marker: "#aedf91",
+        markerDark: "#679b42",
+        markerGlow: "rgba(174, 223, 145, 0.38)",
+        line: "#5c893b",
+      },
+      {
+        marker: "#d7b0ff",
+        markerDark: "#8b61c4",
+        markerGlow: "rgba(215, 176, 255, 0.34)",
+        line: "#7752ad",
+      },
+    ],
   },
   nebula: {
     paper: "#130d20",
@@ -140,6 +245,38 @@ const SKETCH_PALETTES: Record<string, SketchPalette> = {
     shadow: "rgba(0, 0, 0, 0.34)",
     placeholder: "rgba(255, 242, 255, 0.5)",
     textShadow: "rgba(0, 0, 0, 0.45)",
+    childMarkers: [
+      {
+        marker: "#ff6fcf",
+        markerDark: "#65d6ff",
+        markerGlow: "rgba(255, 111, 207, 0.36)",
+        line: "#ff95df",
+      },
+      {
+        marker: "#65d6ff",
+        markerDark: "#9c8cff",
+        markerGlow: "rgba(101, 214, 255, 0.32)",
+        line: "#9ee5ff",
+      },
+      {
+        marker: "#ffe26e",
+        markerDark: "#ff9bd7",
+        markerGlow: "rgba(255, 226, 110, 0.28)",
+        line: "#ffe88d",
+      },
+      {
+        marker: "#b6ff8a",
+        markerDark: "#65d6ff",
+        markerGlow: "rgba(182, 255, 138, 0.26)",
+        line: "#cbffa9",
+      },
+      {
+        marker: "#c7a8ff",
+        markerDark: "#ff6fcf",
+        markerGlow: "rgba(199, 168, 255, 0.3)",
+        line: "#d6bfff",
+      },
+    ],
   },
   forest: {
     paper: "#101912",
@@ -155,6 +292,38 @@ const SKETCH_PALETTES: Record<string, SketchPalette> = {
     shadow: "rgba(0, 0, 0, 0.32)",
     placeholder: "rgba(245, 239, 215, 0.48)",
     textShadow: "rgba(0, 0, 0, 0.44)",
+    childMarkers: [
+      {
+        marker: "#93cf82",
+        markerDark: "#d0b565",
+        markerGlow: "rgba(147, 207, 130, 0.32)",
+        line: "#b8e4a6",
+      },
+      {
+        marker: "#d0b565",
+        markerDark: "#93cf82",
+        markerGlow: "rgba(208, 181, 101, 0.3)",
+        line: "#ead38a",
+      },
+      {
+        marker: "#79c7a2",
+        markerDark: "#c5dc85",
+        markerGlow: "rgba(121, 199, 162, 0.28)",
+        line: "#9fe2c0",
+      },
+      {
+        marker: "#c5dc85",
+        markerDark: "#8ebc5e",
+        markerGlow: "rgba(197, 220, 133, 0.3)",
+        line: "#d9ee9f",
+      },
+      {
+        marker: "#e1a36c",
+        markerDark: "#a8753f",
+        markerGlow: "rgba(225, 163, 108, 0.28)",
+        line: "#f0bc85",
+      },
+    ],
   },
   starry: {
     paper: "#0b1024",
@@ -170,8 +339,48 @@ const SKETCH_PALETTES: Record<string, SketchPalette> = {
     shadow: "rgba(0, 0, 0, 0.36)",
     placeholder: "rgba(240, 247, 255, 0.5)",
     textShadow: "rgba(0, 0, 0, 0.46)",
+    childMarkers: [
+      {
+        marker: "#7ec9ff",
+        markerDark: "#b8a0ff",
+        markerGlow: "rgba(126, 201, 255, 0.34)",
+        line: "#a5dcff",
+      },
+      {
+        marker: "#b8a0ff",
+        markerDark: "#7ec9ff",
+        markerGlow: "rgba(184, 160, 255, 0.3)",
+        line: "#c8b6ff",
+      },
+      {
+        marker: "#ffe88d",
+        markerDark: "#7ec9ff",
+        markerGlow: "rgba(255, 232, 141, 0.25)",
+        line: "#fff0a8",
+      },
+      {
+        marker: "#8ef4d0",
+        markerDark: "#7ec9ff",
+        markerGlow: "rgba(142, 244, 208, 0.25)",
+        line: "#a9ffe1",
+      },
+      {
+        marker: "#ff9dd7",
+        markerDark: "#b8a0ff",
+        markerGlow: "rgba(255, 157, 215, 0.26)",
+        line: "#ffbae3",
+      },
+    ],
   },
 };
+
+function sketchMarkerForDepth(palette: SketchPalette, depth: number): SketchMarker {
+  return palette.childMarkers[depthLevel(depth) % palette.childMarkers.length] ?? palette;
+}
+
+function safeSvgId(value: string) {
+  return value.replace(/[^a-zA-Z0-9_-]/g, "-");
+}
 
 type Placed = { x: number; y: number; w: number; h: number };
 
@@ -379,6 +588,7 @@ function findOpenSpot(
   occupied: Placed[],
   siblingIndex: number,
   shape: ShapeKey,
+  preferredAngle?: number,
 ): Placed {
   if (shape === "boxy") {
     const grid = Math.max(parent.w, parent.h) / 2 + Math.max(size.w, size.h) / 2 + 96;
@@ -410,6 +620,32 @@ function findOpenSpot(
   }
 
   const baseR = Math.max(parent.w, parent.h) / 2 + Math.max(size.w, size.h) / 2 + 118;
+  if (shape === "blob" && preferredAngle != null) {
+    for (let ring = 0; ring <= 12; ring++) {
+      const r = baseR + 36 + ring * 46;
+      for (let i = 0; i < OUTWARD_CHILD_SLOTS.length; i++) {
+        const slot = OUTWARD_CHILD_SLOTS[(siblingIndex + i) % OUTWARD_CHILD_SLOTS.length];
+        const angle = preferredAngle + slot * 0.38 + ring * 0.035;
+        const rect = {
+          x: parent.x + Math.cos(angle) * r,
+          y: parent.y + Math.sin(angle) * r,
+          w: size.w,
+          h: size.h,
+        };
+        if (!occupied.some((placed) => rectsOverlap(rect, placed, 28))) {
+          return rect;
+        }
+      }
+    }
+
+    return {
+      x: parent.x + Math.cos(preferredAngle) * (baseR + 720),
+      y: parent.y + Math.sin(preferredAngle) * (baseR + 720),
+      w: size.w,
+      h: size.h,
+    };
+  }
+
   const startAngle = (siblingIndex * GOLDEN_DEG - 92) * (Math.PI / 180);
   const angleJitter = [0, 0.22, -0.22, 0.45, -0.45, 0.7, -0.7, 0.95, -0.95];
 
@@ -462,14 +698,20 @@ function layoutIdeas(ideas: Idea[], shape: ShapeKey): Placed[] {
     if (isFiniteNumber(idea.cx) && isFiniteNumber(idea.cy)) {
       rect = { x: idea.cx, y: idea.cy, ...size };
     } else {
-      const parent =
-        idea.parentId && byId.has(idea.parentId)
-          ? placeIdea(byId.get(idea.parentId)!.idea)
-          : CENTER_BOX;
+      const parentInfo = idea.parentId ? byId.get(idea.parentId) : undefined;
+      const parent = parentInfo ? placeIdea(parentInfo.idea) : CENTER_BOX;
+      const grandparentInfo = parentInfo?.idea.parentId
+        ? byId.get(parentInfo.idea.parentId)
+        : undefined;
+      const parentOrigin = grandparentInfo ? placeIdea(grandparentInfo.idea) : CENTER_BOX;
+      const preferredAngle =
+        shape === "blob" && parentInfo
+          ? Math.atan2(parent.y - parentOrigin.y, parent.x - parentOrigin.x)
+          : undefined;
       const parentKey = idea.parentId ?? "center";
       const siblingIndex = siblingCounts.get(parentKey) ?? 0;
       siblingCounts.set(parentKey, siblingIndex + 1);
-      rect = findOpenSpot(parent, size, occupied, siblingIndex, shape);
+      rect = findOpenSpot(parent, size, occupied, siblingIndex, shape, preferredAngle);
     }
 
     visiting.delete(idea.id);
@@ -636,6 +878,7 @@ type IdeaNodeProps = {
   shape: ShapeKey;
   theme: ShapeTheme;
   sketchPalette: SketchPalette;
+  sketchMarker: SketchMarker;
   isNew: boolean;
   isFocused: boolean;
   isEditing: boolean;
@@ -654,6 +897,7 @@ function IdeaNode({
   shape,
   theme,
   sketchPalette,
+  sketchMarker,
   isNew,
   isFocused,
   isEditing,
@@ -685,7 +929,7 @@ function IdeaNode({
     ? `0 0 0 ${Math.max(2, focusRing)}px ${sketchPalette.ink}, 0 0 0 ${Math.max(
         8,
         12 - level,
-      )}px ${sketchPalette.markerGlow}, 5px 7px 0 ${sketchPalette.shadow}`
+      )}px ${sketchMarker.markerGlow}, 5px 7px 0 ${sketchPalette.shadow}`
     : `0 0 0 ${focusRing}px color-mix(in oklab, var(--mit) ${Math.max(
         38,
         62 - level * 6,
@@ -769,7 +1013,7 @@ function IdeaNode({
                 style={{
                   ...shapeStyle(shape),
                   inset: -10 + level,
-                  border: `${ringWidth}px solid ${sketchPalette.marker}`,
+                  border: `${ringWidth}px solid ${sketchMarker.marker}`,
                   opacity: isFocused ? 0.9 : 0.72,
                   transform: `rotate(${(idea.id.charCodeAt(0) % 7) - 3}deg) scaleX(1.03)`,
                 }}
@@ -780,7 +1024,7 @@ function IdeaNode({
                 style={{
                   ...shapeStyle(shape),
                   inset: -5 + level,
-                  border: `${Math.max(2, ringWidth * 0.48)}px solid ${sketchPalette.markerDark}`,
+                  border: `${Math.max(2, ringWidth * 0.48)}px solid ${sketchMarker.markerDark}`,
                   opacity: isFocused ? 0.5 : 0.32,
                   transform: `rotate(${(idea.id.charCodeAt(idea.id.length - 1) % 9) - 4}deg) scaleY(1.04)`,
                 }}
@@ -1307,11 +1551,20 @@ export function Brainstorm() {
     const depth = parentId ? (depthById.get(parentId) ?? 0) + 1 : 0;
     const size = estimateCardSize(text, shape, depth);
     const parent = parentId ? (placementById.get(parentId) ?? CENTER_BOX) : CENTER_BOX;
+    const parentIdea = parentId ? state.ideas.find((idea) => idea.id === parentId) : undefined;
+    const parentOrigin =
+      parentIdea?.parentId != null
+        ? (placementById.get(parentIdea.parentId) ?? CENTER_BOX)
+        : CENTER_BOX;
+    const preferredAngle =
+      shape === "blob" && parentId
+        ? Math.atan2(parent.y - parentOrigin.y, parent.x - parentOrigin.x)
+        : undefined;
     const occupied = [CENTER_BOX, ...displayPlacements];
     const siblingIndex = state.ideas.filter(
       (idea) => (idea.parentId ?? "center") === (parentId ?? "center"),
     ).length;
-    const placement = findOpenSpot(parent, size, occupied, siblingIndex, shape);
+    const placement = findOpenSpot(parent, size, occupied, siblingIndex, shape, preferredAngle);
 
     setState((current) => ({
       ...current,
@@ -1669,28 +1922,6 @@ export function Brainstorm() {
           width={viewportSize.w}
           height={viewportSize.h}
         >
-          {shape === "blob" && (
-            <defs>
-              <marker
-                id="sketch-arrowhead"
-                markerWidth="14"
-                markerHeight="14"
-                refX="12"
-                refY="7"
-                orient="auto"
-                markerUnits="strokeWidth"
-              >
-                <path
-                  d="M 1 1 L 12 7 L 1 13"
-                  fill="none"
-                  stroke={sketchPalette.line}
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </marker>
-            </defs>
-          )}
           {state.ideas.map((idea, index) => {
             const to = displayPlacements[index];
             if (!to) return null;
@@ -1706,8 +1937,32 @@ export function Brainstorm() {
             const path = connectorPathFromPoints(start, end, theme.lineMode, index);
             const lineLevel = depthLevel(depthById.get(idea.id) ?? 0);
             const lineScale = Math.max(0.58, 1 - lineLevel * 0.11);
+            const sketchMarker = sketchMarkerForDepth(sketchPalette, depthById.get(idea.id) ?? 0);
+            const markerId = `sketch-arrowhead-${safeSvgId(idea.id)}`;
             return (
               <g key={idea.id}>
+                {shape === "blob" && (
+                  <defs>
+                    <marker
+                      id={markerId}
+                      markerWidth="14"
+                      markerHeight="14"
+                      refX="12"
+                      refY="7"
+                      orient="auto"
+                      markerUnits="strokeWidth"
+                    >
+                      <path
+                        d="M 1 1 L 12 7 L 1 13"
+                        fill="none"
+                        stroke={sketchMarker.line}
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </marker>
+                  </defs>
+                )}
                 {isSelectedOutgoing && shape !== "blob" && (
                   <motion.path
                     d={path}
@@ -1729,7 +1984,7 @@ export function Brainstorm() {
                 <motion.path
                   d={path}
                   fill="none"
-                  stroke={shape === "blob" ? sketchPalette.line : "currentColor"}
+                  stroke={shape === "blob" ? sketchMarker.line : "currentColor"}
                   strokeWidth={
                     (isSelectedOutgoing
                       ? shape === "blob"
@@ -1743,7 +1998,7 @@ export function Brainstorm() {
                   }
                   strokeLinecap={shape === "boxy" ? "square" : "round"}
                   strokeLinejoin={shape === "boxy" ? "miter" : "round"}
-                  markerEnd={shape === "blob" ? "url(#sketch-arrowhead)" : undefined}
+                  markerEnd={shape === "blob" ? `url(#${markerId})` : undefined}
                   className={cn(
                     shape !== "blob" && "text-[color:var(--mit)]",
                     isSelectedOutgoing
@@ -1940,6 +2195,7 @@ export function Brainstorm() {
                   shape={shape}
                   theme={theme}
                   sketchPalette={sketchPalette}
+                  sketchMarker={sketchMarkerForDepth(sketchPalette, depthById.get(idea.id) ?? 0)}
                   isNew={idea.id === lastAddedId}
                   isFocused={focusedId === idea.id}
                   isEditing={editingId === idea.id}
