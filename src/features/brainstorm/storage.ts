@@ -33,6 +33,29 @@ export function normalizeTitleValue(value: string) {
   return value.split("\n").slice(0, 2).join("\n").slice(0, MAX_TITLE_CHARS);
 }
 
+function normalizeTitleKey(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function numberedTitle(baseTitle: string, number: number) {
+  const suffix = ` ${number}`;
+  return normalizeTitleValue(`${baseTitle.slice(0, MAX_TITLE_CHARS - suffix.length)}${suffix}`);
+}
+
+export function nextAvailableBrainstormTitle(baseTitle: string, existingTitles: string[]) {
+  const base = normalizeTitleValue(baseTitle.trim().replace(/\s+/g, " ") || EMPTY.title);
+  const existing = new Set(existingTitles.map(normalizeTitleKey));
+
+  if (!existing.has(normalizeTitleKey(base))) return base;
+
+  for (let number = 2; number < 1000; number += 1) {
+    const candidate = numberedTitle(base, number);
+    if (!existing.has(normalizeTitleKey(candidate))) return candidate;
+  }
+
+  return numberedTitle(base, Date.now());
+}
+
 export function makeId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }

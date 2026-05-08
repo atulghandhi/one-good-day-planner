@@ -3,6 +3,7 @@ import { EMPTY, EMPTY_LIBRARY } from "../constants";
 import {
   createBrainstormDoc,
   loadBrainstormLibrary,
+  nextAvailableBrainstormTitle,
   normalizeTitleValue,
   saveBrainstormLibrary,
 } from "../storage";
@@ -88,8 +89,24 @@ export function useBrainstormLibrary({
   );
 
   const createNewBrainstorm = useCallback(() => {
-    addBrainstormFromState(EMPTY, "New brainstorm ready");
-  }, [addBrainstormFromState]);
+    setLibrary((current) => {
+      const doc = createBrainstormDoc({
+        ...EMPTY,
+        title: nextAvailableBrainstormTitle(
+          EMPTY.title,
+          current.brainstorms.map((brainstorm) => brainstorm.title),
+        ),
+      });
+
+      return {
+        version: 4,
+        activeId: doc.id,
+        brainstorms: [doc, ...current.brainstorms],
+      };
+    });
+    onNewDocument();
+    showNotice("New brainstorm ready");
+  }, [onNewDocument, showNotice]);
 
   const duplicateBrainstorm = useCallback(() => {
     addBrainstormFromState(

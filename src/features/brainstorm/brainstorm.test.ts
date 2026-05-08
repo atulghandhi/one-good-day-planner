@@ -7,7 +7,11 @@ import { buildTodayBrainstorm, toMitHtml } from "./plannerImport";
 import { createPlannerSendUpdate } from "./plannerBridge";
 import { searchBrainstorms } from "./search";
 import { decodeBrainstormShare, encodeBrainstormShare } from "./sharing";
-import { normalizeBrainstormLibrary, normalizeBrainstormState } from "./storage";
+import {
+  nextAvailableBrainstormTitle,
+  normalizeBrainstormLibrary,
+  normalizeBrainstormState,
+} from "./storage";
 import type { BrainstormLibrary, BrainstormState, Idea } from "./types";
 
 describe("brainstorm domain", () => {
@@ -37,6 +41,12 @@ describe("brainstorm domain", () => {
     expect(library.version).toBe(4);
     expect(library.activeId).toBe(library.brainstorms[0].id);
     expect(library.brainstorms[0].shape).toBe("blob");
+  });
+
+  it("creates numbered default brainstorm titles when the name already exists", () => {
+    expect(nextAvailableBrainstormTitle("Options", ["Options"])).toBe("Options 2");
+    expect(nextAvailableBrainstormTitle("Options", ["options", "Options 2"])).toBe("Options 3");
+    expect(nextAvailableBrainstormTitle("Focus", ["Options"])).toBe("Focus");
   });
 
   it("round-trips share links through the stable versioned state shape", () => {
