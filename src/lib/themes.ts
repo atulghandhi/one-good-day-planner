@@ -1,6 +1,6 @@
-// Theme presets — 3 light, 3 dark. Each defines core hue tokens used across the app.
+// Theme presets — 3 light, 2 dark. Each defines core hue tokens used across the app.
 
-export type ThemeKey = "sakura" | "blossom" | "meadow" | "nebula" | "forest" | "starry";
+export type ThemeKey = "sakura" | "blossom" | "meadow" | "nebula" | "starry";
 
 export type ThemeTokens = {
   background: string;
@@ -124,30 +124,6 @@ const nebula: ThemeTokens = {
   gradientCould: "linear-gradient(135deg, oklch(0.65 0.19 275), oklch(0.6 0.2 300))",
 };
 
-// Forest — deep green forest, mossy & earthy
-const forest: ThemeTokens = {
-  background: "oklch(0.18 0.03 150)",
-  foreground: "oklch(0.96 0.02 110)",
-  card: "oklch(0.24 0.04 150)",
-  cardForeground: "oklch(0.96 0.02 110)",
-  muted: "oklch(0.3 0.04 150)",
-  mutedForeground: "oklch(0.78 0.03 130)",
-  border: "oklch(1 0 0 / 12%)",
-  mit: "oklch(0.74 0.16 145)",
-  mitFg: "oklch(0.97 0.05 145)",
-  should: "oklch(0.78 0.14 95)",
-  shouldFg: "oklch(0.97 0.05 95)",
-  could: "oklch(0.74 0.13 60)",
-  couldFg: "oklch(0.97 0.05 55)",
-  sun: "oklch(0.55 0.08 150)",
-  sky: "oklch(0.5 0.08 175)",
-  gradientSky:
-    "linear-gradient(135deg, oklch(0.18 0.04 155), oklch(0.16 0.05 140) 50%, oklch(0.17 0.04 170))",
-  gradientMit: "linear-gradient(135deg, oklch(0.5 0.12 150), oklch(0.45 0.13 135))",
-  gradientShould: "linear-gradient(135deg, oklch(0.5 0.1 130), oklch(0.46 0.11 110))",
-  gradientCould: "linear-gradient(135deg, oklch(0.48 0.1 95), oklch(0.44 0.11 75))",
-};
-
 // Starry — midnight blue starry sky
 const starry: ThemeTokens = {
   background: "oklch(0.16 0.05 265)",
@@ -180,19 +156,11 @@ export const THEMES: Record<
   blossom: { name: "Blossom", tokens: blossom, mode: "light" },
   meadow: { name: "Meadow", tokens: meadow, mode: "light" },
   nebula: { name: "Nebula", tokens: nebula, mode: "dark" },
-  forest: { name: "Forest", tokens: forest, mode: "dark" },
   starry: { name: "Starry", tokens: starry, mode: "dark" },
 };
 
 // Order: lights first, then darks (top to bottom in dropdown)
-export const THEME_ORDER: ThemeKey[] = [
-  "sakura",
-  "blossom",
-  "meadow",
-  "nebula",
-  "forest",
-  "starry",
-];
+export const THEME_ORDER: ThemeKey[] = ["sakura", "blossom", "meadow", "nebula", "starry"];
 
 const STORAGE_KEY = "one-good-day:theme";
 

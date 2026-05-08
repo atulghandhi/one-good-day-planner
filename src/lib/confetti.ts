@@ -189,88 +189,11 @@ function spawnShootingStar(layer: HTMLDivElement) {
   }, dur + 100);
 }
 
-/* ---------------- Falling leaves (forest theme) ---------------- */
-
-const LEAF_COLORS = [
-  "#7a9a3a",
-  "#a3b86c",
-  "#c9a227",
-  "#d97742",
-  "#8b5a2b",
-  "#5d7a2e",
-  "#b8842b",
-  "#6b8e23",
-];
-
-function fallingLeaves(count: number) {
-  if (typeof document === "undefined") return;
-  const layer = ensureLeafLayer();
-  for (let i = 0; i < count; i++) {
-    setTimeout(() => spawnLeaf(layer), i * 30 + Math.random() * 200);
-  }
-}
-
-function ensureLeafLayer(): HTMLDivElement {
-  let el = document.getElementById("leaf-layer") as HTMLDivElement | null;
-  if (!el) {
-    el = document.createElement("div");
-    el.id = "leaf-layer";
-    el.style.position = "fixed";
-    el.style.inset = "0";
-    el.style.pointerEvents = "none";
-    el.style.zIndex = "60";
-    el.style.overflow = "hidden";
-    document.body.appendChild(el);
-  }
-  return el;
-}
-
-function spawnLeaf(layer: HTMLDivElement) {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const size = 14 + Math.random() * 18;
-  const startX = Math.random() * w;
-  const startY = -40;
-  const endY = h + 60;
-  const drift = (Math.random() - 0.5) * 300;
-  const dur = 1166 + Math.random() * 1166;
-  const spin = (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 720);
-  const color = LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)];
-
-  const leaf = document.createElement("div");
-  leaf.style.position = "absolute";
-  leaf.style.left = `${startX}px`;
-  leaf.style.top = `${startY}px`;
-  leaf.style.width = `${size}px`;
-  leaf.style.height = `${size * 1.3}px`;
-  leaf.style.background = color;
-  leaf.style.borderRadius = "0 100% 0 100%";
-  leaf.style.transform = `rotate(${Math.random() * 360}deg)`;
-  leaf.style.opacity = "0.9";
-  leaf.style.boxShadow = "inset 0 0 4px rgba(0,0,0,0.2)";
-  leaf.style.willChange = "transform, top, left";
-  leaf.style.transition = `top ${dur}ms linear, left ${dur}ms ease-in-out, transform ${dur}ms linear, opacity ${dur}ms ease-in`;
-  layer.appendChild(leaf);
-
-  requestAnimationFrame(() => {
-    leaf.style.top = `${endY}px`;
-    leaf.style.left = `${startX + drift}px`;
-    leaf.style.transform = `rotate(${spin}deg)`;
-    leaf.style.opacity = "0";
-  });
-
-  setTimeout(() => leaf.remove(), dur + 100);
-}
-
 /* ---------------- Public API ---------------- */
 
 export function bigConfetti() {
   if (currentTheme() === "starry") {
     shootingStars(80);
-    return;
-  }
-  if (currentTheme() === "forest") {
-    fallingLeaves(80);
     return;
   }
   const colors = toneColors("mit");
@@ -355,10 +278,6 @@ export function bigConfetti() {
 export function smallConfetti(tone: "mit" | "should" | "could", source?: HTMLElement | null) {
   if (currentTheme() === "starry") {
     shootingStars(14);
-    return;
-  }
-  if (currentTheme() === "forest") {
-    fallingLeaves(tone === "mit" ? 30 : 14);
     return;
   }
   const colors = toneColors(tone);

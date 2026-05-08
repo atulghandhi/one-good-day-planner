@@ -51,6 +51,5 @@ export const PAGE_THEME_VIEWPORT_STROKE: Record<string, string> = {
   blossom: "#9a4f19",
   meadow: "#9a6a00",
   nebula: "currentColor",
-  forest: "currentColor",
   starry: "currentColor",
 };
