@@ -11,17 +11,17 @@ import { useEffect, useRef } from "react";
  */
 
 type Flake = {
-  x: number;          // px from left
-  y: number;          // px from top
-  vy: number;         // fall speed px/s
-  vx: number;         // horizontal drift
+  x: number; // px from left
+  y: number; // px from top
+  vy: number; // fall speed px/s
+  vx: number; // horizontal drift
   rot: number;
   vRot: number;
-  size: number;       // px
-  hue: number;        // 0-360
-  twinkle: number;    // phase offset
+  size: number; // px
+  hue: number; // 0-360
+  twinkle: number; // phase offset
   settled: boolean;
-  vanishing: number;  // 0 = alive, >0 = vanishing progress (0..1)
+  vanishing: number; // 0 = alive, >0 = vanishing progress (0..1)
 };
 
 const FLAKE_HUES = [340, 320, 30, 50, 290, 200];
@@ -186,11 +186,7 @@ export function GlitterRain() {
           f.twinkle += dt * 6;
 
           // settle if it lands on the pile area above the MIT card
-          if (
-            f.x >= barrierLeft &&
-            f.x <= barrierRight &&
-            f.y >= barrierY - 4
-          ) {
+          if (f.x >= barrierLeft && f.x <= barrierRight && f.y >= barrierY - 4) {
             // Determine pile height at this x by scanning settled flakes nearby
             let topAtX = barrierY;
             for (const o of flakes) {

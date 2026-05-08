@@ -18,8 +18,10 @@ export const PillInput = forwardRef<HTMLInputElement, Props>(
 
     const toneText = {
       mit: "text-[color:var(--mit-foreground)] placeholder:text-[color:color-mix(in_oklab,var(--mit-foreground)_55%,transparent)]",
-      should: "text-[color:var(--should-foreground)] placeholder:text-[color:color-mix(in_oklab,var(--should-foreground)_55%,transparent)]",
-      could: "text-[color:var(--could-foreground)] placeholder:text-[color:color-mix(in_oklab,var(--could-foreground)_55%,transparent)]",
+      should:
+        "text-[color:var(--should-foreground)] placeholder:text-[color:color-mix(in_oklab,var(--should-foreground)_55%,transparent)]",
+      could:
+        "text-[color:var(--could-foreground)] placeholder:text-[color:color-mix(in_oklab,var(--could-foreground)_55%,transparent)]",
       neutral: "text-card-foreground placeholder:text-muted-foreground/70",
     }[tone];
 

@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Sparkles, X } from "lucide-react";
-import {
-  type DaySnapshot,
-  isoDate,
-  loadHistory,
-  weekDates,
-} from "@/lib/storage";
+import { type DaySnapshot, isoDate, loadHistory, weekDates } from "@/lib/storage";
 
 type Props = {
   open: boolean;
@@ -90,9 +85,7 @@ function DayCard({
       <div className="mb-3 flex items-baseline justify-between">
         <div
           className={`text-xs font-bold uppercase tracking-widest ${
-            isToday
-              ? "text-[color:var(--mit-foreground)]"
-              : "text-muted-foreground"
+            isToday ? "text-[color:var(--mit-foreground)]" : "text-muted-foreground"
           }`}
         >
           {dow}
@@ -108,13 +101,9 @@ function DayCard({
       </div>
 
       {isFuture ? (
-        <p className="text-xs italic text-muted-foreground/70">
-          Yet to come ✨
-        </p>
+        <p className="text-xs italic text-muted-foreground/70">Yet to come ✨</p>
       ) : !hasContent ? (
-        <p className="text-xs italic text-muted-foreground/70">
-          A quiet day.
-        </p>
+        <p className="text-xs italic text-muted-foreground/70">A quiet day.</p>
       ) : (
         <div className="space-y-3">
           {snap!.mit.trim() && (

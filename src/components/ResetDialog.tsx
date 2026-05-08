@@ -38,9 +38,7 @@ export function ResetDialog({ open, onCancel, onConfirm }: Props) {
                 <RotateCcw className="h-6 w-6" strokeWidth={2.5} />
               </div>
               <div>
-                <h2 className="font-display text-2xl tracking-tight">
-                  Start fresh?
-                </h2>
+                <h2 className="font-display text-2xl tracking-tight">Start fresh?</h2>
                 <p className="text-sm text-muted-foreground">
                   This wipes today's plan. It can't be undone.
                 </p>

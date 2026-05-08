@@ -3,9 +3,7 @@ import kirbyImg from "@/assets/kirby.png";
 
 function readVar(name: string): string {
   if (typeof document === "undefined") return "#ff7eb6";
-  const v = getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim();
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || "#ff7eb6";
 }
 
@@ -19,10 +17,7 @@ function toneColors(tone: "mit" | "should" | "could"): string[] {
   const theme = currentTheme();
   if (theme === "sakura") {
     // Multicoloured rainbow palette for sakura
-    return [
-      "#ff5d8f", "#ffb3c6", "#ffd166", "#06d6a0",
-      "#118ab2", "#9b5de5", "#f15bb5", "#fee440",
-    ];
+    return ["#ff5d8f", "#ffb3c6", "#ffd166", "#06d6a0", "#118ab2", "#9b5de5", "#f15bb5", "#fee440"];
   }
   const base = readVar(`--${tone}`);
   const sun = readVar("--sun");
@@ -45,9 +40,11 @@ let kirbyShapePromise: Promise<AnyShape | null> | null = null;
 function loadKirbyShape(): Promise<AnyShape | null> {
   if (kirbyShape) return Promise.resolve(kirbyShape);
   if (kirbyShapePromise) return kirbyShapePromise;
-  const shapeFromImage = (confetti as unknown as {
-    shapeFromImage?: (opts: { src: string; width?: number; height?: number }) => AnyShape;
-  }).shapeFromImage;
+  const shapeFromImage = (
+    confetti as unknown as {
+      shapeFromImage?: (opts: { src: string; width?: number; height?: number }) => AnyShape;
+    }
+  ).shapeFromImage;
   kirbyShapePromise = new Promise((resolve) => {
     if (typeof Image === "undefined" || !shapeFromImage) {
       resolve(null);
@@ -195,8 +192,14 @@ function spawnShootingStar(layer: HTMLDivElement) {
 /* ---------------- Falling leaves (forest theme) ---------------- */
 
 const LEAF_COLORS = [
-  "#7a9a3a", "#a3b86c", "#c9a227", "#d97742",
-  "#8b5a2b", "#5d7a2e", "#b8842b", "#6b8e23",
+  "#7a9a3a",
+  "#a3b86c",
+  "#c9a227",
+  "#d97742",
+  "#8b5a2b",
+  "#5d7a2e",
+  "#b8842b",
+  "#6b8e23",
 ];
 
 function fallingLeaves(count: number) {
@@ -349,10 +352,7 @@ export function bigConfetti() {
   }, 220);
 }
 
-export function smallConfetti(
-  tone: "mit" | "should" | "could",
-  source?: HTMLElement | null,
-) {
+export function smallConfetti(tone: "mit" | "should" | "could", source?: HTMLElement | null) {
   if (currentTheme() === "starry") {
     shootingStars(14);
     return;

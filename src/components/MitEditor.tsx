@@ -2,14 +2,7 @@ import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useEffect, useState } from "react";
-import {
-  Bold as BoldIcon,
-  Italic as ItalicIcon,
-  List,
-  Quote,
-  Code,
-  Code2,
-} from "lucide-react";
+import { Bold as BoldIcon, Italic as ItalicIcon, List, Quote, Code, Code2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -32,9 +25,7 @@ function isPlainSingleLine(editor: Editor): boolean {
   const first = content[0];
   if (first.type !== "paragraph") return false;
   // Any marks present? -> already rich
-  const hasMarks = (first.content ?? []).some(
-    (n) => Array.isArray(n.marks) && n.marks.length > 0,
-  );
+  const hasMarks = (first.content ?? []).some((n) => Array.isArray(n.marks) && n.marks.length > 0);
   if (hasMarks) return false;
   return true;
 }

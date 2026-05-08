@@ -1,12 +1,6 @@
 // Theme presets — 3 light, 3 dark. Each defines core hue tokens used across the app.
 
-export type ThemeKey =
-  | "sakura"
-  | "blossom"
-  | "meadow"
-  | "nebula"
-  | "forest"
-  | "starry";
+export type ThemeKey = "sakura" | "blossom" | "meadow" | "nebula" | "forest" | "starry";
 
 export type ThemeTokens = {
   background: string;
@@ -51,12 +45,9 @@ const sakura: ThemeTokens = {
   sky: "oklch(0.9 0.06 220)",
   gradientSky:
     "linear-gradient(135deg, oklch(0.97 0.03 30), oklch(0.94 0.05 350) 50%, oklch(0.95 0.04 140))",
-  gradientMit:
-    "linear-gradient(135deg, oklch(0.88 0.1 15), oklch(0.82 0.12 350))",
-  gradientShould:
-    "linear-gradient(135deg, oklch(0.88 0.09 145), oklch(0.86 0.1 125))",
-  gradientCould:
-    "linear-gradient(135deg, oklch(0.82 0.09 275), oklch(0.8 0.1 250))",
+  gradientMit: "linear-gradient(135deg, oklch(0.88 0.1 15), oklch(0.82 0.12 350))",
+  gradientShould: "linear-gradient(135deg, oklch(0.88 0.09 145), oklch(0.86 0.1 125))",
+  gradientCould: "linear-gradient(135deg, oklch(0.82 0.09 275), oklch(0.8 0.1 250))",
 };
 
 // Blossom — playful pastel coral / mint / lavender (the original)
@@ -78,12 +69,9 @@ const blossom: ThemeTokens = {
   sky: "oklch(0.88 0.1 230)",
   gradientSky:
     "linear-gradient(135deg, oklch(0.96 0.05 90), oklch(0.93 0.07 200) 50%, oklch(0.95 0.06 320))",
-  gradientMit:
-    "linear-gradient(135deg, oklch(0.85 0.14 35), oklch(0.8 0.16 15))",
-  gradientShould:
-    "linear-gradient(135deg, oklch(0.9 0.12 160), oklch(0.88 0.13 190))",
-  gradientCould:
-    "linear-gradient(135deg, oklch(0.88 0.13 280), oklch(0.86 0.13 320))",
+  gradientMit: "linear-gradient(135deg, oklch(0.85 0.14 35), oklch(0.8 0.16 15))",
+  gradientShould: "linear-gradient(135deg, oklch(0.9 0.12 160), oklch(0.88 0.13 190))",
+  gradientCould: "linear-gradient(135deg, oklch(0.88 0.13 280), oklch(0.86 0.13 320))",
 };
 
 // Meadow — soft buttery yellow, sky blue, peach
@@ -105,12 +93,9 @@ const meadow: ThemeTokens = {
   sky: "oklch(0.88 0.09 215)",
   gradientSky:
     "linear-gradient(135deg, oklch(0.96 0.06 85), oklch(0.93 0.07 200) 50%, oklch(0.95 0.05 50))",
-  gradientMit:
-    "linear-gradient(135deg, oklch(0.9 0.13 90), oklch(0.86 0.14 70))",
-  gradientShould:
-    "linear-gradient(135deg, oklch(0.88 0.1 220), oklch(0.86 0.11 200))",
-  gradientCould:
-    "linear-gradient(135deg, oklch(0.88 0.1 55), oklch(0.85 0.11 35))",
+  gradientMit: "linear-gradient(135deg, oklch(0.9 0.13 90), oklch(0.86 0.14 70))",
+  gradientShould: "linear-gradient(135deg, oklch(0.88 0.1 220), oklch(0.86 0.11 200))",
+  gradientCould: "linear-gradient(135deg, oklch(0.88 0.1 55), oklch(0.85 0.11 35))",
 };
 
 /* ---------------- DARK THEMES ---------------- */
@@ -134,12 +119,9 @@ const nebula: ThemeTokens = {
   sky: "oklch(0.7 0.16 250)",
   gradientSky:
     "linear-gradient(135deg, oklch(0.2 0.07 290), oklch(0.18 0.09 320) 50%, oklch(0.2 0.08 260))",
-  gradientMit:
-    "linear-gradient(135deg, oklch(0.65 0.21 320), oklch(0.6 0.22 295))",
-  gradientShould:
-    "linear-gradient(135deg, oklch(0.66 0.18 205), oklch(0.62 0.19 230))",
-  gradientCould:
-    "linear-gradient(135deg, oklch(0.65 0.19 275), oklch(0.6 0.2 300))",
+  gradientMit: "linear-gradient(135deg, oklch(0.65 0.21 320), oklch(0.6 0.22 295))",
+  gradientShould: "linear-gradient(135deg, oklch(0.66 0.18 205), oklch(0.62 0.19 230))",
+  gradientCould: "linear-gradient(135deg, oklch(0.65 0.19 275), oklch(0.6 0.2 300))",
 };
 
 // Forest — deep green forest, mossy & earthy
@@ -161,12 +143,9 @@ const forest: ThemeTokens = {
   sky: "oklch(0.5 0.08 175)",
   gradientSky:
     "linear-gradient(135deg, oklch(0.18 0.04 155), oklch(0.16 0.05 140) 50%, oklch(0.17 0.04 170))",
-  gradientMit:
-    "linear-gradient(135deg, oklch(0.5 0.12 150), oklch(0.45 0.13 135))",
-  gradientShould:
-    "linear-gradient(135deg, oklch(0.5 0.1 130), oklch(0.46 0.11 110))",
-  gradientCould:
-    "linear-gradient(135deg, oklch(0.48 0.1 95), oklch(0.44 0.11 75))",
+  gradientMit: "linear-gradient(135deg, oklch(0.5 0.12 150), oklch(0.45 0.13 135))",
+  gradientShould: "linear-gradient(135deg, oklch(0.5 0.1 130), oklch(0.46 0.11 110))",
+  gradientCould: "linear-gradient(135deg, oklch(0.48 0.1 95), oklch(0.44 0.11 75))",
 };
 
 // Starry — midnight blue starry sky
@@ -188,12 +167,9 @@ const starry: ThemeTokens = {
   sky: "oklch(0.5 0.12 240)",
   gradientSky:
     "linear-gradient(135deg, oklch(0.16 0.06 265), oklch(0.14 0.08 280) 50%, oklch(0.17 0.07 240))",
-  gradientMit:
-    "linear-gradient(135deg, oklch(0.5 0.14 250), oklch(0.42 0.15 270))",
-  gradientShould:
-    "linear-gradient(135deg, oklch(0.5 0.12 220), oklch(0.45 0.13 235))",
-  gradientCould:
-    "linear-gradient(135deg, oklch(0.48 0.13 285), oklch(0.42 0.14 305))",
+  gradientMit: "linear-gradient(135deg, oklch(0.5 0.14 250), oklch(0.42 0.15 270))",
+  gradientShould: "linear-gradient(135deg, oklch(0.5 0.12 220), oklch(0.45 0.13 235))",
+  gradientCould: "linear-gradient(135deg, oklch(0.48 0.13 285), oklch(0.42 0.14 305))",
 };
 
 export const THEMES: Record<
