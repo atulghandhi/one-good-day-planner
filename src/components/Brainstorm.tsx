@@ -2,13 +2,29 @@ import type React from "react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, LocateFixed, Minus, Plus, RotateCcw, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Layers,
+  LocateFixed,
+  Minus,
+  Plus,
+  Search,
+  Send,
+  Share2,
+  Trash2,
+  X,
+  RotateCcw,
+} from "lucide-react";
 import { ResetDialog } from "./ResetDialog";
 import { ThemePicker } from "./ThemePicker";
 import { cn } from "@/lib/utils";
+import { loadState, saveState, type PlannerState, type TaskItem } from "@/lib/storage";
 
 type ShapeKey = "pill" | "boxy" | "blob";
 type LegacyShapeKey = ShapeKey | "rounded" | "hex";
+type IdeaKind = "idea" | "task" | "note" | "decision";
 
 type Idea = {
   id: string;
@@ -16,6 +32,8 @@ type Idea = {
   cx?: number;
   cy?: number;
   parentId?: string;
+  kind?: IdeaKind;
+  done?: boolean;
 };
 
 type BrainstormState = {
@@ -25,12 +43,35 @@ type BrainstormState = {
   shape: ShapeKey;
 };
 
-const STORAGE_KEY = "one-good-day:brainstorm:v2";
+type BrainstormDoc = BrainstormState & {
+  id: string;
+  updatedAt: number;
+};
+
+type BrainstormLibrary = {
+  version: 4;
+  activeId: string;
+  brainstorms: BrainstormDoc[];
+};
+
+const LEGACY_STORAGE_KEY = "one-good-day:brainstorm:v2";
+const STORAGE_KEY = "one-good-day:brainstorms:v1";
 const EMPTY: BrainstormState = {
   version: 3,
   title: "Options",
   ideas: [],
-  shape: "pill",
+  shape: "blob",
+};
+const EMPTY_LIBRARY: BrainstormLibrary = {
+  version: 4,
+  activeId: "default",
+  brainstorms: [
+    {
+      ...EMPTY,
+      id: "default",
+      updatedAt: 0,
+    },
+  ],
 };
 
 const SHAPES: { key: ShapeKey; label: string }[] = [
@@ -430,11 +471,29 @@ function normalizeShape(shape: unknown): ShapeKey {
   if (shape === "hex") return "blob";
   return typeof shape === "string" && VALID_SHAPES.has(shape as ShapeKey)
     ? (shape as ShapeKey)
-    : "pill";
+    : EMPTY.shape;
+}
+
+function normalizeIdeaKind(kind: unknown): IdeaKind | undefined {
+  return kind === "task" || kind === "note" || kind === "decision" ? kind : undefined;
 }
 
 function normalizeTitleValue(value: string) {
   return value.split("\n").slice(0, 2).join("\n").slice(0, MAX_TITLE_CHARS);
+}
+
+function makeId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function createBrainstormDoc(state: Partial<BrainstormState> = {}): BrainstormDoc {
+  return {
+    ...EMPTY,
+    ...state,
+    version: 3,
+    id: makeId("brainstorm"),
+    updatedAt: Date.now(),
+  };
 }
 
 function shapeStyle(shape: ShapeKey): React.CSSProperties {
@@ -450,79 +509,221 @@ function shapeStyle(shape: ShapeKey): React.CSSProperties {
   }
 }
 
-function loadBrainstorm(): BrainstormState {
-  if (typeof window === "undefined") return EMPTY;
+function normalizeBrainstormState(raw: unknown): BrainstormState {
+  const parsed = (raw ?? {}) as Partial<
+    Omit<BrainstormState, "shape"> & {
+      shape?: LegacyShapeKey;
+      version?: number;
+      ideas?: Partial<Idea>[];
+    }
+  >;
+  const legacyCoords = parsed.version !== 3;
+  const viewportOffsetX = typeof window === "undefined" ? 0 : window.innerWidth / 2;
+  const viewportOffsetY = typeof window === "undefined" ? 0 : window.innerHeight / 2;
+  const seen = new Set<string>();
+  const ideas = Array.isArray(parsed.ideas)
+    ? parsed.ideas.flatMap((idea) => {
+        if (typeof idea.id !== "string" || typeof idea.text !== "string") {
+          return [];
+        }
+        const id = idea.id;
+        if (seen.has(id)) return [];
+        seen.add(id);
+        const cx = isFiniteNumber(idea.cx)
+          ? legacyCoords
+            ? idea.cx - viewportOffsetX
+            : idea.cx
+          : undefined;
+        const cy = isFiniteNumber(idea.cy)
+          ? legacyCoords
+            ? idea.cy - viewportOffsetY
+            : idea.cy
+          : undefined;
+        return [
+          {
+            id,
+            text: idea.text,
+            cx,
+            cy,
+            parentId:
+              typeof idea.parentId === "string" && idea.parentId !== id ? idea.parentId : undefined,
+            kind: normalizeIdeaKind(idea.kind),
+            done: !!idea.done,
+          },
+        ];
+      })
+    : [];
+
+  const ids = new Set(ideas.map((idea) => idea.id));
+
+  return {
+    version: 3,
+    title: typeof parsed.title === "string" ? normalizeTitleValue(parsed.title) : EMPTY.title,
+    ideas: ideas.map((idea) =>
+      idea.parentId && !ids.has(idea.parentId) ? { ...idea, parentId: undefined } : idea,
+    ),
+    shape: normalizeShape(parsed.shape),
+  };
+}
+
+function normalizeBrainstormDoc(raw: unknown, fallbackIndex: number): BrainstormDoc {
+  const parsed = (raw ?? {}) as Partial<BrainstormDoc>;
+  const state = normalizeBrainstormState(parsed);
+  return {
+    ...state,
+    id: typeof parsed.id === "string" && parsed.id ? parsed.id : `brainstorm-${fallbackIndex}`,
+    updatedAt: isFiniteNumber(parsed.updatedAt) ? parsed.updatedAt : Date.now(),
+  };
+}
+
+function normalizeBrainstormLibrary(raw: unknown): BrainstormLibrary {
+  const parsed = (raw ?? {}) as Partial<BrainstormLibrary>;
+  const brainstorms = Array.isArray(parsed.brainstorms)
+    ? parsed.brainstorms.map(normalizeBrainstormDoc)
+    : [];
+
+  if (brainstorms.length === 0) {
+    const doc = createBrainstormDoc();
+    return { version: 4, activeId: doc.id, brainstorms: [doc] };
+  }
+
+  const activeId =
+    typeof parsed.activeId === "string" && brainstorms.some((doc) => doc.id === parsed.activeId)
+      ? parsed.activeId
+      : brainstorms[0].id;
+
+  return { version: 4, activeId, brainstorms };
+}
+
+function loadBrainstormLibrary(): BrainstormLibrary {
+  if (typeof window === "undefined") return EMPTY_LIBRARY;
 
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return EMPTY;
-
-    const parsed = JSON.parse(raw) as Partial<
-      Omit<BrainstormState, "shape"> & {
-        shape?: LegacyShapeKey;
-        version?: number;
-        ideas?: Partial<Idea>[];
-      }
-    >;
-    const legacyCoords = parsed.version !== 3;
-    const viewportOffsetX = window.innerWidth / 2;
-    const viewportOffsetY = window.innerHeight / 2;
-    const seen = new Set<string>();
-    const ideas = Array.isArray(parsed.ideas)
-      ? parsed.ideas.flatMap((idea) => {
-          if (typeof idea.id !== "string" || typeof idea.text !== "string") {
-            return [];
-          }
-          const id = idea.id;
-          if (seen.has(id)) return [];
-          seen.add(id);
-          const cx = isFiniteNumber(idea.cx)
-            ? legacyCoords
-              ? idea.cx - viewportOffsetX
-              : idea.cx
-            : undefined;
-          const cy = isFiniteNumber(idea.cy)
-            ? legacyCoords
-              ? idea.cy - viewportOffsetY
-              : idea.cy
-            : undefined;
-          return [
-            {
-              id,
-              text: idea.text,
-              cx,
-              cy,
-              parentId:
-                typeof idea.parentId === "string" && idea.parentId !== id
-                  ? idea.parentId
-                  : undefined,
-            },
-          ];
-        })
-      : [];
-
-    const ids = new Set(ideas.map((idea) => idea.id));
-
-    return {
-      version: 3,
-      title: typeof parsed.title === "string" ? normalizeTitleValue(parsed.title) : EMPTY.title,
-      ideas: ideas.map((idea) =>
-        idea.parentId && !ids.has(idea.parentId) ? { ...idea, parentId: undefined } : idea,
-      ),
-      shape: normalizeShape(parsed.shape),
-    };
-  } catch {
-    return EMPTY;
-  }
-}
-
-function saveBrainstorm(state: BrainstormState) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, version: 3 }));
+    if (raw) return normalizeBrainstormLibrary(JSON.parse(raw));
   } catch {
     /* ignore */
   }
+
+  try {
+    const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy) {
+      const doc = createBrainstormDoc(normalizeBrainstormState(JSON.parse(legacy)));
+      return { version: 4, activeId: doc.id, brainstorms: [doc] };
+    }
+  } catch {
+    /* ignore */
+  }
+
+  const doc = createBrainstormDoc();
+  return { version: 4, activeId: doc.id, brainstorms: [doc] };
+}
+
+function saveBrainstormLibrary(library: BrainstormLibrary) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...library, version: 4 }));
+  } catch {
+    /* ignore */
+  }
+}
+
+function encodeUrlBase64(value: string) {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function decodeUrlBase64(value: string) {
+  const padded = value
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function encodeBrainstormShare(state: BrainstormState) {
+  return encodeUrlBase64(JSON.stringify({ ...state, version: 3 }));
+}
+
+function decodeBrainstormShare(value: string): BrainstormState | null {
+  try {
+    return normalizeBrainstormState(JSON.parse(decodeUrlBase64(value)));
+  } catch {
+    return null;
+  }
+}
+
+function stripHtml(value: string) {
+  if (!value) return "";
+  if (typeof document !== "undefined") {
+    const element = document.createElement("div");
+    element.innerHTML = value;
+    return (element.textContent ?? "").trim();
+  }
+  return value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function toMitHtml(text: string) {
+  return `<p>${escapeHtml(text)}</p>`;
+}
+
+function buildTodayBrainstorm(planner: PlannerState): BrainstormState {
+  const ideas: Idea[] = [];
+  const addNode = (text: string, parentId?: string, kind: IdeaKind = "idea") => {
+    const trimmed = text.trim();
+    if (!trimmed) return undefined;
+    const idea: Idea = {
+      id: makeId("idea"),
+      text: trimmed,
+      parentId,
+      kind,
+    };
+    ideas.push(idea);
+    return idea.id;
+  };
+
+  const mitId = addNode("MIT", undefined, "task");
+  const mitText = stripHtml(planner.mit);
+  if (mitId && mitText) addNode(mitText, mitId, "task");
+  planner.mitSubs.forEach((step) => {
+    if (mitId && step.text.trim()) {
+      addNode(step.text, mitId, "task");
+    }
+  });
+
+  const shouldId = addNode("Shoulds", undefined, "note");
+  planner.shoulds.forEach((item) => {
+    if (shouldId && item.text.trim()) addNode(item.text, shouldId, "task");
+  });
+
+  const couldId = addNode("Coulds", undefined, "note");
+  planner.coulds.forEach((item) => {
+    if (couldId && item.text.trim()) addNode(item.text, couldId, "task");
+  });
+
+  return {
+    version: 3,
+    title: "Today",
+    shape: "blob",
+    ideas,
+  };
 }
 
 function depthLevel(depth: number) {
@@ -976,13 +1177,21 @@ function IdeaNode({
         className="relative"
       >
         <div
-          onPointerDown={onStartDrag}
+          onPointerDown={(event) => {
+            if (event.detail > 1) {
+              event.stopPropagation();
+              onStartEdit();
+              return;
+            }
+            onStartDrag(event);
+          }}
           onClick={(event) => {
             if (isEditing) return;
             event.stopPropagation();
             onSelect();
           }}
           onDoubleClick={(event) => {
+            event.preventDefault();
             event.stopPropagation();
             onStartEdit();
           }}
@@ -1003,6 +1212,7 @@ function IdeaNode({
             boxShadow: isFocused ? focusedShadow : restingShadow,
             backgroundColor: isSketch ? sketchPalette.card : undefined,
             color: isSketch ? sketchPalette.ink : undefined,
+            opacity: idea.done ? 0.72 : 1,
           }}
         >
           {isSketch && (
@@ -1042,6 +1252,21 @@ function IdeaNode({
               />
             </>
           )}
+          {(idea.kind || idea.done) && !isEditing && (
+            <span
+              className={cn(
+                "absolute -left-2 -top-2 z-20 inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[9px] font-black uppercase tracking-wide shadow-soft",
+                idea.done
+                  ? "bg-[color:var(--mit)] text-[color:var(--mit-foreground)]"
+                  : "bg-card/95 text-muted-foreground",
+              )}
+              style={{
+                border: isSketch ? `2px solid ${sketchMarker.markerDark}` : undefined,
+              }}
+            >
+              {idea.done ? "✓" : idea.kind}
+            </span>
+          )}
           {isEditing ? (
             <input
               autoFocus
@@ -1064,7 +1289,11 @@ function IdeaNode({
             />
           ) : (
             <span
-              className={cn("relative z-10 max-w-full break-words", isSketch && "uppercase")}
+              className={cn(
+                "relative z-10 max-w-full break-words",
+                isSketch && "uppercase",
+                idea.done && "line-through",
+              )}
               style={{
                 textShadow: isSketch ? `0.7px 0.55px 0 ${sketchPalette.textShadow}` : undefined,
               }}
@@ -1279,12 +1508,16 @@ type Interaction =
     };
 
 export function Brainstorm() {
-  const [state, setState] = useState<BrainstormState>(EMPTY);
+  const [library, setLibrary] = useState<BrainstormLibrary>(EMPTY_LIBRARY);
   const [hydrated, setHydrated] = useState(false);
   const [draft, setDraft] = useState("");
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [notice, setNotice] = useState("");
   const [dragLive, setDragLive] = useState<{
     id: string;
     x: number;
@@ -1311,12 +1544,123 @@ export function Brainstorm() {
   const pendingDragRef = useRef<typeof dragLive>(null);
   const dragRafRef = useRef(0);
   const cameraRafRef = useRef(0);
+  const routeImportRef = useRef(false);
   const ignoreNextClickRef = useRef(false);
   const ignoreNextNodeClickRef = useRef(false);
+
+  const state = useMemo(
+    () =>
+      library.brainstorms.find((brainstorm) => brainstorm.id === library.activeId) ??
+      library.brainstorms[0] ??
+      EMPTY_LIBRARY.brainstorms[0],
+    [library],
+  );
+
+  const setState = useCallback(
+    (update: BrainstormState | ((current: BrainstormState) => BrainstormState)) => {
+      setLibrary((current) => {
+        const activeDoc =
+          current.brainstorms.find((brainstorm) => brainstorm.id === current.activeId) ??
+          current.brainstorms[0] ??
+          createBrainstormDoc();
+        const nextState = typeof update === "function" ? update(activeDoc) : update;
+        const nextDoc = {
+          ...activeDoc,
+          ...nextState,
+          version: 3 as const,
+          id: activeDoc.id,
+          updatedAt: Date.now(),
+        };
+        const hasActive = current.brainstorms.some((brainstorm) => brainstorm.id === activeDoc.id);
+        return {
+          version: 4,
+          activeId: activeDoc.id,
+          brainstorms: hasActive
+            ? current.brainstorms.map((brainstorm) =>
+                brainstorm.id === activeDoc.id ? nextDoc : brainstorm,
+              )
+            : [...current.brainstorms, nextDoc],
+        };
+      });
+    },
+    [],
+  );
 
   const shape = state.shape;
   const theme = SHAPE_THEMES[shape];
   const sketchPalette = SKETCH_PALETTES[pageTheme] ?? SKETCH_PALETTES.blossom;
+
+  const showNotice = useCallback((message: string) => {
+    setNotice(message);
+    window.setTimeout(() => setNotice(""), 2400);
+  }, []);
+
+  const activateBrainstorm = useCallback((id: string) => {
+    setLibrary((current) => ({
+      ...current,
+      activeId: current.brainstorms.some((brainstorm) => brainstorm.id === id)
+        ? id
+        : current.activeId,
+    }));
+    setFocusedId(null);
+    setEditingId(null);
+    setLibraryOpen(false);
+    setSearchOpen(false);
+  }, []);
+
+  const addBrainstormFromState = useCallback(
+    (nextState: BrainstormState, message?: string) => {
+      const doc = createBrainstormDoc(nextState);
+      setLibrary((current) => ({
+        version: 4,
+        activeId: doc.id,
+        brainstorms: [doc, ...current.brainstorms],
+      }));
+      setFocusedId(null);
+      setEditingId(null);
+      setDraft("");
+      setLibraryOpen(false);
+      setSearchOpen(false);
+      if (message) showNotice(message);
+    },
+    [showNotice],
+  );
+
+  const createNewBrainstorm = useCallback(() => {
+    addBrainstormFromState(EMPTY, "New brainstorm ready");
+  }, [addBrainstormFromState]);
+
+  const duplicateBrainstorm = useCallback(() => {
+    addBrainstormFromState(
+      {
+        ...state,
+        title: normalizeTitleValue(`${state.title || "Brainstorm"} copy`),
+        ideas: state.ideas.map((idea) => ({ ...idea })),
+      },
+      "Brainstorm duplicated",
+    );
+  }, [addBrainstormFromState, state]);
+
+  const deleteActiveBrainstorm = useCallback(() => {
+    setLibrary((current) => {
+      if (current.brainstorms.length <= 1) {
+        const doc = createBrainstormDoc();
+        return { version: 4, activeId: doc.id, brainstorms: [doc] };
+      }
+      const nextBrainstorms = current.brainstorms.filter(
+        (brainstorm) => brainstorm.id !== current.activeId,
+      );
+      return {
+        version: 4,
+        activeId: nextBrainstorms[0].id,
+        brainstorms: nextBrainstorms,
+      };
+    });
+    setFocusedId(null);
+    setEditingId(null);
+    setLibraryOpen(false);
+    showNotice("Brainstorm deleted");
+  }, [showNotice]);
 
   const syncTitleHeight = useCallback((element: HTMLTextAreaElement) => {
     element.style.height = "auto";
@@ -1340,14 +1684,45 @@ export function Brainstorm() {
   );
 
   useEffect(() => {
-    const loaded = loadBrainstorm();
-    setState(loaded);
+    const loaded = loadBrainstormLibrary();
+    setLibrary(loaded);
     setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (hydrated) saveBrainstorm(state);
-  }, [state, hydrated]);
+    if (hydrated) saveBrainstormLibrary(library);
+  }, [library, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || routeImportRef.current || typeof window === "undefined") return;
+    routeImportRef.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const shared = params.get("brainstorm");
+    const fromToday = params.get("today") === "1";
+
+    if (shared) {
+      const decoded = decodeBrainstormShare(shared);
+      if (decoded) {
+        addBrainstormFromState(decoded, "Shared brainstorm imported");
+      } else {
+        showNotice("That brainstorm link could not be opened");
+      }
+      params.delete("brainstorm");
+    }
+
+    if (fromToday) {
+      void loadState().then((planner) => {
+        addBrainstormFromState(buildTodayBrainstorm(planner), "Today mapped as a brainstorm");
+      });
+      params.delete("today");
+    }
+
+    if (shared || fromToday) {
+      const nextSearch = params.toString();
+      const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`;
+      window.history.replaceState({}, "", nextUrl);
+    }
+  }, [addBrainstormFromState, hydrated, showNotice]);
 
   useLayoutEffect(() => {
     if (titleRef.current) syncTitleHeight(titleRef.current);
@@ -1829,6 +2204,91 @@ export function Brainstorm() {
     event.stopPropagation();
   };
 
+  const focusedIdea = focusedId ? state.ideas.find((idea) => idea.id === focusedId) : undefined;
+  const focusedChildren = focusedId
+    ? state.ideas.filter((idea) => idea.parentId === focusedId)
+    : [];
+  const totalIdeaCount = library.brainstorms.reduce(
+    (count, brainstorm) => count + brainstorm.ideas.length,
+    0,
+  );
+  const searchResults = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+    return library.brainstorms.flatMap((brainstorm) => {
+      const titleMatch = brainstorm.title.toLowerCase().includes(query)
+        ? [
+            {
+              brainstormId: brainstorm.id,
+              ideaId: null as string | null,
+              label: brainstorm.title,
+              context: "Title",
+            },
+          ]
+        : [];
+      const ideaMatches = brainstorm.ideas
+        .filter((idea) => idea.text.toLowerCase().includes(query))
+        .slice(0, 8)
+        .map((idea) => ({
+          brainstormId: brainstorm.id,
+          ideaId: idea.id,
+          label: idea.text,
+          context: brainstorm.title,
+        }));
+      return [...titleMatch, ...ideaMatches];
+    });
+  }, [library.brainstorms, searchQuery]);
+
+  const shareCurrentBrainstorm = async () => {
+    if (typeof window === "undefined") return;
+    const token = encodeBrainstormShare(state);
+    const url = `${window.location.origin}${window.location.pathname}?brainstorm=${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      showNotice("Share link copied");
+    } catch {
+      window.prompt("Copy share link", url);
+      showNotice("Share link ready");
+    }
+  };
+
+  const updateFocusedIdea = (update: (idea: Idea) => Idea) => {
+    if (!focusedId) return;
+    setState((current) => ({
+      ...current,
+      ideas: current.ideas.map((idea) => (idea.id === focusedId ? update(idea) : idea)),
+    }));
+  };
+
+  const sendFocusedToPlanner = async (target: "mit" | "should" | "could") => {
+    if (!focusedIdea) return;
+    const planner = await loadState();
+    const childItems: TaskItem[] = focusedChildren
+      .filter((idea) => idea.text.trim())
+      .map((idea) => ({ text: idea.text, done: !!idea.done }));
+    const cleanList = (items: TaskItem[]) => items.filter((item) => item.text.trim() || item.done);
+
+    if (target === "mit") {
+      await saveState({
+        ...planner,
+        mit: toMitHtml(focusedIdea.text),
+        mitDone: !!focusedIdea.done,
+        mitSubs: childItems.length > 0 ? childItems : planner.mitSubs,
+      });
+      showNotice("Sent to MIT");
+      return;
+    }
+
+    const item: TaskItem = { text: focusedIdea.text, done: !!focusedIdea.done };
+    if (target === "should") {
+      await saveState({ ...planner, shoulds: [...cleanList(planner.shoulds), item] });
+      showNotice("Sent to Shoulds");
+    } else {
+      await saveState({ ...planner, coulds: [...cleanList(planner.coulds), item] });
+      showNotice("Sent to Coulds");
+    }
+  };
+
   const titlePoint = toCanvasPoint(CENTER_BOX);
 
   return (
@@ -1872,7 +2332,68 @@ export function Brainstorm() {
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to today
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
+          <motion.button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setLibraryOpen((open) => !open);
+              setSearchOpen(false);
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className={cn(
+              "grid h-10 w-10 place-items-center text-foreground",
+              theme.controlClassName,
+            )}
+            style={controlStyle(shape, theme, sketchPalette)}
+            aria-label="Brainstorms"
+            title="Brainstorms"
+          >
+            <Layers className="h-4 w-4" strokeWidth={2.5} />
+          </motion.button>
+          {totalIdeaCount >= 50 && (
+            <motion.button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setSearchOpen((open) => !open);
+                setLibraryOpen(false);
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.92 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className={cn(
+                "grid h-10 w-10 place-items-center text-foreground",
+                theme.controlClassName,
+              )}
+              style={controlStyle(shape, theme, sketchPalette)}
+              aria-label="Search brainstorms"
+              title="Search brainstorms"
+            >
+              <Search className="h-4 w-4" strokeWidth={2.5} />
+            </motion.button>
+          )}
+          <motion.button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              void shareCurrentBrainstorm();
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className={cn(
+              "grid h-10 w-10 place-items-center text-foreground",
+              theme.controlClassName,
+            )}
+            style={controlStyle(shape, theme, sketchPalette)}
+            aria-label="Copy share link"
+            title="Copy share link"
+          >
+            <Share2 className="h-4 w-4" strokeWidth={2.5} />
+          </motion.button>
           <ThemePicker
             buttonClassName={cn("h-10 w-10 transition hover:bg-card/90", theme.controlClassName)}
             iconClassName="h-4 w-4"
@@ -1902,8 +2423,137 @@ export function Brainstorm() {
           >
             <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
           </motion.button>
+
+          <AnimatePresence>
+            {libraryOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 280, damping: 22 }}
+                className={cn(
+                  "absolute right-0 top-12 z-50 w-72 p-2 shadow-pop backdrop-blur",
+                  theme.controlClassName,
+                )}
+                style={controlStyle(shape, theme, sketchPalette)}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="mb-2 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={createNewBrainstorm}
+                    className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full bg-card/80 px-3 text-xs font-semibold hover:bg-card"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    New
+                  </button>
+                  <button
+                    type="button"
+                    onClick={duplicateBrainstorm}
+                    className="grid h-9 w-9 place-items-center rounded-full bg-card/80 hover:bg-card"
+                    aria-label="Duplicate brainstorm"
+                    title="Duplicate"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={deleteActiveBrainstorm}
+                    className="grid h-9 w-9 place-items-center rounded-full bg-card/80 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
+                    aria-label="Delete brainstorm"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="max-h-72 space-y-1 overflow-auto pr-1">
+                  {library.brainstorms.map((brainstorm) => (
+                    <button
+                      key={brainstorm.id}
+                      type="button"
+                      onClick={() => activateBrainstorm(brainstorm.id)}
+                      className={cn(
+                        "flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-xs transition",
+                        brainstorm.id === library.activeId
+                          ? "bg-[color:var(--mit)]/25 text-foreground"
+                          : "hover:bg-card/70",
+                      )}
+                    >
+                      <span className="min-w-0 truncate font-semibold">
+                        {brainstorm.title || "Options"}
+                      </span>
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        {brainstorm.ideas.length}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+            {searchOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 280, damping: 22 }}
+                className={cn(
+                  "absolute right-0 top-12 z-50 w-80 p-2 shadow-pop backdrop-blur",
+                  theme.controlClassName,
+                )}
+                style={controlStyle(shape, theme, sketchPalette)}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  autoFocus
+                  placeholder="Search maps..."
+                  className="mb-2 w-full rounded-full bg-card/85 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[color:var(--mit)]"
+                />
+                <div className="max-h-72 space-y-1 overflow-auto pr-1">
+                  {searchResults.slice(0, 14).map((result) => (
+                    <button
+                      key={`${result.brainstormId}-${result.ideaId ?? "title"}`}
+                      type="button"
+                      onClick={() => {
+                        activateBrainstorm(result.brainstormId);
+                        if (result.ideaId) setFocusedId(result.ideaId);
+                      }}
+                      className="block w-full rounded-2xl px-3 py-2 text-left text-xs hover:bg-card/70"
+                    >
+                      <span className="block truncate font-semibold">{result.label}</span>
+                      <span className="block truncate text-[10px] text-muted-foreground">
+                        {result.context}
+                      </span>
+                    </button>
+                  ))}
+                  {searchQuery.trim() && searchResults.length === 0 && (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">No matches</p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
+
+      <AnimatePresence>
+        {notice && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 280, damping: 22 }}
+            className={cn(
+              "absolute left-1/2 top-16 z-[60] -translate-x-1/2 px-4 py-2 text-xs font-semibold shadow-pop backdrop-blur",
+              theme.controlClassName,
+            )}
+            style={controlStyle(shape, theme, sketchPalette)}
+          >
+            {notice}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div
         ref={viewportRef}
@@ -2273,6 +2923,87 @@ export function Brainstorm() {
         className="absolute bottom-6 left-1/2 z-40 w-full max-w-md -translate-x-1/2 px-5"
         onClick={(event) => event.stopPropagation()}
       >
+        <AnimatePresence>
+          {focusedIdea && (
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 280, damping: 22 }}
+              className={cn(
+                "mx-auto mb-2 flex w-fit flex-wrap items-center justify-center gap-1.5 p-1.5 shadow-pop backdrop-blur",
+                theme.controlClassName,
+              )}
+              style={controlStyle(shape, theme, sketchPalette)}
+            >
+              <button
+                type="button"
+                onClick={() => void sendFocusedToPlanner("mit")}
+                className="inline-flex h-8 items-center gap-1 rounded-full bg-card/80 px-2.5 text-[11px] font-bold hover:bg-card"
+              >
+                <Send className="h-3 w-3" />
+                MIT
+              </button>
+              <button
+                type="button"
+                onClick={() => void sendFocusedToPlanner("should")}
+                className="h-8 rounded-full bg-card/80 px-2.5 text-[11px] font-bold hover:bg-card"
+              >
+                Should
+              </button>
+              <button
+                type="button"
+                onClick={() => void sendFocusedToPlanner("could")}
+                className="h-8 rounded-full bg-card/80 px-2.5 text-[11px] font-bold hover:bg-card"
+              >
+                Could
+              </button>
+              <span className="mx-0.5 h-5 w-px bg-border/60" aria-hidden />
+              {(["idea", "task", "note", "decision"] as const).map((kind) => (
+                <button
+                  key={kind}
+                  type="button"
+                  onClick={() =>
+                    updateFocusedIdea((idea) => ({
+                      ...idea,
+                      kind: kind === "idea" ? undefined : kind,
+                    }))
+                  }
+                  className={cn(
+                    "h-8 rounded-full px-2.5 text-[11px] font-bold capitalize transition",
+                    (focusedIdea.kind ?? "idea") === kind
+                      ? "bg-[color:var(--mit)]/30 text-foreground"
+                      : "bg-card/60 text-muted-foreground hover:bg-card",
+                  )}
+                >
+                  {kind}
+                </button>
+              ))}
+              {(focusedIdea.kind === "task" || focusedIdea.done) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateFocusedIdea((idea) => ({
+                      ...idea,
+                      kind: "task",
+                      done: !idea.done,
+                    }))
+                  }
+                  className={cn(
+                    "grid h-8 w-8 place-items-center rounded-full transition",
+                    focusedIdea.done
+                      ? "bg-[color:var(--mit)] text-[color:var(--mit-foreground)]"
+                      : "bg-card/80 text-muted-foreground hover:bg-card",
+                  )}
+                  aria-label={focusedIdea.done ? "Mark node open" : "Mark node done"}
+                  title={focusedIdea.done ? "Done" : "Mark done"}
+                >
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div
           className={cn(
             "relative",

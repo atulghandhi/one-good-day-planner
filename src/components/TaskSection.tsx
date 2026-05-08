@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Plus, X } from "lucide-react";
 import { PillInput } from "./PillInput";
 import { smallConfetti } from "@/lib/confetti";
-import type { TaskItem } from "@/lib/storage";
+import { cn } from "@/lib/utils";
+import type { Priority, TaskItem } from "@/lib/storage";
 
 type Tone = "should" | "could";
 
@@ -17,22 +18,42 @@ type Props = {
   placeholder: string;
 };
 
-export function TaskSection({
-  title,
-  hint,
-  emoji,
-  tone,
-  items,
-  onChange,
-  placeholder,
-}: Props) {
+const PRIORITIES: Array<Priority | undefined> = [undefined, "high", "medium", "low"];
+
+const PRIORITY_RANK: Record<Priority, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+
+const PRIORITY_META: Record<Priority, { label: string; className: string }> = {
+  high: {
+    label: "High priority",
+    className: "bg-red-500 text-white shadow-[0_0_0_3px_rgba(239,68,68,0.18)]",
+  },
+  medium: {
+    label: "Medium priority",
+    className: "bg-amber-400 text-amber-950 shadow-[0_0_0_3px_rgba(251,191,36,0.2)]",
+  },
+  low: {
+    label: "Low priority",
+    className: "bg-emerald-500 text-white shadow-[0_0_0_3px_rgba(16,185,129,0.18)]",
+  },
+};
+
+export function TaskSection({ title, hint, emoji, tone, items, onChange, placeholder }: Props) {
   // Display order: incomplete first (preserve order), completed at bottom.
   const ordered = useMemo(() => {
     return items
       .map((item, originalIndex) => ({ item, originalIndex }))
       .sort((a, b) => {
-        if (a.item.done === b.item.done) return 0;
-        return a.item.done ? 1 : -1;
+        if (a.item.done !== b.item.done) return a.item.done ? 1 : -1;
+        if (!a.item.done) {
+          const aRank = a.item.priority ? PRIORITY_RANK[a.item.priority] : 3;
+          const bRank = b.item.priority ? PRIORITY_RANK[b.item.priority] : 3;
+          if (aRank !== bRank) return aRank - bRank;
+        }
+        return a.originalIndex - b.originalIndex;
       });
   }, [items]);
 
@@ -50,6 +71,15 @@ export function TaskSection({
     if (!wasDone) smallConfetti(tone, source ?? null);
   };
 
+  const cyclePriority = (i: number) => {
+    const next = [...items];
+    const current = next[i].priority;
+    const currentIndex = PRIORITIES.indexOf(current);
+    const priority = PRIORITIES[(currentIndex + 1) % PRIORITIES.length];
+    next[i] = { ...next[i], priority };
+    onChange(next);
+  };
+
   const add = () => onChange([...items, { text: "", done: false }]);
 
   const remove = (i: number) => {
@@ -60,8 +90,7 @@ export function TaskSection({
     onChange(items.filter((_, idx) => idx !== i));
   };
 
-  const gradient =
-    tone === "should" ? "bg-gradient-should" : "bg-gradient-could";
+  const gradient = tone === "should" ? "bg-gradient-should" : "bg-gradient-could";
 
   return (
     <motion.section
@@ -80,9 +109,7 @@ export function TaskSection({
             {emoji}
           </span>
           <div>
-            <h2 className="font-display text-xl tracking-tight leading-none">
-              {title}
-            </h2>
+            <h2 className="font-display text-xl tracking-tight leading-none">{title}</h2>
             <p className="text-xs text-muted-foreground mt-1">{hint}</p>
           </div>
         </div>
@@ -104,6 +131,8 @@ export function TaskSection({
           {ordered.map(({ item, originalIndex: i }) => {
             const value = item.text;
             const done = item.done;
+            const priority = item.priority;
+            const priorityMeta = priority ? PRIORITY_META[priority] : undefined;
             return (
               <motion.li
                 key={`${tone}-${i}`}
@@ -124,9 +153,7 @@ export function TaskSection({
                   value={value}
                   done={done}
                   readOnly={done}
-                  autoFocus={
-                    !done && i === items.length - 1 && i > 0 && value === ""
-                  }
+                  autoFocus={!done && i === items.length - 1 && i > 0 && value === ""}
                   onChange={(e) => updateText(i, e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -134,9 +161,7 @@ export function TaskSection({
                       const list = e.currentTarget.closest("ul");
                       const inputs = list
                         ? Array.from(
-                            list.querySelectorAll<HTMLInputElement>(
-                              "input:not([readonly])",
-                            ),
+                            list.querySelectorAll<HTMLInputElement>("input:not([readonly])"),
                           )
                         : [];
                       const idx = inputs.indexOf(e.currentTarget);
@@ -146,19 +171,17 @@ export function TaskSection({
                         return;
                       }
                       if (value.trim().length > 0) {
-                        const expectedCount = (list
-                          ? list.querySelectorAll<HTMLInputElement>(
-                              "input:not([readonly])",
-                            ).length
-                          : 0) + 1;
+                        const expectedCount =
+                          (list
+                            ? list.querySelectorAll<HTMLInputElement>("input:not([readonly])")
+                                .length
+                            : 0) + 1;
                         add();
                         let tries = 0;
                         const focusNew = () => {
                           const after = list
                             ? Array.from(
-                                list.querySelectorAll<HTMLInputElement>(
-                                  "input:not([readonly])",
-                                ),
+                                list.querySelectorAll<HTMLInputElement>("input:not([readonly])"),
                               )
                             : [];
                           if (after.length >= expectedCount) {
@@ -171,17 +194,11 @@ export function TaskSection({
                       }
                       return;
                     }
-                    if (
-                      e.key === "Backspace" &&
-                      value === "" &&
-                      items.length > 1
-                    ) {
+                    if (e.key === "Backspace" && value === "" && items.length > 1) {
                       e.preventDefault();
                       const list = e.currentTarget.closest("ul");
                       const inputs = list
-                        ? Array.from(
-                            list.querySelectorAll<HTMLInputElement>("input"),
-                          )
+                        ? Array.from(list.querySelectorAll<HTMLInputElement>("input"))
                         : [];
                       const idx = inputs.indexOf(e.currentTarget);
                       const prev = inputs[idx - 1];
@@ -204,6 +221,23 @@ export function TaskSection({
 
                 {/* Right-side action: tick (toggle) or X (remove if done) */}
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  {value.trim().length > 0 && !done && (
+                    <button
+                      onClick={() => cyclePriority(i)}
+                      className={cn(
+                        "grid h-8 w-8 place-items-center rounded-full text-sm font-black transition-all",
+                        priorityMeta
+                          ? priorityMeta.className
+                          : "bg-background/70 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-card hover:text-foreground",
+                      )}
+                      aria-label={priorityMeta ? priorityMeta.label : "Set priority"}
+                      title={priorityMeta ? priorityMeta.label : "Set priority"}
+                      type="button"
+                      tabIndex={-1}
+                    >
+                      !
+                    </button>
+                  )}
                   {done && (
                     <button
                       onClick={() => remove(i)}
@@ -217,9 +251,7 @@ export function TaskSection({
                   )}
                   {value.trim().length > 0 && (
                     <button
-                      onClick={(e) =>
-                        toggleDone(i, e.currentTarget as HTMLElement)
-                      }
+                      onClick={(e) => toggleDone(i, e.currentTarget as HTMLElement)}
                       className={`grid h-8 w-8 place-items-center rounded-full transition-all ${
                         done
                           ? "bg-[color:var(--mit)]/80 text-[color:var(--mit-foreground)] shadow-soft"

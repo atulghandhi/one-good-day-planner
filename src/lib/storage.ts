@@ -1,6 +1,8 @@
 import { get, set, del } from "idb-keyval";
 
-export type TaskItem = { text: string; done: boolean };
+export type Priority = "high" | "medium" | "low";
+
+export type TaskItem = { text: string; done: boolean; priority?: Priority };
 
 export type PlannerState = {
   mit: string;
@@ -54,16 +56,18 @@ export function weekDates(reference: Date = new Date()): Date[] {
 // Migrate legacy shape (string[] -> TaskItem[]) and ensure shape is complete.
 function normalize(raw: unknown): PlannerState {
   const r = (raw ?? {}) as Record<string, unknown>;
+  const toPriority = (v: unknown): Priority | undefined =>
+    v === "high" || v === "medium" || v === "low" ? v : undefined;
   const toItems = (v: unknown, allowEmpty = false): TaskItem[] => {
-    if (!Array.isArray(v) || v.length === 0)
-      return allowEmpty ? [] : [{ text: "", done: false }];
+    if (!Array.isArray(v) || v.length === 0) return allowEmpty ? [] : [{ text: "", done: false }];
     return v.map((x) => {
       if (typeof x === "string") return { text: x, done: false };
       if (x && typeof x === "object") {
-        const o = x as { text?: unknown; done?: unknown };
+        const o = x as { text?: unknown; done?: unknown; priority?: unknown };
         return {
           text: typeof o.text === "string" ? o.text : "",
           done: !!o.done,
+          priority: toPriority(o.priority),
         };
       }
       return { text: "", done: false };
@@ -118,9 +122,7 @@ async function writeHistory(h: Record<string, DaySnapshot>) {
 }
 
 // Prune history to only the current Mon-Sun week.
-function pruneToCurrentWeek(
-  h: Record<string, DaySnapshot>,
-): Record<string, DaySnapshot> {
+function pruneToCurrentWeek(h: Record<string, DaySnapshot>): Record<string, DaySnapshot> {
   const week = weekDates().map(isoDate);
   const out: Record<string, DaySnapshot> = {};
   for (const k of week) {

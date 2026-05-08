@@ -60,9 +60,7 @@ export function Planner() {
     if (target === null) return;
     let tries = 0;
     const tryFocus = () => {
-      const el = document.querySelector<HTMLInputElement>(
-        `input[data-mit-sub-index="${target}"]`,
-      );
+      const el = document.querySelector<HTMLInputElement>(`input[data-mit-sub-index="${target}"]`);
       if (el && !el.readOnly) {
         el.focus();
         pendingMitFocusRef.current = null;
@@ -186,12 +184,8 @@ export function Planner() {
               <Sparkles className="h-3.5 w-3.5 text-[color:var(--mit)]" />
               {dateLabel || "\u00A0"}
             </motion.button>
-            <h1 className="mt-4 font-display text-4xl md:text-5xl tracking-tight">
-              One good day.
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              Pick what matters. Let the rest go.
-            </p>
+            <h1 className="mt-4 font-display text-4xl md:text-5xl tracking-tight">One good day.</h1>
+            <p className="mt-2 text-muted-foreground">Pick what matters. Let the rest go.</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -225,14 +219,11 @@ export function Planner() {
               done={state.mitDone}
               onChange={(html) =>
                 setState((s) => {
-                  const needsSub =
-                    mitHasContent(html) && s.mitSubs.length === 0;
+                  const needsSub = mitHasContent(html) && s.mitSubs.length === 0;
                   return {
                     ...s,
                     mit: html,
-                    mitSubs: needsSub
-                      ? [{ text: "", done: false }]
-                      : s.mitSubs,
+                    mitSubs: needsSub ? [{ text: "", done: false }] : s.mitSubs,
                   };
                 })
               }
@@ -240,9 +231,7 @@ export function Planner() {
                 if (!mitHasContent(state.mit)) return;
                 requestMitFocus(0);
                 setState((s) =>
-                  s.mitSubs.length === 0
-                    ? { ...s, mitSubs: [{ text: "", done: false }] }
-                    : s,
+                  s.mitSubs.length === 0 ? { ...s, mitSubs: [{ text: "", done: false }] } : s,
                 );
               }}
               onBlur={flushSave}
@@ -301,10 +290,7 @@ export function Planner() {
                         onClick={() =>
                           setState((s) => ({
                             ...s,
-                            mitSubs: [
-                              ...s.mitSubs,
-                              { text: "", done: false } as TaskItem,
-                            ],
+                            mitSubs: [...s.mitSubs, { text: "", done: false } as TaskItem],
                           }))
                         }
                         whileTap={{ scale: 0.85, rotate: -10 }}
@@ -357,10 +343,7 @@ export function Planner() {
                                     requestMitFocus(newIndex);
                                     setState((s) => ({
                                       ...s,
-                                      mitSubs: [
-                                        ...s.mitSubs,
-                                        { text: "", done: false },
-                                      ],
+                                      mitSubs: [...s.mitSubs, { text: "", done: false }],
                                     }));
                                   }
                                   return;
@@ -373,19 +356,13 @@ export function Planner() {
                                   e.preventDefault();
                                   const list = e.currentTarget.closest("ul");
                                   const inputs = list
-                                    ? Array.from(
-                                        list.querySelectorAll<HTMLInputElement>(
-                                          "input",
-                                        ),
-                                      )
+                                    ? Array.from(list.querySelectorAll<HTMLInputElement>("input"))
                                     : [];
                                   const idx = inputs.indexOf(e.currentTarget);
                                   const prev = inputs[idx - 1];
                                   setState((s) => ({
                                     ...s,
-                                    mitSubs: s.mitSubs.filter(
-                                      (_, idx2) => idx2 !== i,
-                                    ),
+                                    mitSubs: s.mitSubs.filter((_, idx2) => idx2 !== i),
                                   }));
                                   if (prev) {
                                     requestAnimationFrame(() => {
@@ -409,9 +386,7 @@ export function Planner() {
                                   onClick={() =>
                                     setState((s) => ({
                                       ...s,
-                                      mitSubs: s.mitSubs.filter(
-                                        (_, idx) => idx !== i,
-                                      ),
+                                      mitSubs: s.mitSubs.filter((_, idx) => idx !== i),
                                     }))
                                   }
                                   className="grid h-8 w-8 place-items-center rounded-full bg-background/70 text-muted-foreground transition-all hover:bg-destructive hover:text-destructive-foreground"
@@ -429,16 +404,11 @@ export function Planner() {
                                     setState((s) => ({
                                       ...s,
                                       mitSubs: s.mitSubs.map((it, idx) =>
-                                        idx === i
-                                          ? { ...it, done: !it.done }
-                                          : it,
+                                        idx === i ? { ...it, done: !it.done } : it,
                                       ),
                                     }));
                                     if (!wasDone) {
-                                      smallConfetti(
-                                        "mit",
-                                        ev.currentTarget as HTMLElement,
-                                      );
+                                      smallConfetti("mit", ev.currentTarget as HTMLElement);
                                     }
                                   }}
                                   className={`grid h-8 w-8 place-items-center rounded-full transition-all ${
@@ -446,9 +416,7 @@ export function Planner() {
                                       ? "bg-[color:var(--mit)]/80 text-[color:var(--mit-foreground)] shadow-soft"
                                       : "bg-background/70 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-[color:var(--mit)]/70 hover:text-[color:var(--mit-foreground)]"
                                   }`}
-                                  aria-label={
-                                    sub.done ? "Mark incomplete" : "Mark done"
-                                  }
+                                  aria-label={sub.done ? "Mark incomplete" : "Mark done"}
                                   type="button"
                                   tabIndex={-1}
                                 >
@@ -489,7 +457,7 @@ export function Planner() {
           />
         </div>
 
-        <div className="mt-10 flex justify-center">
+        <div className="mt-10 flex flex-wrap justify-center gap-3">
           <Link
             to="/brainstorm"
             className="inline-flex items-center gap-2 rounded-full bg-gradient-mit p-1 shadow-pop transition-transform hover:scale-105"
@@ -499,14 +467,25 @@ export function Planner() {
               Brainstorm
             </span>
           </Link>
+          <a
+            href="/brainstorm?today=1"
+            className="inline-flex items-center gap-2 rounded-full bg-card/80 px-5 py-2.5 text-sm font-semibold text-foreground shadow-soft transition-transform hover:scale-105"
+          >
+            <Brain className="h-4 w-4 text-[color:var(--mit)]" />
+            Map today
+          </a>
         </div>
 
         <footer className="mt-12 flex flex-col items-center gap-1.5 text-center text-xs text-muted-foreground">
           <p>
-            <kbd className="rounded bg-card/70 px-1.5 py-0.5 font-mono text-[10px] shadow-soft">Enter</kbd>
+            <kbd className="rounded bg-card/70 px-1.5 py-0.5 font-mono text-[10px] shadow-soft">
+              Enter
+            </kbd>
             <span className="mx-1.5">next field (or new)</span>
             <span className="opacity-50">·</span>
-            <kbd className="ml-1.5 rounded bg-card/70 px-1.5 py-0.5 font-mono text-[10px] shadow-soft">Tab</kbd>
+            <kbd className="ml-1.5 rounded bg-card/70 px-1.5 py-0.5 font-mono text-[10px] shadow-soft">
+              Tab
+            </kbd>
             <span className="ml-1.5">next field</span>
           </p>
           <p>Saved automatically · just for today</p>
@@ -519,11 +498,7 @@ export function Planner() {
         onConfirm={handleReset}
       />
 
-      <WeekView
-        open={weekOpen}
-        onClose={() => setWeekOpen(false)}
-        layoutId={WEEK_LAYOUT_ID}
-      />
+      <WeekView open={weekOpen} onClose={() => setWeekOpen(false)} layoutId={WEEK_LAYOUT_ID} />
 
       {/* Kirby — sits at bottom of page (scroll to find!) on sakura + blossom themes */}
       <img
