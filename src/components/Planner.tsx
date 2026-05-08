@@ -1,16 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { Brain, Check, Plus, RotateCcw, Sparkles, X } from "lucide-react";
-import {
-  EMPTY_STATE,
-  type PlannerState,
-  type TaskItem,
-  clearState,
-  loadState,
-  saveState,
-} from "@/lib/storage";
-import { useDebouncedEffect } from "@/hooks/use-debounce";
+import type { TaskItem } from "@/features/planner/types";
+import { useMitFocus } from "@/features/planner/hooks/useMitFocus";
+import { usePlannerState } from "@/features/planner/hooks/usePlannerState";
+import { usePointerSpotlight } from "@/features/planner/hooks/usePointerSpotlight";
 import { bigConfetti, smallConfetti } from "@/lib/confetti";
 import { PillInput } from "./PillInput";
 import { MitEditor, mitHasContent } from "./MitEditor";
@@ -46,88 +41,17 @@ function focusNextSiblingInput(el: HTMLInputElement): boolean {
 }
 
 export function Planner() {
-  const [state, setState] = useState<PlannerState>(EMPTY_STATE);
-  const [hydrated, setHydrated] = useState(false);
+  const { state, setState, flushSave, resetPlanner } = usePlannerState();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [weekOpen, setWeekOpen] = useState(false);
   const [dateLabel, setDateLabel] = useState("");
-  const pendingMitFocusRef = useRef<number | null>(null);
-  const [pendingMitFocusTick, setPendingMitFocusTick] = useState(0);
+  const requestMitFocus = useMitFocus(state.mitSubs.length);
 
-  // After render, focus the pending MIT sub input by its data-index attribute.
-  useEffect(() => {
-    const target = pendingMitFocusRef.current;
-    if (target === null) return;
-    let tries = 0;
-    const tryFocus = () => {
-      const el = document.querySelector<HTMLInputElement>(`input[data-mit-sub-index="${target}"]`);
-      if (el && !el.readOnly) {
-        el.focus();
-        pendingMitFocusRef.current = null;
-        return;
-      }
-      if (tries++ < 30) requestAnimationFrame(tryFocus);
-      else pendingMitFocusRef.current = null;
-    };
-    requestAnimationFrame(tryFocus);
-  }, [pendingMitFocusTick, state.mitSubs.length]);
-
-  const requestMitFocus = (index: number) => {
-    pendingMitFocusRef.current = index;
-    setPendingMitFocusTick((t) => t + 1);
-  };
+  usePointerSpotlight();
 
   useEffect(() => {
     setDateLabel(todayLabel());
   }, []);
-
-  // Track mouse position for theme background spotlight effects
-  useEffect(() => {
-    let raf = 0;
-    let pendingX = 0;
-    let pendingY = 0;
-    const onMove = (e: MouseEvent) => {
-      pendingX = e.clientX;
-      pendingY = e.clientY;
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        document.documentElement.style.setProperty("--mx", `${pendingX}px`);
-        document.documentElement.style.setProperty("--my", `${pendingY}px`);
-      });
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    loadState().then((s) => {
-      if (!cancelled) {
-        setState(s);
-        setHydrated(true);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Debounced auto-save
-  useDebouncedEffect(
-    () => {
-      if (hydrated) void saveState(state);
-    },
-    [state, hydrated],
-    400,
-  );
-
-  const flushSave = () => {
-    if (hydrated) void saveState(state);
-  };
 
   const showSubs = mitHasContent(state.mit);
 
@@ -144,8 +68,7 @@ export function Planner() {
   );
 
   const handleReset = async () => {
-    await clearState();
-    setState(EMPTY_STATE);
+    await resetPlanner();
     setConfirmOpen(false);
   };
 
