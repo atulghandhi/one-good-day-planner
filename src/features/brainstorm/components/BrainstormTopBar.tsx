@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Copy, Layers, Plus, RotateCcw, Search, Share2, Trash2 } from "lucide-react";
 import { ThemePicker } from "@/components/ThemePicker";
 import { cn } from "@/lib/utils";
-import { controlStyle, shapeStyle } from "../theme";
+import { controlStyle, floatingPanelStyle, shapeStyle, sketchChipStyle } from "../theme";
 import type { BrainstormSearchResult } from "../search";
 import type { BrainstormLibrary, ShapeKey, ShapeTheme, SketchPalette } from "../types";
 
@@ -50,24 +50,28 @@ export function BrainstormTopBar({
   onShareBrainstorm,
   onOpenReset,
 }: BrainstormTopBarProps) {
+  const isSketch = shape === "blob";
   const control = controlStyle(shape, theme, sketchPalette);
+  const panel = floatingPanelStyle(shape, theme, sketchPalette);
   const iconButtonClass = cn(
     "grid h-10 w-10 place-items-center text-foreground",
     theme.controlClassName,
   );
+  const sketchButtonStyle = sketchChipStyle(shape, theme, sketchPalette);
+  const activeSketchButtonStyle = sketchChipStyle(shape, theme, sketchPalette, true);
 
   return (
     <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-5 py-4">
       <Link
         to="/"
         className={cn(
-          "inline-flex items-center gap-2 px-4 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-card/90",
+          "inline-flex min-h-12 items-center gap-2 px-5 py-2 text-sm font-bold text-muted-foreground transition hover:bg-card/90",
           theme.controlClassName,
         )}
         style={control}
         onClick={(event) => event.stopPropagation()}
       >
-        <ArrowLeft className="h-3.5 w-3.5" />
+        <ArrowLeft className="h-4 w-4" />
         Back to today
       </Link>
       <div className="relative flex items-center gap-2">
@@ -131,7 +135,7 @@ export function BrainstormTopBar({
             height: 40,
             width: 40,
           }}
-          panelStyle={control}
+          panelStyle={isSketch ? panel : control}
           swatchShapeStyle={shapeStyle(shape)}
         />
         <motion.button
@@ -158,17 +162,21 @@ export function BrainstormTopBar({
               exit={{ opacity: 0, y: -6, scale: 0.96 }}
               transition={{ type: "spring", stiffness: 280, damping: 22 }}
               className={cn(
-                "absolute right-0 top-12 z-50 w-72 p-2 shadow-pop backdrop-blur",
-                theme.controlClassName,
+                "absolute right-0 top-14 z-50 w-72 p-3 shadow-pop",
+                isSketch ? "border-2" : cn("backdrop-blur", theme.controlClassName),
               )}
-              style={control}
+              style={isSketch ? panel : control}
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mb-2 flex items-center gap-1">
                 <button
                   type="button"
                   onClick={onCreateBrainstorm}
-                  className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full bg-card/80 px-3 text-xs font-semibold hover:bg-card"
+                  className={cn(
+                    "inline-flex h-9 flex-1 items-center justify-center gap-1.5 px-3 text-xs font-bold transition",
+                    isSketch ? "border-2" : "rounded-full bg-card/80 font-semibold hover:bg-card",
+                  )}
+                  style={isSketch ? sketchButtonStyle : undefined}
                 >
                   <Plus className="h-3.5 w-3.5" />
                   New
@@ -176,7 +184,11 @@ export function BrainstormTopBar({
                 <button
                   type="button"
                   onClick={onDuplicateBrainstorm}
-                  className="grid h-9 w-9 place-items-center rounded-full bg-card/80 hover:bg-card"
+                  className={cn(
+                    "grid h-9 w-9 place-items-center transition",
+                    isSketch ? "border-2" : "rounded-full bg-card/80 hover:bg-card",
+                  )}
+                  style={isSketch ? sketchButtonStyle : undefined}
                   aria-label="Duplicate brainstorm"
                   title="Duplicate"
                 >
@@ -185,7 +197,13 @@ export function BrainstormTopBar({
                 <button
                   type="button"
                   onClick={onDeleteBrainstorm}
-                  className="grid h-9 w-9 place-items-center rounded-full bg-card/80 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
+                  className={cn(
+                    "grid h-9 w-9 place-items-center text-muted-foreground transition",
+                    isSketch
+                      ? "border-2"
+                      : "rounded-full bg-card/80 hover:bg-destructive hover:text-destructive-foreground",
+                  )}
+                  style={isSketch ? sketchButtonStyle : undefined}
                   aria-label="Delete brainstorm"
                   title="Delete"
                 >
@@ -199,11 +217,23 @@ export function BrainstormTopBar({
                     type="button"
                     onClick={() => onActivateBrainstorm(brainstorm.id)}
                     className={cn(
-                      "flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-xs transition",
-                      brainstorm.id === library.activeId
-                        ? "bg-[color:var(--mit)]/25 text-foreground"
-                        : "hover:bg-card/70",
+                      "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs transition",
+                      isSketch
+                        ? "border-2"
+                        : cn(
+                            "rounded-full",
+                            brainstorm.id === library.activeId
+                              ? "bg-[color:var(--mit)]/25 text-foreground"
+                              : "hover:bg-card/70",
+                          ),
                     )}
+                    style={
+                      isSketch
+                        ? brainstorm.id === library.activeId
+                          ? activeSketchButtonStyle
+                          : sketchButtonStyle
+                        : undefined
+                    }
                   >
                     <span className="min-w-0 truncate font-semibold">
                       {brainstorm.title || "Options"}
@@ -223,10 +253,10 @@ export function BrainstormTopBar({
               exit={{ opacity: 0, y: -6, scale: 0.96 }}
               transition={{ type: "spring", stiffness: 280, damping: 22 }}
               className={cn(
-                "absolute right-0 top-12 z-50 w-80 p-2 shadow-pop backdrop-blur",
-                theme.controlClassName,
+                "absolute right-0 top-14 z-50 w-80 p-3 shadow-pop",
+                isSketch ? "border-2" : cn("backdrop-blur", theme.controlClassName),
               )}
-              style={control}
+              style={isSketch ? panel : control}
               onClick={(event) => event.stopPropagation()}
             >
               <input
@@ -234,7 +264,21 @@ export function BrainstormTopBar({
                 onChange={(event) => onSearchQueryChange(event.target.value)}
                 autoFocus
                 placeholder="Search maps..."
-                className="mb-2 w-full rounded-full bg-card/85 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[color:var(--mit)]"
+                className={cn(
+                  "mb-2 w-full px-3 py-2 text-sm outline-none",
+                  isSketch
+                    ? "border-0 border-b-2 bg-transparent focus:ring-0"
+                    : "rounded-full bg-card/85 focus:ring-2 focus:ring-[color:var(--mit)]",
+                )}
+                style={
+                  isSketch
+                    ? {
+                        borderColor: sketchPalette.markerDark,
+                        color: sketchPalette.ink,
+                        fontFamily: theme.fontFamily,
+                      }
+                    : undefined
+                }
               />
               <div className="max-h-72 space-y-1 overflow-auto pr-1">
                 {searchResults.slice(0, 14).map((result) => (
@@ -242,7 +286,11 @@ export function BrainstormTopBar({
                     key={`${result.brainstormId}-${result.ideaId ?? "title"}`}
                     type="button"
                     onClick={() => onFocusSearchResult(result.brainstormId, result.ideaId)}
-                    className="block w-full rounded-2xl px-3 py-2 text-left text-xs hover:bg-card/70"
+                    className={cn(
+                      "block w-full px-3 py-2 text-left text-xs transition",
+                      isSketch ? "border-2" : "rounded-2xl hover:bg-card/70",
+                    )}
+                    style={isSketch ? sketchButtonStyle : undefined}
                   >
                     <span className="block truncate font-semibold">{result.label}</span>
                     <span className="block truncate text-[10px] text-muted-foreground">

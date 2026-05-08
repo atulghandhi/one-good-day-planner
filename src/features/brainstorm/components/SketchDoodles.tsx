@@ -7,7 +7,7 @@ export function SketchDoodles({ palette }: { palette: SketchPalette }) {
       className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
       style={{ color: palette.doodle }}
     >
-      <svg className="absolute -left-4 top-4 h-36 w-36" viewBox="0 0 144 144" fill="none">
+      <svg className="absolute left-4 top-[48%] h-28 w-28" viewBox="0 0 144 144" fill="none">
         {Array.from({ length: 18 }).map((_, index) => (
           <path
             key={index}
@@ -19,7 +19,7 @@ export function SketchDoodles({ palette }: { palette: SketchPalette }) {
           />
         ))}
       </svg>
-      <svg className="absolute right-5 top-4 h-24 w-52" viewBox="0 0 208 96" fill="none">
+      <svg className="absolute right-6 top-24 h-24 w-52" viewBox="0 0 208 96" fill="none">
         <path
           d="M8 54 C22 8 36 88 50 24 C64 -6 78 82 92 18 C108 -10 120 82 134 18 C148 -8 162 82 176 18 C190 -4 198 52 204 38"
           stroke="currentColor"

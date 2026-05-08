@@ -354,3 +354,42 @@ export function controlStyle(
     color: sketchPalette.ink,
   };
 }
+
+export function floatingPanelStyle(
+  shape: ShapeKey,
+  theme: ShapeTheme,
+  sketchPalette?: SketchPalette,
+): CSSProperties {
+  const base = controlStyle(shape, theme, sketchPalette);
+  if (shape !== "blob" || !sketchPalette) return base;
+
+  return {
+    ...base,
+    borderRadius: "28px 24px 30px 22px / 24px 30px 22px 28px",
+    boxShadow: `4px 5px 0 ${sketchPalette.shadow}`,
+  };
+}
+
+export function sketchChipStyle(
+  shape: ShapeKey,
+  theme: ShapeTheme,
+  sketchPalette?: SketchPalette,
+  active = false,
+): CSSProperties {
+  const base = {
+    ...shapeStyle(shape),
+    fontFamily: theme.fontFamily,
+  };
+
+  if (shape !== "blob" || !sketchPalette) return base;
+
+  return {
+    ...base,
+    backgroundColor: active ? sketchPalette.markerGlow : sketchPalette.card,
+    borderColor: active
+      ? sketchPalette.markerDark
+      : `color-mix(in oklab, ${sketchPalette.ink} 35%, transparent)`,
+    boxShadow: active ? `2px 3px 0 ${sketchPalette.shadow}` : "none",
+    color: sketchPalette.ink,
+  };
+}

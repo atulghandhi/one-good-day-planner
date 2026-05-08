@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Check, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { controlStyle } from "../theme";
+import { controlStyle, sketchChipStyle } from "../theme";
 import type { Idea, ShapeKey, ShapeTheme, SketchPalette } from "../types";
 
 type NodeActionBarProps = {
@@ -21,6 +21,18 @@ export function NodeActionBar({
   onSendToPlanner,
   onUpdateIdea,
 }: NodeActionBarProps) {
+  const isSketch = shape === "blob";
+  const chipStyle = sketchChipStyle(shape, theme, sketchPalette);
+  const activeChipStyle = sketchChipStyle(shape, theme, sketchPalette, true);
+  const actionButtonClass = cn(
+    "h-9 border-2 px-3 text-xs font-bold transition",
+    isSketch ? "" : "rounded-full border-0 bg-card/80 text-[11px] hover:bg-card",
+  );
+  const activeButtonClass = cn(
+    "h-9 border-2 px-3 text-xs font-bold capitalize transition",
+    isSketch ? "" : "rounded-full border-0 text-[11px]",
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8, scale: 0.96 }}
@@ -28,15 +40,20 @@ export function NodeActionBar({
       exit={{ opacity: 0, y: 8, scale: 0.96 }}
       transition={{ type: "spring", stiffness: 280, damping: 22 }}
       className={cn(
-        "mx-auto mb-2 flex w-fit flex-wrap items-center justify-center gap-1.5 p-1.5 shadow-pop backdrop-blur",
-        theme.controlClassName,
+        "mx-auto mb-2 flex w-fit flex-wrap items-center justify-center",
+        isSketch
+          ? "gap-2 p-0"
+          : cn("gap-1.5 p-1.5 shadow-pop backdrop-blur", theme.controlClassName),
       )}
-      style={controlStyle(shape, theme, sketchPalette)}
+      style={
+        isSketch ? { fontFamily: theme.fontFamily } : controlStyle(shape, theme, sketchPalette)
+      }
     >
       <button
         type="button"
         onClick={() => onSendToPlanner("mit")}
-        className="inline-flex h-8 items-center gap-1 rounded-full bg-card/80 px-2.5 text-[11px] font-bold hover:bg-card"
+        className={cn("inline-flex items-center gap-1", actionButtonClass)}
+        style={isSketch ? chipStyle : undefined}
       >
         <Send className="h-3 w-3" />
         MIT
@@ -44,18 +61,20 @@ export function NodeActionBar({
       <button
         type="button"
         onClick={() => onSendToPlanner("should")}
-        className="h-8 rounded-full bg-card/80 px-2.5 text-[11px] font-bold hover:bg-card"
+        className={actionButtonClass}
+        style={isSketch ? chipStyle : undefined}
       >
         Should
       </button>
       <button
         type="button"
         onClick={() => onSendToPlanner("could")}
-        className="h-8 rounded-full bg-card/80 px-2.5 text-[11px] font-bold hover:bg-card"
+        className={actionButtonClass}
+        style={isSketch ? chipStyle : undefined}
       >
         Could
       </button>
-      <span className="mx-0.5 h-5 w-px bg-border/60" aria-hidden />
+      <span className="mx-0.5 h-7 w-px bg-current/20" aria-hidden />
       {(["idea", "task", "note", "decision"] as const).map((kind) => (
         <button
           key={kind}
@@ -67,11 +86,19 @@ export function NodeActionBar({
             }))
           }
           className={cn(
-            "h-8 rounded-full px-2.5 text-[11px] font-bold capitalize transition",
-            (focusedIdea.kind ?? "idea") === kind
-              ? "bg-[color:var(--mit)]/30 text-foreground"
-              : "bg-card/60 text-muted-foreground hover:bg-card",
+            activeButtonClass,
+            !isSketch &&
+              ((focusedIdea.kind ?? "idea") === kind
+                ? "bg-[color:var(--mit)]/30 text-foreground"
+                : "bg-card/60 text-muted-foreground hover:bg-card"),
           )}
+          style={
+            isSketch
+              ? (focusedIdea.kind ?? "idea") === kind
+                ? activeChipStyle
+                : chipStyle
+              : undefined
+          }
         >
           {kind}
         </button>
@@ -87,11 +114,17 @@ export function NodeActionBar({
             }))
           }
           className={cn(
-            "grid h-8 w-8 place-items-center rounded-full transition",
-            focusedIdea.done
-              ? "bg-[color:var(--mit)] text-[color:var(--mit-foreground)]"
-              : "bg-card/80 text-muted-foreground hover:bg-card",
+            "grid h-9 w-9 place-items-center border-2 transition",
+            isSketch
+              ? ""
+              : cn(
+                  "rounded-full border-0",
+                  focusedIdea.done
+                    ? "bg-[color:var(--mit)] text-[color:var(--mit-foreground)]"
+                    : "bg-card/80 text-muted-foreground hover:bg-card",
+                ),
           )}
+          style={isSketch ? (focusedIdea.done ? activeChipStyle : chipStyle) : undefined}
           aria-label={focusedIdea.done ? "Mark node open" : "Mark node done"}
           title={focusedIdea.done ? "Done" : "Mark done"}
         >

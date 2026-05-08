@@ -191,13 +191,26 @@ export function IdeaNode({
           {(idea.kind || idea.done) && !isEditing && (
             <span
               className={cn(
-                "absolute -left-2 -top-2 z-20 inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[9px] font-black uppercase tracking-wide shadow-soft",
-                idea.done
-                  ? "bg-[color:var(--mit)] text-[color:var(--mit-foreground)]"
-                  : "bg-card/95 text-muted-foreground",
+                "absolute -left-2 -top-2 z-20 inline-flex h-6 min-w-6 items-center justify-center px-1.5 text-[9px] font-black uppercase tracking-wide",
+                isSketch
+                  ? ""
+                  : cn(
+                      "rounded-full shadow-soft",
+                      idea.done
+                        ? "bg-[color:var(--mit)] text-[color:var(--mit-foreground)]"
+                        : "bg-card/95 text-muted-foreground",
+                    ),
               )}
               style={{
+                ...(isSketch ? shapeStyle(shape) : undefined),
+                backgroundColor: isSketch
+                  ? idea.done
+                    ? sketchMarker.markerGlow
+                    : sketchPalette.card
+                  : undefined,
                 border: isSketch ? `2px solid ${sketchMarker.markerDark}` : undefined,
+                boxShadow: isSketch ? `1px 2px 0 ${sketchPalette.shadow}` : undefined,
+                color: isSketch ? sketchPalette.ink : undefined,
               }}
             >
               {idea.done ? "✓" : idea.kind}
