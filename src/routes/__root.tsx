@@ -1,4 +1,12 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+  Outlet,
+  Link,
+  createRootRoute,
+  HeadContent,
+  Scripts,
+  useNavigate,
+  useLocation,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
