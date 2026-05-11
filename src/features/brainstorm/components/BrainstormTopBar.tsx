@@ -1,8 +1,15 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Copy, Layers, Plus, RotateCcw, Search, Share2, Trash2 } from "lucide-react";
 import { ThemePicker } from "@/components/ThemePicker";
 import { cn } from "@/lib/utils";
+import {
+  BOARD_ACCENT_PRESETS,
+  BOARD_EMOJI_PRESETS,
+  DEFAULT_BOARD_ACCENT,
+  DEFAULT_BOARD_EMOJI,
+} from "../constants";
 import { controlStyle, floatingPanelStyle, shapeStyle, sketchChipStyle } from "../theme";
 import type { BrainstormSearchResult } from "../search";
 import type { BrainstormLibrary, ShapeKey, ShapeTheme, SketchPalette } from "../types";
