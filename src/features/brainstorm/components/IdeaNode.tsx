@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,8 @@ import { toCanvasPoint } from "../canvas";
 import { depthLevel, ideaFontSize } from "../graph";
 import { shapeStyle } from "../theme";
 import type { Idea, Placed, ShapeKey, ShapeTheme, SketchMarker, SketchPalette } from "../types";
+
+const DOUBLE_CLICK_MS = 320;
 
 export type IdeaNodeProps = {
   idea: Idea;
@@ -46,13 +48,31 @@ export function IdeaNode({
   onStartDrag,
 }: IdeaNodeProps) {
   const [draftText, setDraftText] = useState(idea.text);
+  const editInputRef = useRef<HTMLInputElement>(null);
+  const lastPointerDownAtRef = useRef<number | null>(null);
+  const suppressNextClickRef = useRef(false);
 
   useEffect(() => setDraftText(idea.text), [idea.text]);
+  useEffect(() => {
+    if (!isEditing) return;
+    requestAnimationFrame(() => {
+      editInputRef.current?.focus();
+      editInputRef.current?.select();
+    });
+  }, [isEditing]);
 
   const commit = () => {
     const text = draftText.trim();
     if (text) onCommitEdit(text);
-    else setDraftText(idea.text);
+    else {
+      setDraftText(idea.text);
+      onCommitEdit(idea.text);
+    }
+  };
+
+  const startEditing = (options: { suppressNextClick?: boolean } = {}) => {
+    suppressNextClickRef.current = options.suppressNextClick ?? false;
+    onStartEdit();
   };
 
   const canvasPoint = toCanvasPoint(placement);
@@ -114,14 +134,35 @@ export function IdeaNode({
       >
         <div
           onPointerDown={(event) => {
-            if (event.detail > 1) {
+            const now = performance.now();
+            const lastPointerDownAt = lastPointerDownAtRef.current;
+            const isDoublePress =
+              event.detail > 1 ||
+              (lastPointerDownAt !== null && now - lastPointerDownAt < DOUBLE_CLICK_MS);
+            lastPointerDownAtRef.current = now;
+
+            if (isDoublePress) {
+              event.preventDefault();
               event.stopPropagation();
-              onStartEdit();
+              startEditing({ suppressNextClick: true });
               return;
             }
             onStartDrag(event);
           }}
           onClick={(event) => {
+            if (event.detail > 1) {
+              suppressNextClickRef.current = false;
+              event.preventDefault();
+              event.stopPropagation();
+              onStartEdit();
+              return;
+            }
+            if (suppressNextClickRef.current) {
+              suppressNextClickRef.current = false;
+              event.preventDefault();
+              event.stopPropagation();
+              return;
+            }
             if (isEditing) return;
             event.stopPropagation();
             onSelect();
@@ -129,6 +170,7 @@ export function IdeaNode({
           onDoubleClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
+            suppressNextClickRef.current = false;
             onStartEdit();
           }}
           className={cn(
@@ -218,7 +260,7 @@ export function IdeaNode({
           )}
           {isEditing ? (
             <input
-              autoFocus
+              ref={editInputRef}
               value={draftText}
               onChange={(event) => setDraftText(event.target.value)}
               onBlur={commit}
@@ -233,7 +275,7 @@ export function IdeaNode({
               }}
               onPointerDown={(event) => event.stopPropagation()}
               onClick={(event) => event.stopPropagation()}
-              className="w-full bg-transparent text-center outline-none"
+              className="w-full cursor-text select-text bg-transparent text-center outline-none"
               style={{ fontFamily: theme.fontFamily, minWidth: 60 }}
             />
           ) : (

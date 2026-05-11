@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { connectorPathFromPoints } from "./canvas";
 import { CENTER_BOX } from "./constants";
 import { computeDepthMap } from "./graph";
+import {
+  EMPTY_BRAINSTORM_HISTORY,
+  recordBrainstormHistory,
+  redoBrainstormHistory,
+  undoBrainstormHistory,
+} from "./history";
 import { layoutIdeas } from "./layout";
 import { buildTodayBrainstorm, toMitHtml } from "./plannerImport";
 import { createPlannerSendUpdate } from "./plannerBridge";
@@ -111,6 +117,34 @@ describe("brainstorm domain", () => {
     expect(connectorPathFromPoints(start, end, "curve", 0)).toContain("Q");
     expect(connectorPathFromPoints(start, end, "orthogonal", 0)).toContain("H");
     expect(connectorPathFromPoints(start, end, "sketch", 0)).toContain("C");
+  });
+
+  it("records undo and redo history without mutating saved snapshots", () => {
+    const before: BrainstormState = {
+      version: 3,
+      title: "Options",
+      shape: "blob",
+      ideas: [],
+    };
+    const after: BrainstormState = {
+      ...before,
+      ideas: [{ id: "a", text: "Idea" }],
+    };
+
+    const history = recordBrainstormHistory(EMPTY_BRAINSTORM_HISTORY, before, after);
+    before.title = "Mutated after snapshot";
+    after.ideas[0].text = "Changed after snapshot";
+
+    const undone = undoBrainstormHistory(history, after);
+    expect(undone.state).toEqual({
+      version: 3,
+      title: "Options",
+      shape: "blob",
+      ideas: [],
+    });
+
+    const redone = redoBrainstormHistory(undone.history, before);
+    expect(redone.state?.ideas).toEqual([{ id: "a", text: "Changed after snapshot" }]);
   });
 
   it("maps today planner data into a nested brainstorm", () => {

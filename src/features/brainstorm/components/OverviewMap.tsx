@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import type React from "react";
+import { useMemo, useRef } from "react";
 import { CENTER_BOX, WORLD_CENTER } from "../constants";
 import { clamp } from "../math";
 import type { CanvasView, Idea, Placed } from "../types";
@@ -20,6 +21,7 @@ export function OverviewMap({
   viewportStroke,
   onFocusWorldPoint,
 }: OverviewMapProps) {
+  const draggingRef = useRef(false);
   const mapW = 190;
   const mapH = 132;
   const bounds = useMemo(() => {
@@ -62,11 +64,27 @@ export function OverviewMap({
     w: clamp(visible.w * scale, 8, mapW - 8),
     h: clamp(visible.h * scale, 8, mapH - 8),
   };
+  const focusFromPointer = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const localX = clamp(event.clientX - rect.left, 0, mapW);
+    const localY = clamp(event.clientY - rect.top, 0, mapH);
+    onFocusWorldPoint({
+      x: (localX - offsetX) / scale + bounds.minX,
+      y: (localY - offsetY) / scale + bounds.minY,
+    });
+  };
+
+  const stopDragging = (event: React.PointerEvent<HTMLButtonElement>) => {
+    draggingRef.current = false;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
 
   return (
     <button
       type="button"
-      className="absolute bottom-5 left-5 z-40 block border-2 border-foreground/25 bg-card/90 p-2 text-left shadow-[4px_4px_0_color-mix(in_oklab,var(--mit)_24%,transparent)] backdrop-blur"
+      className="absolute bottom-5 left-5 z-40 block cursor-crosshair border-2 border-foreground/25 bg-card/90 p-2 text-left shadow-[4px_4px_0_color-mix(in_oklab,var(--mit)_24%,transparent)] backdrop-blur active:cursor-grabbing"
       style={{
         borderRadius: 3,
         fontFamily:
@@ -75,15 +93,30 @@ export function OverviewMap({
         height: mapH,
       }}
       aria-label="Overview map"
+      onPointerDown={(event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        draggingRef.current = true;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        focusFromPointer(event);
+      }}
+      onPointerMove={(event) => {
+        if (!draggingRef.current) return;
+        event.preventDefault();
+        event.stopPropagation();
+        focusFromPointer(event);
+      }}
+      onPointerUp={(event) => {
+        event.stopPropagation();
+        stopDragging(event);
+      }}
+      onPointerCancel={(event) => {
+        event.stopPropagation();
+        stopDragging(event);
+      }}
       onClick={(event) => {
         event.stopPropagation();
-        const rect = event.currentTarget.getBoundingClientRect();
-        const localX = event.clientX - rect.left;
-        const localY = event.clientY - rect.top;
-        onFocusWorldPoint({
-          x: (localX - offsetX) / scale + bounds.minX,
-          y: (localY - offsetY) / scale + bounds.minY,
-        });
       }}
     >
       <svg aria-hidden className="h-full w-full overflow-visible" viewBox={`0 0 ${mapW} ${mapH}`}>

@@ -22,6 +22,13 @@ import { SketchDoodles } from "@/features/brainstorm/components/SketchDoodles";
 import { TitleNode } from "@/features/brainstorm/components/TitleNode";
 import { ZoomControls } from "@/features/brainstorm/components/ZoomControls";
 import { computeDepthMap } from "@/features/brainstorm/graph";
+import {
+  EMPTY_BRAINSTORM_HISTORY,
+  recordBrainstormHistory,
+  redoBrainstormHistory,
+  undoBrainstormHistory,
+  type BrainstormHistory,
+} from "@/features/brainstorm/history";
 import { useBrainstormLibrary } from "@/features/brainstorm/hooks/useBrainstormLibrary";
 import { estimateCardSize, findOpenSpot, layoutIdeas } from "@/features/brainstorm/layout";
 import { clamp } from "@/features/brainstorm/math";
@@ -34,7 +41,7 @@ import { buildTodayBrainstorm } from "@/features/brainstorm/plannerImport";
 import { decodeBrainstormShare, encodeBrainstormShare } from "@/features/brainstorm/sharing";
 import { useBrainstormSearch } from "@/features/brainstorm/search";
 import { SHAPE_THEMES, SKETCH_PALETTES } from "@/features/brainstorm/theme";
-import type { CanvasView, Idea, Placed } from "@/features/brainstorm/types";
+import type { BrainstormState, CanvasView, Idea, Placed } from "@/features/brainstorm/types";
 import { loadState, saveState } from "@/features/planner/storage";
 import type { TaskItem } from "@/features/planner/types";
 import { cn } from "@/lib/utils";
@@ -57,6 +64,14 @@ type Interaction =
       startY: number;
       moved: boolean;
     };
+
+function isEditableShortcutTarget(target: EventTarget | null) {
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    (target instanceof HTMLElement && target.isContentEditable)
+  );
+}
 
 export function Brainstorm() {
   const [draft, setDraft] = useState("");
@@ -97,9 +112,13 @@ export function Brainstorm() {
   const pendingDragRef = useRef<typeof dragLive>(null);
   const dragRafRef = useRef(0);
   const cameraRafRef = useRef(0);
+  const inputFocusRafRef = useRef(0);
   const routeImportRef = useRef(false);
   const ignoreNextClickRef = useRef(false);
   const ignoreNextNodeClickRef = useRef(false);
+  const stateRef = useRef<BrainstormState>(EMPTY);
+  const activeBrainstormIdRef = useRef("");
+  const historyByIdRef = useRef(new Map<string, BrainstormHistory>());
 
   const showNotice = useCallback((message: string) => {
     setNotice(message);
@@ -135,9 +154,67 @@ export function Brainstorm() {
     onNewDocument: resetNewDocumentUi,
   });
 
+  stateRef.current = state;
+  activeBrainstormIdRef.current = library.activeId;
+
   const shape = state.shape;
   const theme = SHAPE_THEMES[shape];
   const sketchPalette = SKETCH_PALETTES[pageTheme] ?? SKETCH_PALETTES.blossom;
+
+  const updateBrainstormState = useCallback(
+    (update: BrainstormState | ((current: BrainstormState) => BrainstormState)) => {
+      const activeId = activeBrainstormIdRef.current;
+      const current = stateRef.current;
+      const next = typeof update === "function" ? update(current) : update;
+      const history = activeId
+        ? (historyByIdRef.current.get(activeId) ?? EMPTY_BRAINSTORM_HISTORY)
+        : EMPTY_BRAINSTORM_HISTORY;
+
+      if (activeId) {
+        historyByIdRef.current.set(activeId, recordBrainstormHistory(history, current, next));
+      }
+
+      setState(next);
+    },
+    [setState],
+  );
+
+  const applyBrainstormHistory = useCallback(
+    (
+      applyHistory: (
+        history: BrainstormHistory,
+        current: BrainstormState,
+      ) => { history: BrainstormHistory; state: BrainstormState | null },
+    ) => {
+      const activeId = activeBrainstormIdRef.current;
+      if (!activeId) return false;
+
+      const history = historyByIdRef.current.get(activeId) ?? EMPTY_BRAINSTORM_HISTORY;
+      const result = applyHistory(history, stateRef.current);
+      if (!result.state) return false;
+
+      historyByIdRef.current.set(activeId, result.history);
+      setFocusedId(null);
+      setEditingId(null);
+      setCenterActive(false);
+      setPendingMitOverwrite(null);
+      setDragLive(null);
+      setLastAddedId(null);
+      setState(result.state);
+      return true;
+    },
+    [setState],
+  );
+
+  const undoBrainstorm = useCallback(
+    () => applyBrainstormHistory(undoBrainstormHistory),
+    [applyBrainstormHistory],
+  );
+
+  const redoBrainstorm = useCallback(
+    () => applyBrainstormHistory(redoBrainstormHistory),
+    [applyBrainstormHistory],
+  );
 
   useEffect(() => {
     if (!hydrated || routeImportRef.current || typeof window === "undefined") return;
@@ -209,9 +286,24 @@ export function Brainstorm() {
     () => () => {
       if (dragRafRef.current) cancelAnimationFrame(dragRafRef.current);
       if (cameraRafRef.current) cancelAnimationFrame(cameraRafRef.current);
+      if (inputFocusRafRef.current) cancelAnimationFrame(inputFocusRafRef.current);
     },
     [],
   );
+
+  const cancelIdeaInputFocus = useCallback(() => {
+    if (!inputFocusRafRef.current) return;
+    cancelAnimationFrame(inputFocusRafRef.current);
+    inputFocusRafRef.current = 0;
+  }, []);
+
+  const focusIdeaInput = useCallback(() => {
+    cancelIdeaInputFocus();
+    inputFocusRafRef.current = requestAnimationFrame(() => {
+      inputFocusRafRef.current = 0;
+      inputRef.current?.focus();
+    });
+  }, [cancelIdeaInputFocus]);
 
   const depthById = useMemo(() => computeDepthMap(state.ideas), [state.ideas]);
   const placements = useMemo(() => layoutIdeas(state.ideas, shape), [shape, state.ideas]);
@@ -318,9 +410,9 @@ export function Brainstorm() {
       setFocusedId(id);
       setCenterActive(false);
       if (options.center) focusBoxes(getBranchBoxes(id));
-      requestAnimationFrame(() => inputRef.current?.focus());
+      focusIdeaInput();
     },
-    [focusBoxes, getBranchBoxes],
+    [focusBoxes, focusIdeaInput, getBranchBoxes],
   );
 
   const screenToWorld = useCallback((clientX: number, clientY: number) => {
@@ -383,7 +475,7 @@ export function Brainstorm() {
     ).length;
     const placement = findOpenSpot(parent, size, occupied, siblingIndex, shape, preferredAngle);
 
-    setState((current) => ({
+    updateBrainstormState((current) => ({
       ...current,
       ideas: [
         ...current.ideas,
@@ -401,11 +493,11 @@ export function Brainstorm() {
     if (parentId) {
       focusBoxes(getBranchBoxes(parentId, [placement]));
     }
-    requestAnimationFrame(() => inputRef.current?.focus());
+    focusIdeaInput();
   };
 
   const removeIdea = (id: string) => {
-    setState((current) => ({
+    updateBrainstormState((current) => ({
       ...current,
       ideas: current.ideas
         .filter((idea) => idea.id !== id)
@@ -417,15 +509,23 @@ export function Brainstorm() {
   };
 
   const commitEdit = (id: string, text: string) => {
-    setState((current) => ({
+    updateBrainstormState((current) => ({
       ...current,
       ideas: current.ideas.map((idea) => (idea.id === id ? { ...idea, text } : idea)),
     }));
     setEditingId(null);
   };
 
+  const startEditingIdea = useCallback(
+    (id: string) => {
+      cancelIdeaInputFocus();
+      setEditingId(id);
+    },
+    [cancelIdeaInputFocus],
+  );
+
   const persistDraggedIdea = (id: string, x: number, y: number) => {
-    setState((current) => ({
+    updateBrainstormState((current) => ({
       ...current,
       ideas: current.ideas.map((idea) => (idea.id === id ? { ...idea, cx: x, cy: y } : idea)),
     }));
@@ -628,6 +728,26 @@ export function Brainstorm() {
     return () => window.removeEventListener("keydown", handleKeyZoom, { capture: true });
   }, [fitChart, zoomBy]);
 
+  useEffect(() => {
+    const handleHistoryShortcut = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || !(event.metaKey || event.ctrlKey)) return;
+      const isEmptyIdeaInput = event.target === inputRef.current && draft.length === 0;
+      if (isEditableShortcutTarget(event.target) && !isEmptyIdeaInput) return;
+
+      const key = event.key.toLowerCase();
+      const isUndo = key === "z" && !event.shiftKey;
+      const isRedo = key === "z" && event.shiftKey;
+      if (!isUndo && !isRedo) return;
+
+      event.preventDefault();
+      const changed = isUndo ? undoBrainstorm() : redoBrainstorm();
+      if (changed) showNotice(isUndo ? "Undone" : "Redone");
+    };
+
+    window.addEventListener("keydown", handleHistoryShortcut, { capture: true });
+    return () => window.removeEventListener("keydown", handleHistoryShortcut, { capture: true });
+  }, [draft.length, redoBrainstorm, showNotice, undoBrainstorm]);
+
   const clearCanvasSelection = () => {
     if (ignoreNextClickRef.current) {
       ignoreNextClickRef.current = false;
@@ -663,7 +783,7 @@ export function Brainstorm() {
 
   const updateFocusedIdea = (update: (idea: Idea) => Idea) => {
     if (!focusedId) return;
-    setState((current) => ({
+    updateBrainstormState((current) => ({
       ...current,
       ideas: current.ideas.map((idea) => (idea.id === focusedId ? update(idea) : idea)),
     }));
@@ -825,13 +945,13 @@ export function Brainstorm() {
               setCenterActive(true);
             }}
             onTitleChange={(title) =>
-              setState((current) => ({
+              updateBrainstormState((current) => ({
                 ...current,
                 title,
               }))
             }
             onShapeChange={(nextShape) =>
-              setState((current) => ({
+              updateBrainstormState((current) => ({
                 ...current,
                 shape: nextShape,
               }))
@@ -851,7 +971,7 @@ export function Brainstorm() {
             ignoreNextNodeClickRef={ignoreNextNodeClickRef}
             onRemoveIdea={removeIdea}
             onSelectIdea={(id) => selectIdea(id, { center: true })}
-            onStartEdit={setEditingId}
+            onStartEdit={startEditingIdea}
             onCommitEdit={commitEdit}
             onStartDrag={handleNodePointerDown}
           />{" "}
@@ -908,7 +1028,7 @@ export function Brainstorm() {
         open={confirmOpen}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
-          setState(EMPTY);
+          updateBrainstormState(EMPTY);
           setFocusedId(null);
           setEditingId(null);
           setDragLive(null);
