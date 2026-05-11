@@ -1,10 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export function useDebouncedEffect(
-  effect: () => void,
-  deps: unknown[],
-  delay = 400,
-) {
+export function useDebouncedEffect(effect: () => void, deps: unknown[], delay = 400) {
   const cb = useRef(effect);
   cb.current = effect;
 
