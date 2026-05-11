@@ -18,8 +18,6 @@ export type BrainstormState = {
   title: string;
   ideas: Idea[];
   shape: ShapeKey;
-  emoji?: string;
-  accent?: string;
 };
 
 export type BrainstormDoc = BrainstormState & {

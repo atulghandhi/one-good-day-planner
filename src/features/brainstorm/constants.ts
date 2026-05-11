@@ -30,35 +30,6 @@ export const SHAPES: { key: ShapeKey; label: string }[] = [
 
 export const VALID_SHAPES = new Set<ShapeKey>(SHAPES.map((shape) => shape.key));
 
-export const BOARD_EMOJI_PRESETS = [
-  "💡",
-  "✨",
-  "🎯",
-  "🚀",
-  "🌱",
-  "🔥",
-  "🧩",
-  "📝",
-  "🎨",
-  "🌊",
-  "⭐",
-  "🍀",
-];
-
-export const BOARD_ACCENT_PRESETS = [
-  "#f472b6", // pink
-  "#fb923c", // orange
-  "#fbbf24", // amber
-  "#34d399", // emerald
-  "#22d3ee", // cyan
-  "#60a5fa", // blue
-  "#a78bfa", // violet
-  "#94a3b8", // slate
-];
-
-export const DEFAULT_BOARD_EMOJI = "💡";
-export const DEFAULT_BOARD_ACCENT = "#a78bfa";
-
 export const WORLD_SIZE = 6200;
 export const WORLD_CENTER = WORLD_SIZE / 2;
 export const MIN_ZOOM = 0.35;

@@ -149,7 +149,6 @@ export function Brainstorm() {
     createNewBrainstorm,
     duplicateBrainstorm,
     deleteActiveBrainstorm,
-    updateBrainstormMeta,
   } = useBrainstormLibrary({
     showNotice,
     onDocumentChange: resetDocumentUi,
@@ -1025,7 +1024,6 @@ export function Brainstorm() {
         onCopyShareLink={() => void shareCurrentBrainstorm()}
         onDownloadBrainstorm={downloadCurrentBrainstorm}
         onOpenReset={() => setConfirmOpen(true)}
-        onUpdateBrainstormMeta={updateBrainstormMeta}
       />
 
       <NoticeToast notice={notice} shape={shape} theme={theme} sketchPalette={sketchPalette} />
