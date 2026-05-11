@@ -148,6 +148,7 @@ export function Brainstorm() {
     createNewBrainstorm,
     duplicateBrainstorm,
     deleteActiveBrainstorm,
+    updateBrainstormMeta,
   } = useBrainstormLibrary({
     showNotice,
     onDocumentChange: resetDocumentUi,
