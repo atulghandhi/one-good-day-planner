@@ -3,6 +3,10 @@ import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 
+const APP_DESCRIPTION =
+  "A lightweight daily planner and brainstorm canvas for choosing what matters today, catching ideas, and keeping momentum without accounts or clutter.";
+const SOCIAL_IMAGE = "/og-image.png";
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -33,34 +37,27 @@ export const Route = createRootRoute({
       { title: "One Good Day" },
       {
         name: "description",
-        content:
-          "One Good Day - lightweight daily planning app with 'most important task', 'shoulds' and 'coulds'. Daily planner for ADHD or increased productivity.",
+        content: APP_DESCRIPTION,
       },
       { name: "author", content: "One Good Day" },
+      { property: "og:site_name", content: "One Good Day" },
       { property: "og:title", content: "One Good Day" },
       {
         property: "og:description",
-        content:
-          "One Good Day - lightweight daily planning app with 'most important task', 'shoulds' and 'coulds'. Daily planner for ADHD or increased productivity.",
+        content: APP_DESCRIPTION,
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "One Good Day" },
       {
         name: "twitter:description",
-        content:
-          "One Good Day - lightweight daily planning app with 'most important task', 'shoulds' and 'coulds'. Daily planner for ADHD or increased productivity.",
+        content: APP_DESCRIPTION,
       },
-      {
-        property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6a970a7c-e24a-4730-855f-66d78997ef2a/id-preview-4495c1b8--a71304b9-30e3-438d-a99c-7d32d9297f2c.lovable.app-1776685159283.png",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6a970a7c-e24a-4730-855f-66d78997ef2a/id-preview-4495c1b8--a71304b9-30e3-438d-a99c-7d32d9297f2c.lovable.app-1776685159283.png",
-      },
+      { property: "og:image", content: SOCIAL_IMAGE },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "One Good Day planner and brainstorm canvas" },
+      { name: "twitter:image", content: SOCIAL_IMAGE },
     ],
     links: [
       {
@@ -99,22 +96,65 @@ function RootComponent() {
 
 function LovableBadgeBlocker() {
   useEffect(() => {
+    const isCloseOnlyControl = (element: HTMLElement) => {
+      const label = [
+        element.innerText,
+        element.textContent,
+        element.getAttribute("aria-label"),
+        element.getAttribute("title"),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim()
+        .toLowerCase();
+
+      if (!["x", "×", "close", "close dialog", "dismiss", "✕"].includes(label)) return false;
+
+      const style = window.getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      const nearRight = window.innerWidth - rect.right < 96;
+      const nearBottom = window.innerHeight - rect.bottom < 96;
+
+      return (
+        style.position === "fixed" &&
+        nearRight &&
+        nearBottom &&
+        rect.width <= 96 &&
+        rect.height <= 96
+      );
+    };
+
     const looksLikeLovableBadge = (element: Element) => {
       if (!(element instanceof HTMLElement)) return false;
       const text = element.innerText?.trim().toLowerCase() ?? "";
       const href = element instanceof HTMLAnchorElement ? element.href.toLowerCase() : "";
       const aria = element.getAttribute("aria-label")?.toLowerCase() ?? "";
+      const title = element.getAttribute("title")?.toLowerCase() ?? "";
+      const className = element.getAttribute("class")?.toLowerCase() ?? "";
+      const id = element.id?.toLowerCase() ?? "";
+      const testId = element.getAttribute("data-testid")?.toLowerCase() ?? "";
+      const source = element instanceof HTMLIFrameElement ? element.src.toLowerCase() : "";
+
       return (
         text.includes("edit with lovable") ||
         aria.includes("edit with lovable") ||
-        href.includes("lovable.dev")
+        title.includes("edit with lovable") ||
+        href.includes("lovable.dev") ||
+        source.includes("lovable") ||
+        className.includes("lovable") ||
+        id.includes("lovable") ||
+        testId.includes("lovable") ||
+        isCloseOnlyControl(element)
       );
     };
 
     const removeLovableBadges = () => {
-      document.querySelectorAll("a, button, iframe, div").forEach((element) => {
+      document.querySelectorAll("a, button, iframe, div, aside").forEach((element) => {
         if (!looksLikeLovableBadge(element)) return;
-        const host = element.closest("div") ?? element;
+        const host =
+          element.closest('[id*="lovable" i], [class*="lovable" i], [data-testid*="lovable" i]') ??
+          element.closest("div") ??
+          element;
         host.remove();
       });
     };

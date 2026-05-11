@@ -196,7 +196,11 @@
 
 a[href*="lovable.dev"],
 iframe[src*="lovable.dev"],
-div:has(> a[href*="lovable.dev"]) {
+[id*="lovable" i],
+[class*="lovable" i],
+[data-testid*="lovable" i],
+div:has(> a[href*="lovable.dev"]),
+body > button[style*="position: fixed"][style*="bottom"][style*="right"] {
   display: none !important;
 }
 
