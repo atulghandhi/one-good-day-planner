@@ -124,6 +124,14 @@ export function normalizeBrainstormState(raw: unknown): BrainstormState {
       idea.parentId && !ids.has(idea.parentId) ? { ...idea, parentId: undefined } : idea,
     ),
     shape: normalizeShape(parsed.shape),
+    emoji:
+      typeof parsed.emoji === "string" && parsed.emoji.trim()
+        ? parsed.emoji.trim().slice(0, 8)
+        : undefined,
+    accent:
+      typeof parsed.accent === "string" && /^#[0-9a-fA-F]{3,8}$/.test(parsed.accent.trim())
+        ? parsed.accent.trim()
+        : undefined,
   };
 }
 
