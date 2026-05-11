@@ -27,7 +27,7 @@ describe("brainstorm domain", () => {
       title: "A very long title that should be clipped before it turns into a paragraph",
       shape: "hex",
       ideas: [
-        { id: "a", text: "A", parentId: "missing", kind: "task", done: true },
+        { id: "a", text: "A", parentId: "missing", kind: "task", done: true, collapsed: true },
         { id: "a", text: "duplicate" },
         { id: "b", text: "B", parentId: "a", kind: "unknown" },
       ],
@@ -36,8 +36,8 @@ describe("brainstorm domain", () => {
     expect(state.shape).toBe("blob");
     expect(state.title.length).toBeLessThanOrEqual(64);
     expect(state.ideas).toEqual([
-      { id: "a", text: "A", parentId: undefined, kind: "task", done: true },
-      { id: "b", text: "B", parentId: "a", kind: undefined, done: false },
+      { id: "a", text: "A", parentId: undefined, kind: "task", done: true, collapsed: true },
+      { id: "b", text: "B", parentId: "a", kind: undefined, done: false, collapsed: false },
     ]);
   });
 
@@ -74,6 +74,7 @@ describe("brainstorm domain", () => {
           parentId: undefined,
           kind: undefined,
           done: false,
+          collapsed: false,
         },
       ],
     });

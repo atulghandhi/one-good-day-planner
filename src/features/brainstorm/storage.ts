@@ -110,6 +110,7 @@ export function normalizeBrainstormState(raw: unknown): BrainstormState {
               typeof idea.parentId === "string" && idea.parentId !== id ? idea.parentId : undefined,
             kind: normalizeIdeaKind(idea.kind),
             done: !!idea.done,
+            collapsed: !!idea.collapsed,
           },
         ];
       })

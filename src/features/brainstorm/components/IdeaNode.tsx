@@ -1,7 +1,7 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { ChevronDown, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toCanvasPoint } from "../canvas";
 import { depthLevel, ideaFontSize } from "../graph";
@@ -20,9 +20,13 @@ export type IdeaNodeProps = {
   sketchMarker: SketchMarker;
   isNew: boolean;
   isFocused: boolean;
+  isPathHighlighted: boolean;
+  isDimmed: boolean;
   isEditing: boolean;
   isDragging: boolean;
+  descendantCount: number;
   onRemove: () => void;
+  onToggleCollapse: () => void;
   onSelect: () => void;
   onStartEdit: () => void;
   onCommitEdit: (text: string) => void;
@@ -39,9 +43,13 @@ export function IdeaNode({
   sketchMarker,
   isNew,
   isFocused,
+  isPathHighlighted,
+  isDimmed,
   isEditing,
   isDragging,
+  descendantCount,
   onRemove,
+  onToggleCollapse,
   onSelect,
   onStartEdit,
   onCommitEdit,
@@ -94,6 +102,12 @@ export function IdeaNode({
         22,
         42 - level * 5,
       )}px -12px color-mix(in oklab, var(--mit) ${Math.max(20, 44 - level * 6)}%, transparent)`;
+  const pathShadow = isSketch
+    ? `0 0 0 ${Math.max(1.5, focusRing * 0.8)}px ${sketchMarker.markerDark}, 3px 5px 0 ${sketchPalette.shadow}`
+    : `0 0 0 ${Math.max(1, focusRing * 0.8)}px color-mix(in oklab, var(--mit) ${Math.max(
+        26,
+        44 - level * 5,
+      )}%, transparent), 0 8px 26px -18px color-mix(in oklab, var(--mit) 34%, transparent)`;
   const restingShadow = isSketch
     ? `3px 4px 0 ${sketchPalette.shadow}`
     : level === 0
@@ -187,10 +201,10 @@ export function IdeaNode({
             fontWeight,
             lineHeight: 1.2,
             border: nestedBorder,
-            boxShadow: isFocused ? focusedShadow : restingShadow,
+            boxShadow: isFocused ? focusedShadow : isPathHighlighted ? pathShadow : restingShadow,
             backgroundColor: isSketch ? sketchPalette.card : undefined,
             color: isSketch ? sketchPalette.ink : undefined,
-            opacity: idea.done ? 0.72 : 1,
+            opacity: isDimmed ? 0.3 : idea.done ? 0.72 : 1,
           }}
         >
           {isSketch && (
@@ -308,6 +322,33 @@ export function IdeaNode({
         >
           <X className="h-3 w-3" />
         </button>
+        {descendantCount > 0 && (
+          <button
+            type="button"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onToggleCollapse();
+            }}
+            className={cn(
+              "absolute -left-2 -bottom-2 z-20 grid h-6 min-w-6 place-items-center bg-background/95 px-1 text-muted-foreground opacity-0 shadow-soft transition group-hover:opacity-100 hover:text-foreground",
+              idea.collapsed && "opacity-100",
+              shape === "boxy" ? "rounded-[3px]" : "rounded-full",
+            )}
+            aria-label={idea.collapsed ? "Expand branch" : "Collapse branch"}
+            title={idea.collapsed ? "Expand branch" : "Collapse branch"}
+          >
+            <span className="flex items-center gap-0.5">
+              {idea.collapsed ? (
+                <ChevronRight className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
+              {idea.collapsed && <span className="text-[9px] font-bold">{descendantCount}</span>}
+            </span>
+          </button>
+        )}
       </motion.div>
     </div>
   );

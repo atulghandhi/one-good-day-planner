@@ -10,6 +10,7 @@ export type Idea = {
   parentId?: string;
   kind?: IdeaKind;
   done?: boolean;
+  collapsed?: boolean;
 };
 
 export type BrainstormState = {

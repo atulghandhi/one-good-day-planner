@@ -1,7 +1,19 @@
-import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Copy, Layers, Plus, RotateCcw, Search, Share2, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Copy,
+  Download,
+  Layers,
+  Link as LinkIcon,
+  Plus,
+  RotateCcw,
+  Search,
+  Share2,
+  Trash2,
+} from "lucide-react";
 import { ThemePicker } from "@/components/ThemePicker";
 import { cn } from "@/lib/utils";
 import {
@@ -32,7 +44,8 @@ type BrainstormTopBarProps = {
   onDeleteBrainstorm: () => void;
   onActivateBrainstorm: (id: string) => void;
   onFocusSearchResult: (brainstormId: string, ideaId: string | null) => void;
-  onShareBrainstorm: () => void;
+  onCopyShareLink: () => void;
+  onDownloadBrainstorm: () => void;
   onOpenReset: () => void;
   onUpdateBrainstormMeta: (id: string, meta: { emoji?: string; accent?: string }) => void;
 };
@@ -55,11 +68,15 @@ export function BrainstormTopBar({
   onDeleteBrainstorm,
   onActivateBrainstorm,
   onFocusSearchResult,
-  onShareBrainstorm,
+  onCopyShareLink,
+  onDownloadBrainstorm,
   onOpenReset,
   onUpdateBrainstormMeta,
 }: BrainstormTopBarProps) {
   const [editingMetaId, setEditingMetaId] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const libraryCloseTimer = useRef<number | null>(null);
+  const shareCloseTimer = useRef<number | null>(null);
   const isSketch = shape === "blob";
   const control = controlStyle(shape, theme, sketchPalette);
   const panel = floatingPanelStyle(shape, theme, sketchPalette);
@@ -69,6 +86,41 @@ export function BrainstormTopBar({
   );
   const sketchButtonStyle = sketchChipStyle(shape, theme, sketchPalette);
   const activeSketchButtonStyle = sketchChipStyle(shape, theme, sketchPalette, true);
+  const clearTimer = (timer: React.MutableRefObject<number | null>) => {
+    if (timer.current === null) return;
+    window.clearTimeout(timer.current);
+    timer.current = null;
+  };
+  const cancelLibraryClose = () => clearTimer(libraryCloseTimer);
+  const cancelShareClose = () => clearTimer(shareCloseTimer);
+  const scheduleLibraryClose = () => {
+    cancelLibraryClose();
+    libraryCloseTimer.current = window.setTimeout(() => onLibraryOpenChange(false), 2000);
+  };
+  const scheduleShareClose = () => {
+    cancelShareClose();
+    shareCloseTimer.current = window.setTimeout(() => setShareOpen(false), 2000);
+  };
+  const openLibrary = () => {
+    cancelLibraryClose();
+    onLibraryOpenChange(true);
+    onSearchOpenChange(false);
+    setShareOpen(false);
+  };
+  const openShare = () => {
+    cancelShareClose();
+    setShareOpen(true);
+    onLibraryOpenChange(false);
+    onSearchOpenChange(false);
+  };
+
+  useEffect(
+    () => () => {
+      if (libraryCloseTimer.current !== null) window.clearTimeout(libraryCloseTimer.current);
+      if (shareCloseTimer.current !== null) window.clearTimeout(shareCloseTimer.current);
+    },
+    [],
+  );
 
   return (
     <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-5 py-4">
@@ -87,10 +139,16 @@ export function BrainstormTopBar({
       <div className="relative flex items-center gap-2">
         <motion.button
           type="button"
+          onMouseEnter={openLibrary}
+          onMouseLeave={scheduleLibraryClose}
+          onFocus={openLibrary}
+          onBlur={scheduleLibraryClose}
           onClick={(event) => {
             event.stopPropagation();
+            cancelLibraryClose();
             onLibraryOpenChange(!libraryOpen);
             onSearchOpenChange(false);
+            setShareOpen(false);
           }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.92 }}
@@ -109,6 +167,7 @@ export function BrainstormTopBar({
               event.stopPropagation();
               onSearchOpenChange(!searchOpen);
               onLibraryOpenChange(false);
+              setShareOpen(false);
             }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.92 }}
@@ -123,17 +182,24 @@ export function BrainstormTopBar({
         )}
         <motion.button
           type="button"
+          onMouseEnter={openShare}
+          onMouseLeave={scheduleShareClose}
+          onFocus={openShare}
+          onBlur={scheduleShareClose}
           onClick={(event) => {
             event.stopPropagation();
-            onShareBrainstorm();
+            cancelShareClose();
+            setShareOpen(!shareOpen);
+            onLibraryOpenChange(false);
+            onSearchOpenChange(false);
           }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.92 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
           className={iconButtonClass}
           style={control}
-          aria-label="Copy share link"
-          title="Copy share link"
+          aria-label="Share or export"
+          title="Share or export"
         >
           <Share2 className="h-4 w-4" strokeWidth={2.5} />
         </motion.button>
@@ -176,6 +242,8 @@ export function BrainstormTopBar({
                 isSketch ? "border-2" : cn("backdrop-blur", theme.controlClassName),
               )}
               style={isSketch ? panel : control}
+              onMouseEnter={cancelLibraryClose}
+              onMouseLeave={scheduleLibraryClose}
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mb-2 flex items-center gap-1">
@@ -235,7 +303,9 @@ export function BrainstormTopBar({
                             ? "border-2"
                             : cn(
                                 "rounded-full",
-                                isActive ? "bg-[color:var(--mit)]/25 text-foreground" : "hover:bg-card/70",
+                                isActive
+                                  ? "bg-[color:var(--mit)]/25 text-foreground"
+                                  : "hover:bg-card/70",
                               ),
                         )}
                         style={
@@ -329,6 +399,53 @@ export function BrainstormTopBar({
                   );
                 })}
               </div>
+            </motion.div>
+          )}
+          {shareOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 280, damping: 22 }}
+              className={cn(
+                "absolute right-0 top-14 z-50 w-48 space-y-1 p-2 shadow-pop",
+                isSketch ? "border-2" : cn("backdrop-blur", theme.controlClassName),
+              )}
+              style={isSketch ? panel : control}
+              onMouseEnter={cancelShareClose}
+              onMouseLeave={scheduleShareClose}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  onCopyShareLink();
+                  setShareOpen(false);
+                }}
+                className={cn(
+                  "flex h-9 w-full items-center gap-2 px-3 text-left text-xs font-bold transition",
+                  isSketch ? "border-2" : "rounded-full bg-card/80 hover:bg-card",
+                )}
+                style={isSketch ? sketchButtonStyle : undefined}
+              >
+                <LinkIcon className="h-3.5 w-3.5" />
+                Copy link
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onDownloadBrainstorm();
+                  setShareOpen(false);
+                }}
+                className={cn(
+                  "flex h-9 w-full items-center gap-2 px-3 text-left text-xs font-bold transition",
+                  isSketch ? "border-2" : "rounded-full bg-card/80 hover:bg-card",
+                )}
+                style={isSketch ? sketchButtonStyle : undefined}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download SVG
+              </button>
             </motion.div>
           )}
           {searchOpen && (

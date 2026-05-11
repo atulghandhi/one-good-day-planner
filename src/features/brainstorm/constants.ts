@@ -31,7 +31,18 @@ export const SHAPES: { key: ShapeKey; label: string }[] = [
 export const VALID_SHAPES = new Set<ShapeKey>(SHAPES.map((shape) => shape.key));
 
 export const BOARD_EMOJI_PRESETS = [
-  "💡", "✨", "🎯", "🚀", "🌱", "🔥", "🧩", "📝", "🎨", "🌊", "⭐", "🍀",
+  "💡",
+  "✨",
+  "🎯",
+  "🚀",
+  "🌱",
+  "🔥",
+  "🧩",
+  "📝",
+  "🎨",
+  "🌊",
+  "⭐",
+  "🍀",
 ];
 
 export const BOARD_ACCENT_PRESETS = [

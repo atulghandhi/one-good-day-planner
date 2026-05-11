@@ -21,6 +21,7 @@ function cloneIdea(idea: Idea): Idea {
     parentId: idea.parentId,
     kind: idea.kind,
     done: idea.done,
+    collapsed: idea.collapsed,
   };
 }
 
@@ -47,7 +48,8 @@ export function areBrainstormStatesEqual(a: BrainstormState, b: BrainstormState)
       idea.cy === other.cy &&
       idea.parentId === other.parentId &&
       idea.kind === other.kind &&
-      idea.done === other.done
+      idea.done === other.done &&
+      idea.collapsed === other.collapsed
     );
   });
 }

@@ -21,6 +21,7 @@ import { OverviewMap } from "@/features/brainstorm/components/OverviewMap";
 import { SketchDoodles } from "@/features/brainstorm/components/SketchDoodles";
 import { TitleNode } from "@/features/brainstorm/components/TitleNode";
 import { ZoomControls } from "@/features/brainstorm/components/ZoomControls";
+import { downloadBrainstormSvg } from "@/features/brainstorm/export";
 import { computeDepthMap } from "@/features/brainstorm/graph";
 import {
   EMPTY_BRAINSTORM_HISTORY,
@@ -308,6 +309,30 @@ export function Brainstorm() {
 
   const depthById = useMemo(() => computeDepthMap(state.ideas), [state.ideas]);
   const placements = useMemo(() => layoutIdeas(state.ideas, shape), [shape, state.ideas]);
+  const parentById = useMemo(() => {
+    const map = new Map<string, string | undefined>();
+    state.ideas.forEach((idea) => map.set(idea.id, idea.parentId));
+    return map;
+  }, [state.ideas]);
+  const childrenByParentId = useMemo(() => {
+    const map = new Map<string, string[]>();
+    state.ideas.forEach((idea) => {
+      if (!idea.parentId) return;
+      map.set(idea.parentId, [...(map.get(idea.parentId) ?? []), idea.id]);
+    });
+    return map;
+  }, [state.ideas]);
+  const descendantCountById = useMemo(() => {
+    const countDescendants = (id: string, visited = new Set<string>()): number => {
+      if (visited.has(id)) return 0;
+      visited.add(id);
+      return (childrenByParentId.get(id) ?? []).reduce(
+        (count, childId) => count + 1 + countDescendants(childId, new Set(visited)),
+        0,
+      );
+    };
+    return new Map(state.ideas.map((idea) => [idea.id, countDescendants(idea.id)]));
+  }, [childrenByParentId, state.ideas]);
 
   const placementById = useMemo(() => {
     const map = new Map<string, Placed>();
@@ -328,6 +353,62 @@ export function Brainstorm() {
       }),
     [dragLive, placements, state.ideas],
   );
+  const hiddenByCollapse = useMemo(() => {
+    const hidden = new Set<string>();
+    const collapsedById = new Map(state.ideas.map((idea) => [idea.id, !!idea.collapsed]));
+    let changed = true;
+
+    while (changed) {
+      changed = false;
+      state.ideas.forEach((idea) => {
+        if (!idea.parentId) return;
+        const shouldHide = !!collapsedById.get(idea.parentId) || hidden.has(idea.parentId);
+        if (shouldHide && !hidden.has(idea.id)) {
+          hidden.add(idea.id);
+          changed = true;
+        }
+      });
+    }
+
+    return hidden;
+  }, [state.ideas]);
+  const visibleEntries = useMemo(
+    () =>
+      state.ideas.flatMap((idea, index) => {
+        if (hiddenByCollapse.has(idea.id)) return [];
+        const placement = displayPlacements[index];
+        return placement ? [{ idea, placement }] : [];
+      }),
+    [displayPlacements, hiddenByCollapse, state.ideas],
+  );
+  const visibleIdeas = useMemo(() => visibleEntries.map((entry) => entry.idea), [visibleEntries]);
+  const visiblePlacements = useMemo(
+    () => visibleEntries.map((entry) => entry.placement),
+    [visibleEntries],
+  );
+  const focusedPathIds = useMemo(() => {
+    if (!focusedId) return new Set<string>();
+    const ids = new Set<string>();
+    let cursor: string | undefined = focusedId;
+    while (cursor && !ids.has(cursor)) {
+      ids.add(cursor);
+      cursor = parentById.get(cursor);
+    }
+    return ids;
+  }, [focusedId, parentById]);
+  const focusedBranchIds = useMemo(() => {
+    if (!focusedId) return new Set<string>();
+    const ids = new Set(focusedPathIds);
+    const visit = (id: string) => {
+      (childrenByParentId.get(id) ?? []).forEach((childId) => {
+        if (hiddenByCollapse.has(childId) || ids.has(childId)) return;
+        ids.add(childId);
+        visit(childId);
+      });
+    };
+    visit(focusedId);
+    return ids;
+  }, [childrenByParentId, focusedId, focusedPathIds, hiddenByCollapse]);
 
   const animateViewTo = useCallback((target: CanvasView, duration = 360) => {
     if (cameraRafRef.current) cancelAnimationFrame(cameraRafRef.current);
@@ -397,13 +478,13 @@ export function Brainstorm() {
       }
 
       const boxes = state.ideas.flatMap((idea, index) => {
-        if (!ids.has(idea.id)) return [];
+        if (!ids.has(idea.id) || hiddenByCollapse.has(idea.id)) return [];
         const placement = displayPlacements[index];
         return placement ? [placement] : [];
       });
       return [...boxes, ...extraBoxes];
     },
-    [displayPlacements, state.ideas],
+    [displayPlacements, hiddenByCollapse, state.ideas],
   );
 
   const selectIdea = useCallback(
@@ -478,16 +559,15 @@ export function Brainstorm() {
 
     updateBrainstormState((current) => ({
       ...current,
-      ideas: [
-        ...current.ideas,
-        {
+      ideas: current.ideas
+        .map((idea) => (idea.id === parentId ? { ...idea, collapsed: false } : idea))
+        .concat({
           id,
           text,
           parentId,
           cx: placement.x,
           cy: placement.y,
-        },
-      ],
+        }),
     }));
     setLastAddedId(id);
     setDraft("");
@@ -508,6 +588,42 @@ export function Brainstorm() {
     if (editingId === id) setEditingId(null);
     if (dragLive?.id === id) setDragLive(null);
   };
+
+  const isDescendantOf = useCallback(
+    (childId: string, ancestorId: string) => {
+      let cursor = parentById.get(childId);
+      const visited = new Set<string>();
+      while (cursor && !visited.has(cursor)) {
+        if (cursor === ancestorId) return true;
+        visited.add(cursor);
+        cursor = parentById.get(cursor);
+      }
+      return false;
+    },
+    [parentById],
+  );
+
+  const toggleIdeaCollapse = useCallback(
+    (id: string) => {
+      const idea = stateRef.current.ideas.find((candidate) => candidate.id === id);
+      const collapsing = !idea?.collapsed;
+
+      updateBrainstormState((current) => ({
+        ...current,
+        ideas: current.ideas.map((candidate) =>
+          candidate.id === id ? { ...candidate, collapsed: !candidate.collapsed } : candidate,
+        ),
+      }));
+
+      if (collapsing && focusedId && focusedId !== id && isDescendantOf(focusedId, id)) {
+        setFocusedId(id);
+      }
+      if (collapsing && editingId && editingId !== id && isDescendantOf(editingId, id)) {
+        setEditingId(null);
+      }
+    },
+    [editingId, focusedId, isDescendantOf, updateBrainstormState],
+  );
 
   const commitEdit = (id: string, text: string) => {
     updateBrainstormState((current) => ({
@@ -673,7 +789,7 @@ export function Brainstorm() {
   );
 
   const fitChart = useCallback(() => {
-    const boxes = [CENTER_BOX, ...displayPlacements];
+    const boxes = [CENTER_BOX, ...visiblePlacements];
     const minX = Math.min(...boxes.map((box) => box.x - box.w / 2)) - 180;
     const maxX = Math.max(...boxes.map((box) => box.x + box.w / 2)) + 180;
     const minY = Math.min(...boxes.map((box) => box.y - box.h / 2)) - 160;
@@ -686,7 +802,7 @@ export function Brainstorm() {
       1.35,
     );
     focusWorldPoint({ x: (minX + maxX) / 2, y: (minY + maxY) / 2 }, nextZoom);
-  }, [displayPlacements, focusWorldPoint, viewportSize.h, viewportSize.w]);
+  }, [focusWorldPoint, viewportSize.h, viewportSize.w, visiblePlacements]);
 
   useEffect(() => {
     const handleNativeWheel = (event: WheelEvent) => {
@@ -780,6 +896,18 @@ export function Brainstorm() {
       window.prompt("Copy share link", url);
       showNotice("Share link ready");
     }
+  };
+
+  const downloadCurrentBrainstorm = () => {
+    downloadBrainstormSvg({
+      title: state.title,
+      ideas: visibleIdeas,
+      placements: visiblePlacements,
+      shape,
+      theme,
+      sketchPalette,
+    });
+    showNotice("Brainstorm downloaded");
   };
 
   const updateFocusedIdea = (update: (idea: Idea) => Idea) => {
@@ -894,7 +1022,8 @@ export function Brainstorm() {
           activateBrainstorm(brainstormId);
           if (ideaId) setFocusedId(ideaId);
         }}
-        onShareBrainstorm={() => void shareCurrentBrainstorm()}
+        onCopyShareLink={() => void shareCurrentBrainstorm()}
+        onDownloadBrainstorm={downloadCurrentBrainstorm}
         onOpenReset={() => setConfirmOpen(true)}
         onUpdateBrainstormMeta={updateBrainstormMeta}
       />
@@ -914,8 +1043,8 @@ export function Brainstorm() {
         onClick={handleCanvasClick}
       >
         <ConnectorLayer
-          ideas={state.ideas}
-          placements={displayPlacements}
+          ideas={visibleIdeas}
+          placements={visiblePlacements}
           depthById={depthById}
           viewportSize={viewportSize}
           view={view}
@@ -923,6 +1052,8 @@ export function Brainstorm() {
           theme={theme}
           sketchPalette={sketchPalette}
           focusedId={focusedId}
+          focusedPathIds={focusedPathIds}
+          focusedBranchIds={focusedBranchIds}
           lastAddedId={lastAddedId}
         />
 
@@ -960,29 +1091,33 @@ export function Brainstorm() {
             }
           />
           <NodesLayer
-            ideas={state.ideas}
-            placements={displayPlacements}
+            ideas={visibleIdeas}
+            placements={visiblePlacements}
             depthById={depthById}
+            descendantCountById={descendantCountById}
             shape={shape}
             theme={theme}
             sketchPalette={sketchPalette}
             lastAddedId={lastAddedId}
             focusedId={focusedId}
+            focusedPathIds={focusedPathIds}
+            focusedBranchIds={focusedBranchIds}
             editingId={editingId}
             draggingId={dragLive?.id}
             ignoreNextNodeClickRef={ignoreNextNodeClickRef}
             onRemoveIdea={removeIdea}
             onSelectIdea={(id) => selectIdea(id, { center: true })}
+            onToggleCollapse={toggleIdeaCollapse}
             onStartEdit={startEditingIdea}
             onCommitEdit={commitEdit}
             onStartDrag={handleNodePointerDown}
-          />{" "}
+          />
         </div>
       </div>
 
       <OverviewMap
-        placements={displayPlacements}
-        ideas={state.ideas}
+        placements={visiblePlacements}
+        ideas={visibleIdeas}
         viewportSize={viewportSize}
         view={view}
         viewportStroke={PAGE_THEME_VIEWPORT_STROKE[pageTheme] ?? "currentColor"}

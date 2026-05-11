@@ -143,9 +143,7 @@ export function useBrainstormLibrary({
       setLibrary((current) => ({
         ...current,
         brainstorms: current.brainstorms.map((brainstorm) =>
-          brainstorm.id === id
-            ? { ...brainstorm, ...meta, updatedAt: Date.now() }
-            : brainstorm,
+          brainstorm.id === id ? { ...brainstorm, ...meta, updatedAt: Date.now() } : brainstorm,
         ),
       }));
     },
