@@ -100,9 +100,29 @@ function RootComponent() {
   return (
     <>
       <LovableBadgeBlocker />
+      <PageToggleShortcut />
       <Outlet />
     </>
   );
+}
+
+function PageToggleShortcut() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === ".") {
+        e.preventDefault();
+        const target = location.pathname.startsWith("/brainstorm") ? "/" : "/brainstorm";
+        navigate({ to: target });
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [navigate, location.pathname]);
+
+  return null;
 }
 
 function LovableBadgeBlocker() {
