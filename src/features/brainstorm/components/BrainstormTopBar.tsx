@@ -34,6 +34,7 @@ type BrainstormTopBarProps = {
   onFocusSearchResult: (brainstormId: string, ideaId: string | null) => void;
   onShareBrainstorm: () => void;
   onOpenReset: () => void;
+  onUpdateBrainstormMeta: (id: string, meta: { emoji?: string; accent?: string }) => void;
 };
 
 export function BrainstormTopBar({
