@@ -138,6 +138,20 @@ export function useBrainstormLibrary({
     showNotice("Brainstorm deleted");
   }, [onDocumentChange, showNotice]);
 
+  const updateBrainstormMeta = useCallback(
+    (id: string, meta: { emoji?: string; accent?: string }) => {
+      setLibrary((current) => ({
+        ...current,
+        brainstorms: current.brainstorms.map((brainstorm) =>
+          brainstorm.id === id
+            ? { ...brainstorm, ...meta, updatedAt: Date.now() }
+            : brainstorm,
+        ),
+      }));
+    },
+    [],
+  );
+
   useEffect(() => {
     const loaded = loadBrainstormLibrary();
     setLibrary(loaded);
@@ -158,5 +172,6 @@ export function useBrainstormLibrary({
     createNewBrainstorm,
     duplicateBrainstorm,
     deleteActiveBrainstorm,
+    updateBrainstormMeta,
   };
 }

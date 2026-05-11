@@ -1,8 +1,15 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Copy, Layers, Plus, RotateCcw, Search, Share2, Trash2 } from "lucide-react";
 import { ThemePicker } from "@/components/ThemePicker";
 import { cn } from "@/lib/utils";
+import {
+  BOARD_ACCENT_PRESETS,
+  BOARD_EMOJI_PRESETS,
+  DEFAULT_BOARD_ACCENT,
+  DEFAULT_BOARD_EMOJI,
+} from "../constants";
 import { controlStyle, floatingPanelStyle, shapeStyle, sketchChipStyle } from "../theme";
 import type { BrainstormSearchResult } from "../search";
 import type { BrainstormLibrary, ShapeKey, ShapeTheme, SketchPalette } from "../types";
@@ -27,6 +34,7 @@ type BrainstormTopBarProps = {
   onFocusSearchResult: (brainstormId: string, ideaId: string | null) => void;
   onShareBrainstorm: () => void;
   onOpenReset: () => void;
+  onUpdateBrainstormMeta: (id: string, meta: { emoji?: string; accent?: string }) => void;
 };
 
 export function BrainstormTopBar({
@@ -49,7 +57,9 @@ export function BrainstormTopBar({
   onFocusSearchResult,
   onShareBrainstorm,
   onOpenReset,
+  onUpdateBrainstormMeta,
 }: BrainstormTopBarProps) {
+  const [editingMetaId, setEditingMetaId] = useState<string | null>(null);
   const isSketch = shape === "blob";
   const control = controlStyle(shape, theme, sketchPalette);
   const panel = floatingPanelStyle(shape, theme, sketchPalette);
@@ -210,39 +220,114 @@ export function BrainstormTopBar({
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="max-h-72 space-y-1 overflow-auto pr-1">
-                {library.brainstorms.map((brainstorm) => (
-                  <button
-                    key={brainstorm.id}
-                    type="button"
-                    onClick={() => onActivateBrainstorm(brainstorm.id)}
-                    className={cn(
-                      "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs transition",
-                      isSketch
-                        ? "border-2"
-                        : cn(
-                            "rounded-full",
-                            brainstorm.id === library.activeId
-                              ? "bg-[color:var(--mit)]/25 text-foreground"
-                              : "hover:bg-card/70",
-                          ),
-                    )}
-                    style={
-                      isSketch
-                        ? brainstorm.id === library.activeId
-                          ? activeSketchButtonStyle
-                          : sketchButtonStyle
-                        : undefined
-                    }
-                  >
-                    <span className="min-w-0 truncate font-semibold">
-                      {brainstorm.title || "Options"}
-                    </span>
-                    <span className="shrink-0 text-[10px] text-muted-foreground">
-                      {brainstorm.ideas.length}
-                    </span>
-                  </button>
-                ))}
+              <div className="max-h-80 space-y-1 overflow-auto pr-1">
+                {library.brainstorms.map((brainstorm) => {
+                  const emoji = brainstorm.emoji || DEFAULT_BOARD_EMOJI;
+                  const accent = brainstorm.accent || DEFAULT_BOARD_ACCENT;
+                  const isActive = brainstorm.id === library.activeId;
+                  const isEditingMeta = editingMetaId === brainstorm.id;
+                  return (
+                    <div key={brainstorm.id} className="space-y-1">
+                      <div
+                        className={cn(
+                          "flex w-full items-center gap-2 pr-2 text-left text-xs transition",
+                          isSketch
+                            ? "border-2"
+                            : cn(
+                                "rounded-full",
+                                isActive ? "bg-[color:var(--mit)]/25 text-foreground" : "hover:bg-card/70",
+                              ),
+                        )}
+                        style={
+                          isSketch
+                            ? isActive
+                              ? activeSketchButtonStyle
+                              : sketchButtonStyle
+                            : { boxShadow: `inset 3px 0 0 0 ${accent}` }
+                        }
+                      >
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setEditingMetaId(isEditingMeta ? null : brainstorm.id);
+                          }}
+                          className={cn(
+                            "grid h-8 w-8 shrink-0 place-items-center text-base transition hover:scale-110",
+                            isSketch ? "border-r-2" : "rounded-full",
+                          )}
+                          style={{
+                            backgroundColor: `color-mix(in oklab, ${accent} 22%, transparent)`,
+                          }}
+                          aria-label="Edit board emoji and color"
+                          title="Edit emoji & color"
+                        >
+                          <span aria-hidden>{emoji}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onActivateBrainstorm(brainstorm.id)}
+                          className="flex min-w-0 flex-1 items-center justify-between gap-2 py-2 pr-1 text-left"
+                        >
+                          <span className="min-w-0 truncate font-semibold">
+                            {brainstorm.title || "Options"}
+                          </span>
+                          <span className="shrink-0 text-[10px] text-muted-foreground">
+                            {brainstorm.ideas.length}
+                          </span>
+                        </button>
+                      </div>
+                      {isEditingMeta && (
+                        <div
+                          className={cn(
+                            "space-y-2 px-2 py-2",
+                            isSketch ? "border-2" : "rounded-2xl bg-card/70",
+                          )}
+                          style={isSketch ? sketchButtonStyle : undefined}
+                        >
+                          <div className="flex flex-wrap gap-1">
+                            {BOARD_EMOJI_PRESETS.map((preset) => (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onUpdateBrainstormMeta(brainstorm.id, { emoji: preset });
+                                }}
+                                className={cn(
+                                  "grid h-7 w-7 place-items-center text-sm transition hover:scale-110",
+                                  isSketch ? "border" : "rounded-full",
+                                  preset === emoji && !isSketch && "bg-[color:var(--mit)]/30",
+                                )}
+                                aria-label={`Set emoji ${preset}`}
+                              >
+                                <span aria-hidden>{preset}</span>
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {BOARD_ACCENT_PRESETS.map((preset) => (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onUpdateBrainstormMeta(brainstorm.id, { accent: preset });
+                                }}
+                                className={cn(
+                                  "h-5 w-5 rounded-full transition hover:scale-110",
+                                  preset === accent && "ring-2 ring-foreground/60 ring-offset-1",
+                                )}
+                                style={{ backgroundColor: preset }}
+                                aria-label={`Set accent color ${preset}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </motion.div>
           )}
