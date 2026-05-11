@@ -57,7 +57,9 @@ export function BrainstormTopBar({
   onFocusSearchResult,
   onShareBrainstorm,
   onOpenReset,
+  onUpdateBrainstormMeta,
 }: BrainstormTopBarProps) {
+  const [editingMetaId, setEditingMetaId] = useState<string | null>(null);
   const isSketch = shape === "blob";
   const control = controlStyle(shape, theme, sketchPalette);
   const panel = floatingPanelStyle(shape, theme, sketchPalette);
