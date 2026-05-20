@@ -11,9 +11,11 @@ import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 
+const SITE_URL = "https://just-one-good-day.lovable.app";
+const ROOT_TITLE = "One Good Day — Daily Planner & Brainstorm Canvas";
 const APP_DESCRIPTION =
   "A lightweight daily planner and brainstorm canvas for choosing what matters today, catching ideas, and keeping momentum without accounts or clutter.";
-const SOCIAL_IMAGE = "/og-image.png";
+const SOCIAL_IMAGE = `${SITE_URL}/og-image.png`;
 
 function NotFoundComponent() {
   return (
@@ -42,21 +44,21 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "One Good Day" },
+      { title: ROOT_TITLE },
       {
         name: "description",
         content: APP_DESCRIPTION,
       },
       { name: "author", content: "One Good Day" },
       { property: "og:site_name", content: "One Good Day" },
-      { property: "og:title", content: "One Good Day" },
+      { property: "og:title", content: ROOT_TITLE },
       {
         property: "og:description",
         content: APP_DESCRIPTION,
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "One Good Day" },
+      { name: "twitter:title", content: ROOT_TITLE },
       {
         name: "twitter:description",
         content: APP_DESCRIPTION,
