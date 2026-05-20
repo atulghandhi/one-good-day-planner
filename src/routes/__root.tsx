@@ -73,6 +73,18 @@ export const Route = createRootRoute({
         href: appCss,
       },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "One Good Day",
+          url: "https://just-one-good-day.lovable.app",
+          description: APP_DESCRIPTION,
+        }),
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
