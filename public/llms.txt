@@ -1,0 +1,10 @@
+# One Good Day
+
+> A lightweight daily planner and brainstorm canvas for choosing what matters today, catching ideas, and keeping momentum — no accounts, no clutter.
+
+One Good Day stores everything locally in the browser. The planner helps you pick one Most Important Task plus a few "shoulds" and "coulds" for the day. The brainstorm canvas is a free-form mind-map for capturing and connecting ideas, which you can promote into your day.
+
+## Pages
+
+- [Daily Planner](/): Pick your Most Important Task, shoulds, and coulds for today.
+- [Brainstorm](/brainstorm): Free-form canvas to capture and connect ideas around a central thought.
