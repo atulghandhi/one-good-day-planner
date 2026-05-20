@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://just-one-good-day.lovable.app/sitemap.xml
