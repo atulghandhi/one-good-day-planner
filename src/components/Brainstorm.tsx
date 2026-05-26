@@ -16,12 +16,16 @@ import { IdeaInputBar } from "@/features/brainstorm/components/IdeaInputBar";
 import { MitOverwriteDialog } from "@/features/brainstorm/components/MitOverwriteDialog";
 import { NoticeToast } from "@/features/brainstorm/components/NoticeToast";
 import { NodeActionBar } from "@/features/brainstorm/components/NodeActionBar";
+import { NodeFilterBar } from "@/features/brainstorm/components/NodeFilterBar";
 import { NodesLayer } from "@/features/brainstorm/components/NodesLayer";
 import { OverviewMap } from "@/features/brainstorm/components/OverviewMap";
 import { SketchDoodles } from "@/features/brainstorm/components/SketchDoodles";
 import { TitleNode } from "@/features/brainstorm/components/TitleNode";
 import { ZoomControls } from "@/features/brainstorm/components/ZoomControls";
-import { downloadBrainstormSvg } from "@/features/brainstorm/export";
+import {
+  downloadBrainstormExport,
+  type BrainstormExportFormat,
+} from "@/features/brainstorm/export";
 import { computeDepthMap } from "@/features/brainstorm/graph";
 import {
   EMPTY_BRAINSTORM_HISTORY,
@@ -31,6 +35,7 @@ import {
   type BrainstormHistory,
 } from "@/features/brainstorm/history";
 import { useBrainstormLibrary } from "@/features/brainstorm/hooks/useBrainstormLibrary";
+import { effectiveIdeaKind } from "@/features/brainstorm/kinds";
 import { estimateCardSize, findOpenSpot, layoutIdeas } from "@/features/brainstorm/layout";
 import { clamp } from "@/features/brainstorm/math";
 import {
@@ -42,7 +47,13 @@ import { buildTodayBrainstorm } from "@/features/brainstorm/plannerImport";
 import { decodeBrainstormShare, encodeBrainstormShare } from "@/features/brainstorm/sharing";
 import { useBrainstormSearch } from "@/features/brainstorm/search";
 import { SHAPE_THEMES, SKETCH_PALETTES } from "@/features/brainstorm/theme";
-import type { BrainstormState, CanvasView, Idea, Placed } from "@/features/brainstorm/types";
+import type {
+  BrainstormState,
+  CanvasView,
+  Idea,
+  IdeaKind,
+  Placed,
+} from "@/features/brainstorm/types";
 import { loadState, saveState } from "@/features/planner/storage";
 import type { TaskItem } from "@/features/planner/types";
 import { cn } from "@/lib/utils";
@@ -81,6 +92,8 @@ export function Brainstorm() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [clearMode, setClearMode] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<IdeaKind | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [notice, setNotice] = useState("");
   const [dragLive, setDragLive] = useState<{
@@ -131,6 +144,7 @@ export function Brainstorm() {
     setEditingId(null);
     setLibraryOpen(false);
     setSearchOpen(false);
+    setActiveFilter(null);
     setPendingMitOverwrite(null);
   }, []);
 
@@ -374,11 +388,12 @@ export function Brainstorm() {
   const visibleEntries = useMemo(
     () =>
       state.ideas.flatMap((idea, index) => {
-        if (hiddenByCollapse.has(idea.id)) return [];
+        if (!activeFilter && hiddenByCollapse.has(idea.id)) return [];
+        if (activeFilter && effectiveIdeaKind(idea) !== activeFilter) return [];
         const placement = displayPlacements[index];
         return placement ? [{ idea, placement }] : [];
       }),
-    [displayPlacements, hiddenByCollapse, state.ideas],
+    [activeFilter, displayPlacements, hiddenByCollapse, state.ideas],
   );
   const visibleIdeas = useMemo(() => visibleEntries.map((entry) => entry.idea), [visibleEntries]);
   const visiblePlacements = useMemo(
@@ -897,16 +912,57 @@ export function Brainstorm() {
     }
   };
 
-  const downloadCurrentBrainstorm = () => {
-    downloadBrainstormSvg({
-      title: state.title,
-      ideas: visibleIdeas,
-      placements: visiblePlacements,
-      shape,
-      theme,
-      sketchPalette,
+  useEffect(() => {
+    if (!activeFilter || !focusedId) return;
+    const focusedStillVisible = state.ideas.some(
+      (idea) => idea.id === focusedId && effectiveIdeaKind(idea) === activeFilter,
+    );
+    if (!focusedStillVisible) setFocusedId(null);
+  }, [activeFilter, focusedId, state.ideas]);
+
+  const toggleClearMode = useCallback(() => {
+    setClearMode((current) => {
+      const next = !current;
+      if (next) {
+        setLibraryOpen(false);
+        setSearchOpen(false);
+      }
+      return next;
     });
-    showNotice("Brainstorm downloaded");
+  }, []);
+
+  useEffect(() => {
+    const handleClearShortcut = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || !(event.metaKey || event.ctrlKey)) return;
+      if (event.key !== "\\") return;
+      event.preventDefault();
+      toggleClearMode();
+    };
+
+    window.addEventListener("keydown", handleClearShortcut, { capture: true });
+    return () => window.removeEventListener("keydown", handleClearShortcut, { capture: true });
+  }, [toggleClearMode]);
+
+  const downloadCurrentBrainstorm = async (format: BrainstormExportFormat) => {
+    try {
+      await downloadBrainstormExport(
+        {
+          title: state.title,
+          ideas: visibleIdeas,
+          placements: visiblePlacements,
+          shape,
+          theme,
+          sketchPalette,
+          filterKind: activeFilter,
+        },
+        format,
+      );
+      showNotice(
+        format === "markdown" ? "Markdown downloaded" : `${format.toUpperCase()} downloaded`,
+      );
+    } catch {
+      showNotice("Export failed");
+    }
   };
 
   const updateFocusedIdea = (update: (idea: Idea) => Idea) => {
@@ -1010,6 +1066,7 @@ export function Brainstorm() {
         shape={shape}
         theme={theme}
         sketchPalette={sketchPalette}
+        clearMode={clearMode}
         onSearchQueryChange={setSearchQuery}
         onLibraryOpenChange={setLibraryOpen}
         onSearchOpenChange={setSearchOpen}
@@ -1022,9 +1079,21 @@ export function Brainstorm() {
           if (ideaId) setFocusedId(ideaId);
         }}
         onCopyShareLink={() => void shareCurrentBrainstorm()}
-        onDownloadBrainstorm={downloadCurrentBrainstorm}
+        onDownloadBrainstorm={(format) => void downloadCurrentBrainstorm(format)}
         onOpenReset={() => setConfirmOpen(true)}
       />
+
+      <AnimatePresence>
+        {!clearMode && (
+          <NodeFilterBar
+            activeFilter={activeFilter}
+            shape={shape}
+            theme={theme}
+            sketchPalette={sketchPalette}
+            onFilterChange={setActiveFilter}
+          />
+        )}
+      </AnimatePresence>
 
       <NoticeToast notice={notice} shape={shape} theme={theme} sketchPalette={sketchPalette} />
 
@@ -1119,6 +1188,7 @@ export function Brainstorm() {
         viewportSize={viewportSize}
         view={view}
         viewportStroke={PAGE_THEME_VIEWPORT_STROKE[pageTheme] ?? "currentColor"}
+        clearMode={clearMode}
         onFocusWorldPoint={(point) => focusWorldPoint(point)}
       />
 
@@ -1129,6 +1199,8 @@ export function Brainstorm() {
         onZoomIn={() => zoomBy(1.16)}
         onZoomOut={() => zoomBy(0.86)}
         onFit={fitChart}
+        onToggleClearMode={toggleClearMode}
+        clearMode={clearMode}
       />
 
       <div
@@ -1136,7 +1208,7 @@ export function Brainstorm() {
         onClick={(event) => event.stopPropagation()}
       >
         <AnimatePresence>
-          {focusedIdea && (
+          {focusedIdea && !clearMode && (
             <NodeActionBar
               focusedIdea={focusedIdea}
               shape={shape}

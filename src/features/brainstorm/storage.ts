@@ -26,7 +26,8 @@ export function normalizeShape(shape: unknown): ShapeKey {
 }
 
 export function normalizeIdeaKind(kind: unknown): IdeaKind | undefined {
-  return kind === "task" || kind === "note" || kind === "decision" ? kind : undefined;
+  if (kind === "decision") return "action";
+  return kind === "task" || kind === "note" || kind === "action" ? kind : undefined;
 }
 
 export function normalizeTitleValue(value: string) {

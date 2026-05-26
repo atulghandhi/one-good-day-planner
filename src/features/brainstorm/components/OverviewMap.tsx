@@ -1,5 +1,6 @@
 import type React from "react";
 import { useMemo, useRef } from "react";
+import { motion } from "framer-motion";
 import { CENTER_BOX, WORLD_CENTER } from "../constants";
 import { clamp } from "../math";
 import type { CanvasView, Idea, Placed } from "../types";
@@ -10,6 +11,7 @@ export type OverviewMapProps = {
   viewportSize: { w: number; h: number };
   view: CanvasView;
   viewportStroke: string;
+  clearMode?: boolean;
   onFocusWorldPoint: (point: { x: number; y: number }) => void;
 };
 
@@ -19,6 +21,7 @@ export function OverviewMap({
   viewportSize,
   view,
   viewportStroke,
+  clearMode = false,
   onFocusWorldPoint,
 }: OverviewMapProps) {
   const draggingRef = useRef(false);
@@ -82,15 +85,22 @@ export function OverviewMap({
   };
 
   return (
-    <button
+    <motion.button
       type="button"
       className="absolute bottom-5 left-5 z-40 block cursor-crosshair border-2 border-foreground/25 bg-card/90 p-2 text-left shadow-[4px_4px_0_color-mix(in_oklab,var(--mit)_24%,transparent)] backdrop-blur active:cursor-grabbing"
+      animate={
+        clearMode
+          ? { x: -236, y: 44, opacity: 0, scale: 0.86 }
+          : { x: 0, y: 0, opacity: 1, scale: 1 }
+      }
+      transition={{ type: "spring", stiffness: 320, damping: 20 }}
       style={{
         borderRadius: 3,
         fontFamily:
           'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
         width: mapW,
         height: mapH,
+        pointerEvents: clearMode ? "none" : undefined,
       }}
       aria-label="Overview map"
       onPointerDown={(event) => {
@@ -196,6 +206,6 @@ export function OverviewMap({
           strokeWidth="2"
         />
       </svg>
-    </button>
+    </motion.button>
   );
 }

@@ -1,6 +1,6 @@
 // Theme presets — 3 light, 2 dark. Each defines core hue tokens used across the app.
 
-export type ThemeKey = "sakura" | "blossom" | "meadow" | "nebula" | "starry";
+export type ThemeKey = "sakura" | "blossom" | "meadow" | "tide" | "nebula" | "starry";
 
 export type ThemeTokens = {
   background: string;
@@ -98,6 +98,30 @@ const meadow: ThemeTokens = {
   gradientCould: "linear-gradient(135deg, oklch(0.88 0.1 55), oklch(0.85 0.11 35))",
 };
 
+// Tide — cool blues, gentle wave motion, sea-glass green
+const tide: ThemeTokens = {
+  background: "oklch(0.97 0.02 220)",
+  foreground: "oklch(0.22 0.05 240)",
+  card: "oklch(0.995 0.005 220)",
+  cardForeground: "oklch(0.22 0.05 240)",
+  muted: "oklch(0.94 0.02 220)",
+  mutedForeground: "oklch(0.48 0.05 230)",
+  border: "oklch(0.9 0.02 220)",
+  mit: "oklch(0.76 0.13 210)",
+  mitFg: "oklch(0.22 0.1 230)",
+  should: "oklch(0.82 0.1 175)",
+  shouldFg: "oklch(0.26 0.08 175)",
+  could: "oklch(0.82 0.1 250)",
+  couldFg: "oklch(0.26 0.1 250)",
+  sun: "oklch(0.9 0.07 195)",
+  sky: "oklch(0.88 0.08 230)",
+  gradientSky:
+    "linear-gradient(135deg, oklch(0.94 0.05 220), oklch(0.91 0.06 200) 50%, oklch(0.93 0.05 250))",
+  gradientMit: "linear-gradient(135deg, oklch(0.82 0.12 215), oklch(0.78 0.14 195))",
+  gradientShould: "linear-gradient(135deg, oklch(0.86 0.1 180), oklch(0.83 0.11 165))",
+  gradientCould: "linear-gradient(135deg, oklch(0.85 0.11 250), oklch(0.82 0.12 270))",
+};
+
 /* ---------------- DARK THEMES ---------------- */
 
 // Nebula — purple sci-fi, neon magenta + cyan
@@ -155,12 +179,13 @@ export const THEMES: Record<
   sakura: { name: "Sakura", tokens: sakura, mode: "light" },
   blossom: { name: "Blossom", tokens: blossom, mode: "light" },
   meadow: { name: "Meadow", tokens: meadow, mode: "light" },
+  tide: { name: "Tide", tokens: tide, mode: "light" },
   nebula: { name: "Nebula", tokens: nebula, mode: "dark" },
   starry: { name: "Starry", tokens: starry, mode: "dark" },
 };
 
 // Order: lights first, then darks (top to bottom in dropdown)
-export const THEME_ORDER: ThemeKey[] = ["sakura", "blossom", "meadow", "nebula", "starry"];
+export const THEME_ORDER: ThemeKey[] = ["sakura", "blossom", "meadow", "tide", "nebula", "starry"];
 
 const STORAGE_KEY = "one-good-day:theme";
 

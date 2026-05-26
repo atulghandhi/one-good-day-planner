@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Paintbrush } from "lucide-react";
+import { Paintbrush, Volume2, VolumeX } from "lucide-react";
 import { THEMES, THEME_ORDER, type ThemeKey, applyTheme, loadSavedTheme } from "@/lib/themes";
 import { cn } from "@/lib/utils";
+import { isSoundOn, setSoundOn } from "@/lib/sound";
 
 type ThemePickerProps = {
   buttonClassName?: string;
   iconClassName?: string;
   buttonStyle?: React.CSSProperties;
+  onOpenChange?: (open: boolean) => void;
   panelStyle?: React.CSSProperties;
   swatchShapeStyle?: React.CSSProperties;
 };
@@ -17,18 +19,27 @@ export function ThemePicker({
   buttonClassName,
   iconClassName,
   buttonStyle,
+  onOpenChange,
   panelStyle,
   swatchShapeStyle,
 }: ThemePickerProps = {}) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<ThemeKey>("blossom");
+  const [soundOn, setSoundOnState] = useState(false);
   const closeTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const saved = loadSavedTheme();
     setActive(saved);
     applyTheme(saved);
+    setSoundOnState(isSoundOn());
   }, []);
+
+  const toggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    setSoundOnState(next);
+  };
 
   const cancelClose = () => {
     if (closeTimer.current !== null) {
@@ -39,7 +50,10 @@ export function ThemePicker({
 
   const scheduleClose = () => {
     cancelClose();
-    closeTimer.current = window.setTimeout(() => setOpen(false), 500);
+    closeTimer.current = window.setTimeout(() => {
+      setOpen(false);
+      onOpenChange?.(false);
+    }, 500);
   };
 
   useEffect(() => () => cancelClose(), []);
@@ -55,6 +69,7 @@ export function ThemePicker({
       onMouseEnter={() => {
         cancelClose();
         setOpen(true);
+        onOpenChange?.(true);
       }}
       onMouseLeave={scheduleClose}
     >
@@ -70,9 +85,16 @@ export function ThemePicker({
         style={buttonStyle}
         aria-label="Change theme"
         type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          cancelClose();
+          setOpen(true);
+          onOpenChange?.(true);
+        }}
         onFocus={() => {
           cancelClose();
           setOpen(true);
+          onOpenChange?.(true);
         }}
         onBlur={scheduleClose}
       >
@@ -90,6 +112,22 @@ export function ThemePicker({
             className="absolute right-0 top-14 z-30 flex flex-col gap-2 rounded-2xl border border-white/40 bg-card/40 p-2.5 shadow-pop backdrop-blur-xl"
             style={panelStyle}
           >
+            <motion.button
+              type="button"
+              onClick={toggleSound}
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              title={soundOn ? "Sound on" : "Sound off"}
+              aria-label={soundOn ? "Turn sound off" : "Turn sound on"}
+              className="grid h-9 w-9 place-items-center rounded-xl bg-card/80 text-muted-foreground shadow-soft transition hover:text-foreground"
+            >
+              {soundOn ? (
+                <Volume2 className="h-4 w-4" strokeWidth={2.4} />
+              ) : (
+                <VolumeX className="h-4 w-4" strokeWidth={2.4} />
+              )}
+            </motion.button>
+            <div className="h-px bg-border/60" aria-hidden />
             {THEME_ORDER.map((key, i) => {
               const t = THEMES[key].tokens;
               const swatch = `linear-gradient(135deg, ${t.mit}, ${t.should} 55%, ${t.could})`;

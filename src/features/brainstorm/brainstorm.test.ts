@@ -13,6 +13,7 @@ import { buildTodayBrainstorm, toMitHtml } from "./plannerImport";
 import { createPlannerSendUpdate } from "./plannerBridge";
 import { searchBrainstorms } from "./search";
 import { decodeBrainstormShare, encodeBrainstormShare } from "./sharing";
+import { createBrainstormMarkdown } from "./export";
 import {
   nextAvailableBrainstormTitle,
   normalizeBrainstormLibrary,
@@ -30,6 +31,7 @@ describe("brainstorm domain", () => {
         { id: "a", text: "A", parentId: "missing", kind: "task", done: true, collapsed: true },
         { id: "a", text: "duplicate" },
         { id: "b", text: "B", parentId: "a", kind: "unknown" },
+        { id: "c", text: "C", parentId: "a", kind: "decision" },
       ],
     });
 
@@ -38,6 +40,7 @@ describe("brainstorm domain", () => {
     expect(state.ideas).toEqual([
       { id: "a", text: "A", parentId: undefined, kind: "task", done: true, collapsed: true },
       { id: "b", text: "B", parentId: "a", kind: undefined, done: false, collapsed: false },
+      { id: "c", text: "C", parentId: "a", kind: "action", done: false, collapsed: false },
     ]);
   });
 
@@ -78,6 +81,22 @@ describe("brainstorm domain", () => {
         },
       ],
     });
+  });
+
+  it("creates a portable markdown outline for the visible brainstorm nodes", () => {
+    const markdown = createBrainstormMarkdown({
+      title: "Options",
+      filterKind: "action",
+      ideas: [
+        { id: "a", text: "Build export", kind: "action" },
+        { id: "b", text: "Check output", parentId: "a", kind: "action", done: true },
+      ],
+    });
+
+    expect(markdown).toContain("# Options");
+    expect(markdown).toContain("_Filtered to Action nodes._");
+    expect(markdown).toContain("- Build export _Action_");
+    expect(markdown).toContain("  - Check output _Action_ [done]");
   });
 
   it("computes graph depth and keeps cycles from recursing forever", () => {

@@ -1,0 +1,23 @@
+{
+  "name": "One Good Day",
+  "short_name": "One Good Day",
+  "description": "A delightfully simple daily planner. Pick what matters. Let the rest go.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fef9ef",
+  "theme_color": "#ffe5d0",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png"
+    }
+  ]
+}

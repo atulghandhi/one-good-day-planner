@@ -9,7 +9,9 @@ export function useMitFocus(mitSubCount: number) {
     if (target === null) return;
     let tries = 0;
     const tryFocus = () => {
-      const el = document.querySelector<HTMLInputElement>(`input[data-mit-sub-index="${target}"]`);
+      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+        `[data-mit-sub-index="${target}"]`,
+      );
       if (el && !el.readOnly) {
         el.focus();
         pendingMitFocusRef.current = null;

@@ -1,6 +1,7 @@
 import { connectorPathFromPoints } from "./canvas";
 import { CENTER_BOX } from "./constants";
-import type { Idea, Placed, ShapeKey, ShapeTheme, SketchPalette } from "./types";
+import { effectiveIdeaKind, ideaKindLabel } from "./kinds";
+import type { Idea, IdeaKind, Placed, ShapeKey, ShapeTheme, SketchPalette } from "./types";
 
 type ExportBrainstormSvgOptions = {
   title: string;
@@ -9,9 +10,18 @@ type ExportBrainstormSvgOptions = {
   shape: ShapeKey;
   theme: ShapeTheme;
   sketchPalette: SketchPalette;
+  filterKind?: IdeaKind | null;
 };
 
 const EXPORT_PADDING = 180;
+
+export type BrainstormExportFormat = "svg" | "png" | "pdf" | "markdown";
+
+type BrainstormSvgDocument = {
+  svg: string;
+  width: number;
+  height: number;
+};
 
 function escapeXml(value: string) {
   return value
@@ -28,6 +38,22 @@ function slugifyFilename(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
   return slug || "brainstorm";
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function filenameFor(options: ExportBrainstormSvgOptions, extension: string) {
+  const filterSuffix = options.filterKind ? ` ${ideaKindLabel(options.filterKind)}` : "";
+  return `${slugifyFilename(`${options.title || "brainstorm"}${filterSuffix}`)}.${extension}`;
 }
 
 function cssVar(name: string, fallback: string) {
@@ -96,14 +122,14 @@ function rectSvg(
   return `<rect x="${x}" y="${y}" width="${box.w}" height="${box.h}" rx="${shape === "boxy" ? 6 : Math.min(28, box.h / 2)}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" />`;
 }
 
-export function createBrainstormSvg({
+export function createBrainstormSvgDocument({
   title,
   ideas,
   placements,
   shape,
   theme,
   sketchPalette,
-}: ExportBrainstormSvgOptions) {
+}: ExportBrainstormSvgOptions): BrainstormSvgDocument {
   const boxes = [CENTER_BOX, ...placements];
   const minX = Math.min(...boxes.map((box) => box.x - box.w / 2)) - EXPORT_PADDING;
   const minY = Math.min(...boxes.map((box) => box.y - box.h / 2)) - EXPORT_PADDING;
@@ -168,7 +194,7 @@ export function createBrainstormSvg({
     })
     .join("");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <rect width="100%" height="100%" fill="${paper}" />
   <g font-family="${escapeXml(fontFamily)}" letter-spacing="0">
     ${connectors}
@@ -177,17 +203,178 @@ export function createBrainstormSvg({
     ${nodeSvgs}
   </g>
 </svg>`;
+
+  return { svg, width, height };
 }
 
-export function downloadBrainstormSvg(options: ExportBrainstormSvgOptions) {
-  const svg = createBrainstormSvg(options);
-  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${slugifyFilename(options.title || "brainstorm")}.svg`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+export function createBrainstormSvg(options: ExportBrainstormSvgOptions) {
+  return createBrainstormSvgDocument(options).svg;
+}
+
+function loadSvgImage(svg: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not render SVG export"));
+    };
+    image.src = url;
+  });
+}
+
+async function createExportCanvas(options: ExportBrainstormSvgOptions) {
+  const { svg, width, height } = createBrainstormSvgDocument(options);
+  const image = await loadSvgImage(svg);
+  const scale = Math.min(2, 4096 / Math.max(width, height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Could not create export canvas");
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: number) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Could not create export image"));
+      },
+      type,
+      quality,
+    );
+  });
+}
+
+function binaryStringToBytes(value: string) {
+  const bytes = new Uint8Array(value.length);
+  for (let index = 0; index < value.length; index += 1) {
+    bytes[index] = value.charCodeAt(index) & 0xff;
+  }
+  return bytes;
+}
+
+function createPdfFromJpeg(jpegDataUrl: string, width: number, height: number) {
+  const base64 = jpegDataUrl.split(",")[1] ?? "";
+  const imageBytes = binaryStringToBytes(window.atob(base64));
+  const encoder = new TextEncoder();
+  const chunks: BlobPart[] = [];
+  const offsets: number[] = [0];
+  let length = 0;
+
+  const addBytes = (bytes: Uint8Array) => {
+    const copy = new Uint8Array(bytes.length);
+    copy.set(bytes);
+    chunks.push(copy.buffer);
+    length += bytes.length;
+  };
+  const addText = (text: string) => addBytes(encoder.encode(text));
+  const addObject = (id: number, body: string) => {
+    offsets[id] = length;
+    addText(`${id} 0 obj\n${body}\nendobj\n`);
+  };
+
+  addText("%PDF-1.4\n");
+  addObject(1, "<< /Type /Catalog /Pages 2 0 R >>");
+  addObject(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+  addObject(
+    3,
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] /Resources << /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>`,
+  );
+  const content = `q\n${width} 0 0 ${height} 0 0 cm\n/Im0 Do\nQ\n`;
+  addObject(4, `<< /Length ${content.length} >>\nstream\n${content}endstream`);
+
+  offsets[5] = length;
+  addText(
+    `5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBytes.length} >>\nstream\n`,
+  );
+  addBytes(imageBytes);
+  addText("\nendstream\nendobj\n");
+
+  const xrefOffset = length;
+  addText("xref\n0 6\n0000000000 65535 f \n");
+  for (let id = 1; id <= 5; id += 1) {
+    addText(`${String(offsets[id]).padStart(10, "0")} 00000 n \n`);
+  }
+  addText(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
+
+  return new Blob(chunks, { type: "application/pdf" });
+}
+
+function escapeMarkdown(value: string) {
+  return value.replace(/([\\`*_{}[\]()#+\-.!|>])/g, "\\$1");
+}
+
+export function createBrainstormMarkdown({
+  title,
+  ideas,
+  filterKind,
+}: Pick<ExportBrainstormSvgOptions, "title" | "ideas" | "filterKind">) {
+  const includedIds = new Set(ideas.map((idea) => idea.id));
+  const childrenByParent = new Map<string, Idea[]>();
+  const roots: Idea[] = [];
+
+  ideas.forEach((idea) => {
+    const parentId = idea.parentId && includedIds.has(idea.parentId) ? idea.parentId : undefined;
+    if (!parentId) {
+      roots.push(idea);
+      return;
+    }
+    childrenByParent.set(parentId, [...(childrenByParent.get(parentId) ?? []), idea]);
+  });
+
+  const lines = [`# ${escapeMarkdown(title || "Options")}`, ""];
+  if (filterKind) {
+    lines.push(`_Filtered to ${ideaKindLabel(filterKind)} nodes._`, "");
+  }
+
+  const writeIdea = (idea: Idea, depth: number) => {
+    const kind = effectiveIdeaKind(idea);
+    const tag = kind === "idea" ? "" : ` _${ideaKindLabel(kind)}_`;
+    const done = idea.done ? " [done]" : "";
+    lines.push(`${"  ".repeat(depth)}- ${escapeMarkdown(idea.text)}${tag}${done}`);
+    (childrenByParent.get(idea.id) ?? []).forEach((child) => writeIdea(child, depth + 1));
+  };
+
+  roots.forEach((idea) => writeIdea(idea, 0));
+  if (roots.length === 0) lines.push("_No matching nodes._");
+
+  return `${lines.join("\n")}\n`;
+}
+
+export async function downloadBrainstormExport(
+  options: ExportBrainstormSvgOptions,
+  format: BrainstormExportFormat,
+) {
+  if (format === "svg") {
+    downloadBlob(
+      new Blob([createBrainstormSvg(options)], { type: "image/svg+xml;charset=utf-8" }),
+      filenameFor(options, "svg"),
+    );
+    return;
+  }
+
+  if (format === "markdown") {
+    downloadBlob(
+      new Blob([createBrainstormMarkdown(options)], { type: "text/markdown;charset=utf-8" }),
+      filenameFor(options, "md"),
+    );
+    return;
+  }
+
+  const canvas = await createExportCanvas(options);
+  if (format === "png") {
+    downloadBlob(await canvasToBlob(canvas, "image/png"), filenameFor(options, "png"));
+    return;
+  }
+
+  const pdf = createPdfFromJpeg(canvas.toDataURL("image/jpeg", 0.92), canvas.width, canvas.height);
+  downloadBlob(pdf, filenameFor(options, "pdf"));
 }

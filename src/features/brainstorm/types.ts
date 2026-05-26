@@ -1,6 +1,6 @@
 export type ShapeKey = "pill" | "boxy" | "blob";
 export type LegacyShapeKey = ShapeKey | "rounded" | "hex";
-export type IdeaKind = "idea" | "task" | "note" | "decision";
+export type IdeaKind = "idea" | "task" | "note" | "action";
 
 export type Idea = {
   id: string;

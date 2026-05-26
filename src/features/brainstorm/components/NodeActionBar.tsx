@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Check, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { IDEA_KIND_OPTIONS, effectiveIdeaKind, ideaKindLabel } from "../kinds";
 import { controlStyle, sketchChipStyle } from "../theme";
 import type { Idea, ShapeKey, ShapeTheme, SketchPalette } from "../types";
 
@@ -75,7 +76,7 @@ export function NodeActionBar({
         Could
       </button>
       <span className="mx-0.5 h-7 w-px bg-current/20" aria-hidden />
-      {(["idea", "task", "note", "decision"] as const).map((kind) => (
+      {IDEA_KIND_OPTIONS.map((kind) => (
         <button
           key={kind}
           type="button"
@@ -88,19 +89,19 @@ export function NodeActionBar({
           className={cn(
             activeButtonClass,
             !isSketch &&
-              ((focusedIdea.kind ?? "idea") === kind
+              (effectiveIdeaKind(focusedIdea) === kind
                 ? "bg-[color:var(--mit)]/30 text-foreground"
                 : "bg-card/60 text-muted-foreground hover:bg-card"),
           )}
           style={
             isSketch
-              ? (focusedIdea.kind ?? "idea") === kind
+              ? effectiveIdeaKind(focusedIdea) === kind
                 ? activeChipStyle
                 : chipStyle
               : undefined
           }
         >
-          {kind}
+          {ideaKindLabel(kind)}
         </button>
       ))}
       {(focusedIdea.kind === "task" || focusedIdea.done) && (

@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Plus, X } from "lucide-react";
-import { PillInput } from "./PillInput";
-import { smallConfetti } from "@/lib/confetti";
+import { Check, Play, Plus, X } from "lucide-react";
+import { PillTextArea } from "./PillInput";
 import { cn } from "@/lib/utils";
 import { orderTaskItems, PRIORITIES, PRIORITY_META } from "@/features/planner/priority";
 import type { TaskItem } from "@/features/planner/types";
@@ -16,10 +15,27 @@ type Props = {
   tone: Tone;
   items: TaskItem[];
   onChange: (items: TaskItem[]) => void;
+  onStartTask: (index: number) => void;
+  onLimitReached: (message: string) => void;
   placeholder: string;
+  /** When true, the section's icon chip bows (used in MIT-done choreography). */
+  iconBow?: boolean;
+  iconBowDelay?: number;
 };
 
-export function TaskSection({ title, hint, emoji, tone, items, onChange, placeholder }: Props) {
+export function TaskSection({
+  title,
+  hint,
+  emoji,
+  tone,
+  items,
+  onChange,
+  onStartTask,
+  onLimitReached,
+  placeholder,
+  iconBow = false,
+  iconBowDelay = 0,
+}: Props) {
   // Display order: incomplete first (preserve order), completed at bottom.
   const ordered = useMemo(() => orderTaskItems(items), [items]);
 
@@ -29,12 +45,10 @@ export function TaskSection({ title, hint, emoji, tone, items, onChange, placeho
     onChange(next);
   };
 
-  const toggleDone = (i: number, source?: HTMLElement | null) => {
+  const toggleDone = (i: number) => {
     const next = [...items];
-    const wasDone = next[i].done;
-    next[i] = { ...next[i], done: !wasDone };
+    next[i] = { ...next[i], done: !next[i].done };
     onChange(next);
-    if (!wasDone) smallConfetti(tone, source ?? null);
   };
 
   const cyclePriority = (i: number) => {
@@ -68,15 +82,21 @@ export function TaskSection({ title, hint, emoji, tone, items, onChange, placeho
     >
       <header className="mb-5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span
+          <motion.span
             className={`grid h-10 w-10 place-items-center rounded-2xl ${gradient} text-xl shadow-pop`}
             aria-hidden
+            animate={iconBow ? { rotate: [0, -8, 8, -4, 0] } : { rotate: 0 }}
+            transition={{
+              duration: 0.8,
+              ease: [0.32, 0.72, 0, 1],
+              delay: iconBow ? iconBowDelay : 0,
+            }}
           >
             {emoji}
-          </span>
+          </motion.span>
           <div>
-            <h2 className="font-display text-xl tracking-tight leading-none">{title}</h2>
-            <p className="text-xs text-muted-foreground mt-1">{hint}</p>
+            <h2 className="t-display-sm leading-none">{title}</h2>
+            <p className="t-meta text-muted-foreground mt-1">{hint}</p>
           </div>
         </div>
         <motion.button
@@ -112,9 +132,9 @@ export function TaskSection({ title, hint, emoji, tone, items, onChange, placeho
                   scale: { duration: 0.22, ease: [0.32, 0.72, 0, 1] },
                   layout: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
                 }}
-                className="group relative overflow-hidden rounded-full"
+                className="group relative overflow-hidden rounded-[1.45rem]"
               >
-                <PillInput
+                <PillTextArea
                   tone={tone}
                   value={value}
                   done={done}
@@ -122,12 +142,13 @@ export function TaskSection({ title, hint, emoji, tone, items, onChange, placeho
                   autoFocus={!done && i === items.length - 1 && i > 0 && value === ""}
                   onChange={(e) => updateText(i, e.target.value)}
                   onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.shiftKey) return;
                     if (e.key === "Enter") {
                       e.preventDefault();
                       const list = e.currentTarget.closest("ul");
                       const inputs = list
                         ? Array.from(
-                            list.querySelectorAll<HTMLInputElement>("input:not([readonly])"),
+                            list.querySelectorAll<HTMLTextAreaElement>("textarea:not([readonly])"),
                           )
                         : [];
                       const idx = inputs.indexOf(e.currentTarget);
@@ -139,7 +160,7 @@ export function TaskSection({ title, hint, emoji, tone, items, onChange, placeho
                       if (value.trim().length > 0) {
                         const expectedCount =
                           (list
-                            ? list.querySelectorAll<HTMLInputElement>("input:not([readonly])")
+                            ? list.querySelectorAll<HTMLTextAreaElement>("textarea:not([readonly])")
                                 .length
                             : 0) + 1;
                         add();
@@ -147,7 +168,9 @@ export function TaskSection({ title, hint, emoji, tone, items, onChange, placeho
                         const focusNew = () => {
                           const after = list
                             ? Array.from(
-                                list.querySelectorAll<HTMLInputElement>("input:not([readonly])"),
+                                list.querySelectorAll<HTMLTextAreaElement>(
+                                  "textarea:not([readonly])",
+                                ),
                               )
                             : [];
                           if (after.length >= expectedCount) {
@@ -164,7 +187,7 @@ export function TaskSection({ title, hint, emoji, tone, items, onChange, placeho
                       e.preventDefault();
                       const list = e.currentTarget.closest("ul");
                       const inputs = list
-                        ? Array.from(list.querySelectorAll<HTMLInputElement>("input"))
+                        ? Array.from(list.querySelectorAll<HTMLTextAreaElement>("textarea"))
                         : [];
                       const idx = inputs.indexOf(e.currentTarget);
                       const prev = inputs[idx - 1];
@@ -183,10 +206,27 @@ export function TaskSection({ title, hint, emoji, tone, items, onChange, placeho
                     }
                   }}
                   placeholder={placeholder}
+                  className="pr-28"
+                  maxLines={4}
+                  onMaxLinesExceeded={() =>
+                    onLimitReached("This is getting big. Break it down into another item.")
+                  }
                 />
 
                 {/* Right-side action: tick (toggle) or X (remove if done) */}
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  {value.trim().length > 0 && !done && (
+                    <button
+                      onClick={() => onStartTask(i)}
+                      className="grid h-8 w-8 place-items-center rounded-full bg-background/70 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:bg-card hover:text-foreground"
+                      aria-label="Start task"
+                      title="Start task"
+                      type="button"
+                      tabIndex={-1}
+                    >
+                      <Play className="h-3.5 w-3.5 fill-current" />
+                    </button>
+                  )}
                   {value.trim().length > 0 && !done && (
                     <button
                       onClick={() => cyclePriority(i)}
@@ -217,7 +257,7 @@ export function TaskSection({ title, hint, emoji, tone, items, onChange, placeho
                   )}
                   {value.trim().length > 0 && (
                     <button
-                      onClick={(e) => toggleDone(i, e.currentTarget as HTMLElement)}
+                      onClick={() => toggleDone(i)}
                       className={`grid h-8 w-8 place-items-center rounded-full transition-all ${
                         done
                           ? "bg-[color:var(--mit)]/80 text-[color:var(--mit-foreground)] shadow-soft"

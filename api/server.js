@@ -1,4 +1,4 @@
-import server from "../dist/server/index.js";
+import server from "../dist/server/server.js";
 
 export default async function handler(req, res) {
   const protocol = req.headers["x-forwarded-proto"] || "https";

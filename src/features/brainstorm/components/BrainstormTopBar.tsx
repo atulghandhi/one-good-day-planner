@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { ThemePicker } from "@/components/ThemePicker";
 import { cn } from "@/lib/utils";
+import type { BrainstormExportFormat } from "../export";
 import { controlStyle, floatingPanelStyle, shapeStyle, sketchChipStyle } from "../theme";
 import type { BrainstormSearchResult } from "../search";
 import type { BrainstormLibrary, ShapeKey, ShapeTheme, SketchPalette } from "../types";
@@ -30,6 +31,7 @@ type BrainstormTopBarProps = {
   shape: ShapeKey;
   theme: ShapeTheme;
   sketchPalette: SketchPalette;
+  clearMode: boolean;
   onSearchQueryChange: (query: string) => void;
   onLibraryOpenChange: (open: boolean) => void;
   onSearchOpenChange: (open: boolean) => void;
@@ -39,7 +41,7 @@ type BrainstormTopBarProps = {
   onActivateBrainstorm: (id: string) => void;
   onFocusSearchResult: (brainstormId: string, ideaId: string | null) => void;
   onCopyShareLink: () => void;
-  onDownloadBrainstorm: () => void;
+  onDownloadBrainstorm: (format: BrainstormExportFormat) => void;
   onOpenReset: () => void;
 };
 
@@ -53,6 +55,7 @@ export function BrainstormTopBar({
   shape,
   theme,
   sketchPalette,
+  clearMode,
   onSearchQueryChange,
   onLibraryOpenChange,
   onSearchOpenChange,
@@ -105,6 +108,13 @@ export function BrainstormTopBar({
     onSearchOpenChange(false);
   };
 
+  useEffect(() => {
+    if (!clearMode) return;
+    setShareOpen(false);
+    onLibraryOpenChange(false);
+    onSearchOpenChange(false);
+  }, [clearMode, onLibraryOpenChange, onSearchOpenChange]);
+
   useEffect(
     () => () => {
       if (libraryCloseTimer.current !== null) window.clearTimeout(libraryCloseTimer.current);
@@ -115,19 +125,33 @@ export function BrainstormTopBar({
 
   return (
     <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-5 py-4">
-      <Link
-        to="/"
-        className={cn(
-          "inline-flex min-h-12 items-center gap-2 px-5 py-2 text-sm font-bold text-muted-foreground transition hover:bg-card/90",
-          theme.controlClassName,
-        )}
-        style={control}
-        onClick={(event) => event.stopPropagation()}
+      <motion.div
+        animate={clearMode ? { x: -220, opacity: 0, scale: 0.86 } : { x: 0, opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 320, damping: 20 }}
+        style={{ pointerEvents: clearMode ? "none" : undefined }}
       >
-        <ArrowLeft className="h-4 w-4" />
-        Back to today
-      </Link>
-      <div className="relative flex items-center gap-2">
+        <Link
+          to="/"
+          className={cn(
+            "inline-flex min-h-12 items-center gap-2 px-5 py-2 text-sm font-bold text-muted-foreground transition hover:bg-card/90",
+            theme.controlClassName,
+          )}
+          style={control}
+          onClick={(event) => event.stopPropagation()}
+          aria-hidden={clearMode}
+          tabIndex={clearMode ? -1 : undefined}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to today
+        </Link>
+      </motion.div>
+      <motion.div
+        className="relative flex items-center gap-2"
+        animate={clearMode ? { x: 300, opacity: 0, scale: 0.86 } : { x: 0, opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 320, damping: 20 }}
+        aria-hidden={clearMode}
+        style={{ pointerEvents: clearMode ? "none" : undefined }}
+      >
         <motion.button
           type="button"
           onMouseEnter={openLibrary}
@@ -148,6 +172,7 @@ export function BrainstormTopBar({
           style={control}
           aria-label="Brainstorms"
           title="Brainstorms"
+          tabIndex={clearMode ? -1 : undefined}
         >
           <Layers className="h-4 w-4" strokeWidth={2.5} />
         </motion.button>
@@ -167,6 +192,7 @@ export function BrainstormTopBar({
             style={control}
             aria-label="Search brainstorms"
             title="Search brainstorms"
+            tabIndex={clearMode ? -1 : undefined}
           >
             <Search className="h-4 w-4" strokeWidth={2.5} />
           </motion.button>
@@ -191,6 +217,7 @@ export function BrainstormTopBar({
           style={control}
           aria-label="Share or export"
           title="Share or export"
+          tabIndex={clearMode ? -1 : undefined}
         >
           <Share2 className="h-4 w-4" strokeWidth={2.5} />
         </motion.button>
@@ -201,6 +228,14 @@ export function BrainstormTopBar({
             ...control,
             height: 40,
             width: 40,
+          }}
+          onOpenChange={(open) => {
+            if (!open) return;
+            cancelLibraryClose();
+            cancelShareClose();
+            onLibraryOpenChange(false);
+            onSearchOpenChange(false);
+            setShareOpen(false);
           }}
           panelStyle={isSketch ? panel : control}
           swatchShapeStyle={shapeStyle(shape)}
@@ -217,6 +252,7 @@ export function BrainstormTopBar({
           className={iconButtonClass}
           style={control}
           aria-label="Reset brainstorm"
+          tabIndex={clearMode ? -1 : undefined}
         >
           <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
         </motion.button>
@@ -322,7 +358,7 @@ export function BrainstormTopBar({
               exit={{ opacity: 0, y: -6, scale: 0.96 }}
               transition={{ type: "spring", stiffness: 280, damping: 22 }}
               className={cn(
-                "absolute right-0 top-14 z-50 w-48 space-y-1 p-2 shadow-pop",
+                "absolute right-0 top-14 z-50 w-56 space-y-1 p-2 shadow-pop",
                 isSketch ? "border-2" : cn("backdrop-blur", theme.controlClassName),
               )}
               style={isSketch ? panel : control}
@@ -348,7 +384,7 @@ export function BrainstormTopBar({
               <button
                 type="button"
                 onClick={() => {
-                  onDownloadBrainstorm();
+                  onDownloadBrainstorm("svg");
                   setShareOpen(false);
                 }}
                 className={cn(
@@ -360,6 +396,24 @@ export function BrainstormTopBar({
                 <Download className="h-3.5 w-3.5" />
                 Download SVG
               </button>
+              {(["png", "pdf", "markdown"] as const).map((format) => (
+                <button
+                  key={format}
+                  type="button"
+                  onClick={() => {
+                    onDownloadBrainstorm(format);
+                    setShareOpen(false);
+                  }}
+                  className={cn(
+                    "flex h-9 w-full items-center gap-2 px-3 text-left text-xs font-bold transition",
+                    isSketch ? "border-2" : "rounded-full bg-card/80 hover:bg-card",
+                  )}
+                  style={isSketch ? sketchButtonStyle : undefined}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Download {format === "markdown" ? "Markdown" : format.toUpperCase()}
+                </button>
+              ))}
             </motion.div>
           )}
           {searchOpen && (
@@ -421,7 +475,7 @@ export function BrainstormTopBar({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
     </div>
   );
 }

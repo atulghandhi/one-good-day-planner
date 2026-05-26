@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toCanvasPoint } from "../canvas";
 import { depthLevel, ideaFontSize } from "../graph";
+import { ideaKindLabel } from "../kinds";
 import { shapeStyle } from "../theme";
 import type { Idea, Placed, ShapeKey, ShapeTheme, SketchMarker, SketchPalette } from "../types";
 
@@ -269,7 +270,7 @@ export function IdeaNode({
                 color: isSketch ? sketchPalette.ink : undefined,
               }}
             >
-              {idea.done ? "✓" : idea.kind}
+              {idea.done ? "✓" : idea.kind ? ideaKindLabel(idea.kind) : ""}
             </span>
           )}
           {isEditing ? (
