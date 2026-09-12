@@ -42,7 +42,8 @@ export function buildTodayBrainstorm(planner: PlannerState): BrainstormState {
     return idea.id;
   };
 
-  const mitId = addNode("MIT", undefined, "task");
+  const rootId = addNode("Today");
+  const mitId = addNode("MIT", rootId, "task");
   const mitText = stripHtml(planner.mit);
   if (mitId && mitText) addNode(mitText, mitId, "task");
   planner.mitSubs.forEach((step) => {
@@ -51,18 +52,18 @@ export function buildTodayBrainstorm(planner: PlannerState): BrainstormState {
     }
   });
 
-  const shouldId = addNode("Shoulds", undefined, "note");
+  const shouldId = addNode("Shoulds", rootId, "note");
   planner.shoulds.forEach((item) => {
     if (shouldId && item.text.trim()) addNode(item.text, shouldId, "task");
   });
 
-  const couldId = addNode("Coulds", undefined, "note");
+  const couldId = addNode("Coulds", rootId, "note");
   planner.coulds.forEach((item) => {
     if (couldId && item.text.trim()) addNode(item.text, couldId, "task");
   });
 
   return {
-    version: 3,
+    version: 4,
     title: "Today",
     shape: "blob",
     ideas,

@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { CENTER_BOX } from "../constants";
 import { connectorPathFromPoints, toScreenPoint } from "../canvas";
 import { depthLevel } from "../graph";
 import { safeSvgId, sketchMarkerForDepth } from "../theme";
@@ -50,7 +49,7 @@ export function ConnectorLayer({
       {ideas.map((idea, index) => {
         const to = placements[index];
         if (!to) return null;
-        const from = idea.parentId ? placementById.get(idea.parentId) : CENTER_BOX;
+        const from = idea.parentId ? placementById.get(idea.parentId) : undefined;
         if (!from) return null;
         const isNew = idea.id === lastAddedId;
         const isSelectedOutgoing = focusedId != null && idea.parentId === focusedId;

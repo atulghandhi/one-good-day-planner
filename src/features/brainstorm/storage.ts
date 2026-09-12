@@ -62,13 +62,45 @@ export function makeId(prefix: string) {
 }
 
 export function createBrainstormDoc(state: Partial<BrainstormState> = {}): BrainstormDoc {
-  return {
+  const title = state.title ?? EMPTY.title;
+  const ideas =
+    state.ideas?.length === 1 &&
+    state.ideas[0].id === "root" &&
+    state.ideas[0].text === EMPTY.title &&
+    title !== EMPTY.title
+      ? [{ ...state.ideas[0], text: title }]
+      : (state.ideas ?? EMPTY.ideas.map((idea) => ({ ...idea, text: title })));
+  const nextState = normalizeBrainstormState({
     ...EMPTY,
     ...state,
-    version: 3,
+    title,
+    ideas,
+  });
+
+  return {
+    ...nextState,
     id: makeId("brainstorm"),
     updatedAt: Date.now(),
   };
+}
+
+function uniqueId(baseId: string, seen: Set<string>) {
+  if (!seen.has(baseId)) {
+    seen.add(baseId);
+    return baseId;
+  }
+
+  for (let index = 2; index < 1000; index += 1) {
+    const candidate = `${baseId}-${index}`;
+    if (!seen.has(candidate)) {
+      seen.add(candidate);
+      return candidate;
+    }
+  }
+
+  const fallback = `${baseId}-${seen.size + 1}`;
+  seen.add(fallback);
+  return fallback;
 }
 
 export function normalizeBrainstormState(raw: unknown): BrainstormState {
@@ -79,10 +111,12 @@ export function normalizeBrainstormState(raw: unknown): BrainstormState {
       ideas?: Partial<Idea>[];
     }
   >;
-  const legacyCoords = parsed.version !== 3;
+  const schemaVersion = typeof parsed.version === "number" ? parsed.version : 0;
+  const legacyCoords = schemaVersion < 3;
   const viewportOffsetX = typeof window === "undefined" ? 0 : window.innerWidth / 2;
   const viewportOffsetY = typeof window === "undefined" ? 0 : window.innerHeight / 2;
   const seen = new Set<string>();
+  const title = typeof parsed.title === "string" ? normalizeTitleValue(parsed.title) : EMPTY.title;
   const ideas = Array.isArray(parsed.ideas)
     ? parsed.ideas.flatMap((idea) => {
         if (typeof idea.id !== "string" || typeof idea.text !== "string") {
@@ -118,13 +152,41 @@ export function normalizeBrainstormState(raw: unknown): BrainstormState {
     : [];
 
   const ids = new Set(ideas.map((idea) => idea.id));
+  let normalizedIdeas: Idea[] = ideas.map((idea) =>
+    idea.parentId && !ids.has(idea.parentId) ? { ...idea, parentId: undefined } : idea,
+  );
+
+  if (schemaVersion < 4) {
+    const rootId = uniqueId("root", seen);
+    normalizedIdeas = [
+      {
+        id: rootId,
+        text: title || EMPTY.title,
+        cx: 0,
+        cy: 0,
+        parentId: undefined,
+        kind: undefined,
+        done: false,
+        collapsed: false,
+      },
+      ...normalizedIdeas.map((idea) => ({
+        ...idea,
+        parentId: idea.parentId ?? rootId,
+      })),
+    ];
+  } else if (normalizedIdeas.length === 0) {
+    normalizedIdeas = EMPTY.ideas.map((idea) => ({
+      ...idea,
+      text: title || idea.text,
+      cx: idea.cx,
+      cy: idea.cy,
+    }));
+  }
 
   return {
-    version: 3,
-    title: typeof parsed.title === "string" ? normalizeTitleValue(parsed.title) : EMPTY.title,
-    ideas: ideas.map((idea) =>
-      idea.parentId && !ids.has(idea.parentId) ? { ...idea, parentId: undefined } : idea,
-    ),
+    version: 4,
+    title,
+    ideas: normalizedIdeas,
     shape: normalizeShape(parsed.shape),
   };
 }

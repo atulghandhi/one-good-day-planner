@@ -66,6 +66,7 @@ export function NodesLayer({
             sketchMarker={sketchMarkerForDepth(sketchPalette, depth)}
             isNew={idea.id === lastAddedId}
             isFocused={focusedId === idea.id}
+            isRoot={!idea.parentId}
             isPathHighlighted={focusedPathIds.has(idea.id)}
             isDimmed={focusedId != null && !focusedBranchIds.has(idea.id)}
             isEditing={editingId === idea.id}

@@ -21,6 +21,7 @@ export type IdeaNodeProps = {
   sketchMarker: SketchMarker;
   isNew: boolean;
   isFocused: boolean;
+  isRoot: boolean;
   isPathHighlighted: boolean;
   isDimmed: boolean;
   isEditing: boolean;
@@ -44,6 +45,7 @@ export function IdeaNode({
   sketchMarker,
   isNew,
   isFocused,
+  isRoot,
   isPathHighlighted,
   isDimmed,
   isEditing,
@@ -87,8 +89,20 @@ export function IdeaNode({
   const canvasPoint = toCanvasPoint(placement);
   const isSketch = shape === "blob";
   const level = depthLevel(depth);
-  const fontSize = isSketch ? Math.max(12.5, 15.5 - level * 1.15) : ideaFontSize(level);
-  const fontWeight = isSketch ? Math.max(600, 800 - level * 55) : Math.max(520, 650 - level * 45);
+  const fontSize = isRoot
+    ? isSketch
+      ? 34
+      : 24
+    : isSketch
+      ? Math.max(12.5, 15.5 - level * 1.15)
+      : ideaFontSize(level);
+  const fontWeight = isRoot
+    ? isSketch
+      ? 900
+      : 720
+    : isSketch
+      ? Math.max(600, 800 - level * 55)
+      : Math.max(520, 650 - level * 45);
   const focusScale = Math.max(1.025, 1.08 - level * 0.012);
   const focusRing = Math.max(1, 2 - level * 0.22);
   const focusedShadow = isSketch
@@ -125,7 +139,7 @@ export function IdeaNode({
           22 - level * 2,
         )}%, transparent)`
       : undefined;
-  const ringWidth = Math.max(3, 7 - level * 0.8);
+  const ringWidth = isRoot ? 8 : Math.max(3, 7 - level * 0.8);
 
   return (
     <div
@@ -190,6 +204,7 @@ export function IdeaNode({
           }}
           className={cn(
             "relative flex min-h-11 select-none items-center justify-center overflow-visible px-3 py-2 text-center text-sm font-medium text-foreground transition-shadow",
+            isRoot && "min-h-20 px-7 py-4",
             isDragging ? "cursor-grabbing" : "cursor-grab",
             theme.cardClassName,
           )}
@@ -200,7 +215,7 @@ export function IdeaNode({
             fontFamily: theme.fontFamily,
             fontSize,
             fontWeight,
-            lineHeight: 1.2,
+            lineHeight: isRoot && isSketch ? 0.96 : 1.2,
             border: nestedBorder,
             boxShadow: isFocused ? focusedShadow : isPathHighlighted ? pathShadow : restingShadow,
             backgroundColor: isSketch ? sketchPalette.card : undefined,

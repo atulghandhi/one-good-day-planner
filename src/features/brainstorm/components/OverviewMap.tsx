@@ -1,7 +1,7 @@
 import type React from "react";
 import { useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import { CENTER_BOX, WORLD_CENTER } from "../constants";
+import { WORLD_CENTER } from "../constants";
 import { clamp } from "../math";
 import type { CanvasView, Idea, Placed } from "../types";
 
@@ -28,7 +28,17 @@ export function OverviewMap({
   const mapW = 190;
   const mapH = 132;
   const bounds = useMemo(() => {
-    const boxes = [CENTER_BOX, ...placements];
+    const boxes =
+      placements.length > 0
+        ? placements
+        : [
+            {
+              x: (viewportSize.w / 2 - view.x) / view.zoom - WORLD_CENTER,
+              y: (viewportSize.h / 2 - view.y) / view.zoom - WORLD_CENTER,
+              w: viewportSize.w / view.zoom,
+              h: viewportSize.h / view.zoom,
+            },
+          ];
     const minX = Math.min(...boxes.map((box) => box.x - box.w / 2)) - 260;
     const maxX = Math.max(...boxes.map((box) => box.x + box.w / 2)) + 260;
     const minY = Math.min(...boxes.map((box) => box.y - box.h / 2)) - 220;
@@ -44,7 +54,7 @@ export function OverviewMap({
       width,
       height,
     };
-  }, [placements]);
+  }, [placements, view.x, view.y, view.zoom, viewportSize.h, viewportSize.w]);
 
   const scale = Math.min((mapW - 20) / bounds.width, (mapH - 20) / bounds.height);
   const offsetX = (mapW - bounds.width * scale) / 2;
@@ -146,7 +156,7 @@ export function OverviewMap({
           const from =
             idea.parentId != null
               ? placements[ideas.findIndex((candidate) => candidate.id === idea.parentId)]
-              : CENTER_BOX;
+              : undefined;
           if (!from) return null;
           const a = mapPoint(from);
           const b = mapPoint(to);
@@ -179,21 +189,6 @@ export function OverviewMap({
             />
           );
         })}
-        {(() => {
-          const center = mapPoint(CENTER_BOX);
-          return (
-            <rect
-              x={center.x - 4}
-              y={center.y - 4}
-              width="8"
-              height="8"
-              rx="1"
-              ry="1"
-              fill="currentColor"
-              className="text-[color:var(--mit)]"
-            />
-          );
-        })()}
         <rect
           x={visibleRect.x}
           y={visibleRect.y}

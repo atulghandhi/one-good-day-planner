@@ -14,7 +14,7 @@ export type Idea = {
 };
 
 export type BrainstormState = {
-  version: 3;
+  version: 4;
   title: string;
   ideas: Idea[];
   shape: ShapeKey;

@@ -27,7 +27,7 @@ function cloneIdea(idea: Idea): Idea {
 
 export function snapshotBrainstormState(state: BrainstormState): BrainstormState {
   return {
-    version: 3,
+    version: 4,
     title: state.title,
     shape: state.shape,
     ideas: state.ideas.map(cloneIdea),

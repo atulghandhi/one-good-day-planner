@@ -8,7 +8,7 @@ import {
   redoBrainstormHistory,
   undoBrainstormHistory,
 } from "./history";
-import { layoutIdeas } from "./layout";
+import { findOpenRootSpotInBounds, layoutIdeas } from "./layout";
 import { buildTodayBrainstorm, toMitHtml } from "./plannerImport";
 import { createPlannerSendUpdate } from "./plannerBridge";
 import { searchBrainstorms } from "./search";
@@ -37,8 +37,19 @@ describe("brainstorm domain", () => {
 
     expect(state.shape).toBe("blob");
     expect(state.title.length).toBeLessThanOrEqual(64);
+    expect(state.version).toBe(4);
     expect(state.ideas).toEqual([
-      { id: "a", text: "A", parentId: undefined, kind: "task", done: true, collapsed: true },
+      {
+        id: "root",
+        text: state.title,
+        cx: 0,
+        cy: 0,
+        parentId: undefined,
+        kind: undefined,
+        done: false,
+        collapsed: false,
+      },
+      { id: "a", text: "A", parentId: "root", kind: "task", done: true, collapsed: true },
       { id: "b", text: "B", parentId: "a", kind: undefined, done: false, collapsed: false },
       { id: "c", text: "C", parentId: "a", kind: "action", done: false, collapsed: false },
     ]);
@@ -60,7 +71,7 @@ describe("brainstorm domain", () => {
 
   it("round-trips share links through the stable versioned state shape", () => {
     const state: BrainstormState = {
-      version: 3,
+      version: 4,
       title: "Options",
       shape: "boxy",
       ideas: [{ id: "a", text: "Idea" }],
@@ -130,6 +141,22 @@ describe("brainstorm domain", () => {
     ).toBeGreaterThan(120);
   });
 
+  it("keeps new root placements inside the visible board bounds when possible", () => {
+    const placement = findOpenRootSpotInBounds(
+      { x: 0, y: 0 },
+      { w: 180, h: 80 },
+      [{ x: 0, y: 0, w: 220, h: 120 }],
+      1,
+      { minX: -340, maxX: 340, minY: -220, maxY: 220 },
+    );
+
+    expect(placement).not.toBeNull();
+    expect(placement!.x - placement!.w / 2).toBeGreaterThanOrEqual(-340);
+    expect(placement!.x + placement!.w / 2).toBeLessThanOrEqual(340);
+    expect(placement!.y - placement!.h / 2).toBeGreaterThanOrEqual(-220);
+    expect(placement!.y + placement!.h / 2).toBeLessThanOrEqual(220);
+  });
+
   it("generates distinct connector path modes", () => {
     const start = { x: 0, y: 0 };
     const end = { x: 100, y: 80 };
@@ -141,7 +168,7 @@ describe("brainstorm domain", () => {
 
   it("records undo and redo history without mutating saved snapshots", () => {
     const before: BrainstormState = {
-      version: 3,
+      version: 4,
       title: "Options",
       shape: "blob",
       ideas: [],
@@ -157,7 +184,7 @@ describe("brainstorm domain", () => {
 
     const undone = undoBrainstormHistory(history, after);
     expect(undone.state).toEqual({
-      version: 3,
+      version: 4,
       title: "Options",
       shape: "blob",
       ideas: [],
@@ -179,6 +206,7 @@ describe("brainstorm domain", () => {
     expect(today.title).toBe("Today");
     expect(today.shape).toBe("blob");
     expect(today.ideas.map((idea) => idea.text)).toEqual([
+      "Today",
       "MIT",
       "Write plan",
       "Draft",
@@ -194,9 +222,9 @@ describe("brainstorm domain", () => {
       version: 4,
       activeId: "one",
       brainstorms: [
-        { version: 3, id: "one", updatedAt: 1, title: "Work", shape: "blob", ideas: [] },
+        { version: 4, id: "one", updatedAt: 1, title: "Work", shape: "blob", ideas: [] },
         {
-          version: 3,
+          version: 4,
           id: "two",
           updatedAt: 2,
           title: "Home",

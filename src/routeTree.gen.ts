@@ -9,18 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ReflectRouteImport } from './routes/reflect'
 import { Route as ReceiveRouteImport } from './routes/receive'
 import { Route as DiaryRouteImport } from './routes/diary'
 import { Route as BrainstormRouteImport } from './routes/brainstorm'
 import { Route as IndexRouteImport } from './routes/index'
 
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ReflectRoute = ReflectRouteImport.update({
   id: '/reflect',
   path: '/reflect',
@@ -53,7 +47,6 @@ export interface FileRoutesByFullPath {
   '/diary': typeof DiaryRoute
   '/receive': typeof ReceiveRoute
   '/reflect': typeof ReflectRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,7 +54,6 @@ export interface FileRoutesByTo {
   '/diary': typeof DiaryRoute
   '/receive': typeof ReceiveRoute
   '/reflect': typeof ReflectRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,27 +62,13 @@ export interface FileRoutesById {
   '/diary': typeof DiaryRoute
   '/receive': typeof ReceiveRoute
   '/reflect': typeof ReflectRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/brainstorm'
-    | '/diary'
-    | '/receive'
-    | '/reflect'
-    | '/sitemap.xml'
+  fullPaths: '/' | '/brainstorm' | '/diary' | '/receive' | '/reflect'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/brainstorm' | '/diary' | '/receive' | '/reflect' | '/sitemap.xml'
-  id:
-    | '__root__'
-    | '/'
-    | '/brainstorm'
-    | '/diary'
-    | '/receive'
-    | '/reflect'
-    | '/sitemap.xml'
+  to: '/' | '/brainstorm' | '/diary' | '/receive' | '/reflect'
+  id: '__root__' | '/' | '/brainstorm' | '/diary' | '/receive' | '/reflect'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -99,18 +77,10 @@ export interface RootRouteChildren {
   DiaryRoute: typeof DiaryRoute
   ReceiveRoute: typeof ReceiveRoute
   ReflectRoute: typeof ReflectRoute
-  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/reflect': {
       id: '/reflect'
       path: '/reflect'
@@ -155,7 +125,6 @@ const rootRouteChildren: RootRouteChildren = {
   DiaryRoute: DiaryRoute,
   ReceiveRoute: ReceiveRoute,
   ReflectRoute: ReflectRoute,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

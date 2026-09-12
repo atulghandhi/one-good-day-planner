@@ -1,5 +1,4 @@
 import { connectorPathFromPoints } from "./canvas";
-import { CENTER_BOX } from "./constants";
 import { effectiveIdeaKind, ideaKindLabel } from "./kinds";
 import type { Idea, IdeaKind, Placed, ShapeKey, ShapeTheme, SketchPalette } from "./types";
 
@@ -130,7 +129,7 @@ export function createBrainstormSvgDocument({
   theme,
   sketchPalette,
 }: ExportBrainstormSvgOptions): BrainstormSvgDocument {
-  const boxes = [CENTER_BOX, ...placements];
+  const boxes = placements.length > 0 ? placements : [{ x: 0, y: 0, w: 420, h: 240 }];
   const minX = Math.min(...boxes.map((box) => box.x - box.w / 2)) - EXPORT_PADDING;
   const minY = Math.min(...boxes.map((box) => box.y - box.h / 2)) - EXPORT_PADDING;
   const maxX = Math.max(...boxes.map((box) => box.x + box.w / 2)) + EXPORT_PADDING;
@@ -155,7 +154,7 @@ export function createBrainstormSvgDocument({
     .map((idea, index) => {
       const to = placements[index];
       if (!to) return "";
-      const from = idea.parentId ? placementById.get(idea.parentId) : CENTER_BOX;
+      const from = idea.parentId ? placementById.get(idea.parentId) : undefined;
       if (!from) return "";
       const start = { x: from.x + offset.x, y: from.y + offset.y };
       const end = { x: to.x + offset.x, y: to.y + offset.y };
@@ -163,15 +162,6 @@ export function createBrainstormSvgDocument({
       return `<path d="${path}" fill="none" stroke="${line}" stroke-width="${shape === "blob" ? 3 : 2.4}" stroke-linecap="${shape === "boxy" ? "square" : "round"}" stroke-linejoin="${shape === "boxy" ? "miter" : "round"}" opacity="0.72" />`;
     })
     .join("");
-
-  const centerBox = rectSvg(CENTER_BOX, offset, shape, card, marker, shape === "blob" ? 8 : 3);
-  const centerText = textSvg(
-    wrapText(title || "Options", 22, 2),
-    CENTER_BOX.x + offset.x,
-    CENTER_BOX.y + offset.y,
-    shape === "blob" ? 38 : 28,
-    foreground,
-  );
 
   const nodeSvgs = ideas
     .map((idea, index) => {
@@ -198,8 +188,6 @@ export function createBrainstormSvgDocument({
   <rect width="100%" height="100%" fill="${paper}" />
   <g font-family="${escapeXml(fontFamily)}" letter-spacing="0">
     ${connectors}
-    ${centerBox}
-    ${centerText}
     ${nodeSvgs}
   </g>
 </svg>`;

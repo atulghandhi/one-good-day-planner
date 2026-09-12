@@ -21,7 +21,7 @@ export function decodeUrlBase64(value: string) {
 }
 
 export function encodeBrainstormShare(state: BrainstormState) {
-  return encodeUrlBase64(JSON.stringify({ ...state, version: 3 }));
+  return encodeUrlBase64(JSON.stringify({ ...state, version: 4 }));
 }
 
 export function decodeBrainstormShare(value: string): BrainstormState | null {

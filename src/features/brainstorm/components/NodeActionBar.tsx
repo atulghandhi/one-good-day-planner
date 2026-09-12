@@ -1,26 +1,31 @@
 import { motion } from "framer-motion";
 import { Check, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SHAPES } from "../constants";
 import { IDEA_KIND_OPTIONS, effectiveIdeaKind, ideaKindLabel } from "../kinds";
-import { controlStyle, sketchChipStyle } from "../theme";
+import { controlStyle, shapeStyle, sketchChipStyle, SHAPE_THEMES } from "../theme";
 import type { Idea, ShapeKey, ShapeTheme, SketchPalette } from "../types";
 
 type NodeActionBarProps = {
   focusedIdea: Idea;
+  isRoot: boolean;
   shape: ShapeKey;
   theme: ShapeTheme;
   sketchPalette: SketchPalette;
   onSendToPlanner: (target: "mit" | "should" | "could") => void;
   onUpdateIdea: (update: (idea: Idea) => Idea) => void;
+  onShapeChange: (shape: ShapeKey) => void;
 };
 
 export function NodeActionBar({
   focusedIdea,
+  isRoot,
   shape,
   theme,
   sketchPalette,
   onSendToPlanner,
   onUpdateIdea,
+  onShapeChange,
 }: NodeActionBarProps) {
   const isSketch = shape === "blob";
   const chipStyle = sketchChipStyle(shape, theme, sketchPalette);
@@ -131,6 +136,42 @@ export function NodeActionBar({
         >
           <Check className="h-3.5 w-3.5" strokeWidth={3} />
         </button>
+      )}
+      {isRoot && (
+        <>
+          <span className="mx-0.5 h-7 w-px bg-current/20" aria-hidden />
+          {SHAPES.map((candidate) => (
+            <button
+              key={candidate.key}
+              type="button"
+              onClick={() => onShapeChange(candidate.key)}
+              className={cn(
+                "grid h-9 w-9 place-items-center border-2 transition",
+                !isSketch &&
+                  (shape === candidate.key
+                    ? "rounded-full bg-[color:var(--mit)]/30 text-foreground"
+                    : "rounded-full bg-card/70 text-muted-foreground hover:bg-card"),
+              )}
+              style={
+                isSketch
+                  ? shape === candidate.key
+                    ? activeChipStyle
+                    : chipStyle
+                  : {
+                      ...shapeStyle(candidate.key),
+                      fontFamily: SHAPE_THEMES[candidate.key].fontFamily,
+                    }
+              }
+              aria-label={`Use ${candidate.label} board style`}
+              title={candidate.label}
+            >
+              <span
+                className="block h-3.5 w-3.5 bg-current opacity-80"
+                style={shapeStyle(candidate.key)}
+              />
+            </button>
+          ))}
+        </>
       )}
     </motion.div>
   );

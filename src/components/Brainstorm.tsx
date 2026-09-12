@@ -3,7 +3,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { AnimatePresence } from "framer-motion";
 import { ResetDialog } from "./ResetDialog";
 import {
-  CENTER_BOX,
   EMPTY,
   MAX_ZOOM,
   MIN_ZOOM,
@@ -19,8 +18,6 @@ import { NodeActionBar } from "@/features/brainstorm/components/NodeActionBar";
 import { NodeFilterBar } from "@/features/brainstorm/components/NodeFilterBar";
 import { NodesLayer } from "@/features/brainstorm/components/NodesLayer";
 import { OverviewMap } from "@/features/brainstorm/components/OverviewMap";
-import { SketchDoodles } from "@/features/brainstorm/components/SketchDoodles";
-import { TitleNode } from "@/features/brainstorm/components/TitleNode";
 import { ZoomControls } from "@/features/brainstorm/components/ZoomControls";
 import {
   downloadBrainstormExport,
@@ -36,7 +33,14 @@ import {
 } from "@/features/brainstorm/history";
 import { useBrainstormLibrary } from "@/features/brainstorm/hooks/useBrainstormLibrary";
 import { effectiveIdeaKind } from "@/features/brainstorm/kinds";
-import { estimateCardSize, findOpenSpot, layoutIdeas } from "@/features/brainstorm/layout";
+import {
+  estimateCardSize,
+  estimateRootSize,
+  findOpenRootSpot,
+  findOpenRootSpotInBounds,
+  findOpenSpot,
+  layoutIdeas,
+} from "@/features/brainstorm/layout";
 import { clamp } from "@/features/brainstorm/math";
 import {
   childIdeasToTaskItems,
@@ -107,7 +111,6 @@ export function Brainstorm() {
     childItems: TaskItem[];
     existingMitText: string;
   } | null>(null);
-  const [centerActive, setCenterActive] = useState(false);
   const [pageTheme, setPageTheme] = useState("blossom");
   const [viewportSize, setViewportSize] = useState({ w: 0, h: 0 });
   const [view, setView] = useState<CanvasView>({
@@ -211,7 +214,6 @@ export function Brainstorm() {
       historyByIdRef.current.set(activeId, result.history);
       setFocusedId(null);
       setEditingId(null);
-      setCenterActive(false);
       setPendingMitOverwrite(null);
       setDragLive(null);
       setLastAddedId(null);
@@ -504,7 +506,6 @@ export function Brainstorm() {
   const selectIdea = useCallback(
     (id: string, options: { center?: boolean } = {}) => {
       setFocusedId(id);
-      setCenterActive(false);
       if (options.center) focusBoxes(getBranchBoxes(id));
       focusIdeaInput();
     },
@@ -520,6 +521,45 @@ export function Brainstorm() {
       y: (clientY - rect.top - current.y) / current.zoom - WORLD_CENTER,
     };
   }, []);
+
+  const getViewportWorldCenter = useCallback(
+    () => ({
+      x: (viewportSize.w / 2 - viewRef.current.x) / viewRef.current.zoom - WORLD_CENTER,
+      y: (viewportSize.h / 2 - viewRef.current.y) / viewRef.current.zoom - WORLD_CENTER,
+    }),
+    [viewportSize.h, viewportSize.w],
+  );
+
+  const getVisibleWorldBounds = useCallback(() => {
+    const current = viewRef.current;
+    const toWorldX = (screenX: number) =>
+      screenX / current.zoom - current.x / current.zoom - WORLD_CENTER;
+    const toWorldY = (screenY: number) =>
+      screenY / current.zoom - current.y / current.zoom - WORLD_CENTER;
+    const sidePadding = 90;
+    const topPadding = 104;
+    const bottomPadding = 170;
+
+    return {
+      minX: toWorldX(sidePadding),
+      maxX: toWorldX(Math.max(sidePadding, viewportSize.w - sidePadding)),
+      minY: toWorldY(topPadding),
+      maxY: toWorldY(Math.max(topPadding, viewportSize.h - bottomPadding)),
+    };
+  }, [viewportSize.h, viewportSize.w]);
+
+  const isPlacementFullyVisible = useCallback(
+    (placement: Placed) => {
+      const bounds = getVisibleWorldBounds();
+      return (
+        placement.x - placement.w / 2 >= bounds.minX &&
+        placement.x + placement.w / 2 <= bounds.maxX &&
+        placement.y - placement.h / 2 >= bounds.minY &&
+        placement.y + placement.h / 2 <= bounds.maxY
+      );
+    },
+    [getVisibleWorldBounds],
+  );
 
   const focusWorldPoint = useCallback(
     (point: { x: number; y: number }, zoom = viewRef.current.zoom, animated = false) => {
@@ -553,26 +593,43 @@ export function Brainstorm() {
 
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const parentId = focusedId ?? undefined;
-    const depth = parentId ? (depthById.get(parentId) ?? 0) + 1 : 0;
-    const size = estimateCardSize(text, shape, depth);
-    const parent = parentId ? (placementById.get(parentId) ?? CENTER_BOX) : CENTER_BOX;
-    const parentIdea = parentId ? state.ideas.find((idea) => idea.id === parentId) : undefined;
-    const parentOrigin =
-      parentIdea?.parentId != null
-        ? (placementById.get(parentIdea.parentId) ?? CENTER_BOX)
-        : CENTER_BOX;
-    const preferredAngle =
-      shape === "blob" && parentId
-        ? Math.atan2(parent.y - parentOrigin.y, parent.x - parentOrigin.x)
-        : undefined;
-    const occupied = [CENTER_BOX, ...displayPlacements];
-    const siblingIndex = state.ideas.filter(
-      (idea) => (idea.parentId ?? "center") === (parentId ?? "center"),
-    ).length;
-    const placement = findOpenSpot(parent, size, occupied, siblingIndex, shape, preferredAngle);
+    const occupied = displayPlacements;
+    const viewportCenter = getViewportWorldCenter();
+    const placement = parentId
+      ? (() => {
+          const depth = (depthById.get(parentId) ?? 0) + 1;
+          const size = estimateCardSize(text, shape, depth);
+          const parent = placementById.get(parentId);
+          if (!parent) return findOpenRootSpot(viewportCenter, size, occupied, 0);
+          const parentIdea = state.ideas.find((idea) => idea.id === parentId);
+          const parentOrigin =
+            parentIdea?.parentId != null
+              ? (placementById.get(parentIdea.parentId) ?? parent)
+              : parent;
+          const preferredAngle =
+            shape === "blob" && parentIdea?.parentId
+              ? Math.atan2(parent.y - parentOrigin.y, parent.x - parentOrigin.x)
+              : undefined;
+          const siblingIndex = state.ideas.filter((idea) => idea.parentId === parentId).length;
+          return findOpenSpot(parent, size, occupied, siblingIndex, shape, preferredAngle);
+        })()
+      : (() => {
+          const size = estimateRootSize(text, shape);
+          const rootIndex = state.ideas.filter((idea) => !idea.parentId).length;
+          return (
+            findOpenRootSpotInBounds(
+              viewportCenter,
+              size,
+              occupied,
+              rootIndex,
+              getVisibleWorldBounds(),
+            ) ?? findOpenRootSpot(viewportCenter, size, occupied, rootIndex)
+          );
+        })();
 
     updateBrainstormState((current) => ({
       ...current,
+      title: parentId || current.ideas.some((idea) => !idea.parentId) ? current.title : text,
       ideas: current.ideas
         .map((idea) => (idea.id === parentId ? { ...idea, collapsed: false } : idea))
         .concat({
@@ -584,20 +641,32 @@ export function Brainstorm() {
         }),
     }));
     setLastAddedId(id);
+    setFocusedId(id);
     setDraft("");
     if (parentId) {
       focusBoxes(getBranchBoxes(parentId, [placement]));
+    } else if (!isPlacementFullyVisible(placement)) {
+      focusBoxes([placement]);
     }
     focusIdeaInput();
   };
 
   const removeIdea = (id: string) => {
-    updateBrainstormState((current) => ({
-      ...current,
-      ideas: current.ideas
+    updateBrainstormState((current) => {
+      const primaryRootId = current.ideas.find((idea) => !idea.parentId)?.id;
+      const ideas = current.ideas
         .filter((idea) => idea.id !== id)
-        .map((idea) => (idea.parentId === id ? { ...idea, parentId: undefined } : idea)),
-    }));
+        .map((idea) => (idea.parentId === id ? { ...idea, parentId: undefined } : idea));
+
+      return {
+        ...current,
+        title:
+          id === primaryRootId
+            ? (ideas.find((idea) => !idea.parentId)?.text ?? EMPTY.title)
+            : current.title,
+        ideas,
+      };
+    });
     if (focusedId === id) setFocusedId(null);
     if (editingId === id) setEditingId(null);
     if (dragLive?.id === id) setDragLive(null);
@@ -640,10 +709,14 @@ export function Brainstorm() {
   );
 
   const commitEdit = (id: string, text: string) => {
-    updateBrainstormState((current) => ({
-      ...current,
-      ideas: current.ideas.map((idea) => (idea.id === id ? { ...idea, text } : idea)),
-    }));
+    updateBrainstormState((current) => {
+      const primaryRootId = current.ideas.find((idea) => !idea.parentId)?.id;
+      return {
+        ...current,
+        title: id === primaryRootId ? text : current.title,
+        ideas: current.ideas.map((idea) => (idea.id === id ? { ...idea, text } : idea)),
+      };
+    });
     setEditingId(null);
   };
 
@@ -684,7 +757,6 @@ export function Brainstorm() {
     viewportRef.current?.setPointerCapture(event.pointerId);
     const point = screenToWorld(event.clientX, event.clientY);
     setFocusedId(id);
-    setCenterActive(false);
     interactionRef.current = {
       type: "node",
       pointerId: event.pointerId,
@@ -803,7 +875,11 @@ export function Brainstorm() {
   );
 
   const fitChart = useCallback(() => {
-    const boxes = [CENTER_BOX, ...visiblePlacements];
+    const boxes = visiblePlacements;
+    if (boxes.length === 0) {
+      focusWorldPoint({ x: 0, y: 0 }, 1);
+      return;
+    }
     const minX = Math.min(...boxes.map((box) => box.x - box.w / 2)) - 180;
     const maxX = Math.max(...boxes.map((box) => box.x + box.w / 2)) + 180;
     const minY = Math.min(...boxes.map((box) => box.y - box.h / 2)) - 160;
@@ -885,8 +961,6 @@ export function Brainstorm() {
       return;
     }
     setFocusedId(null);
-    setCenterActive(false);
-    focusWorldPoint({ x: 0, y: 0 }, viewRef.current.zoom, true);
   };
 
   const handleCanvasClick = () => {
@@ -979,6 +1053,11 @@ export function Brainstorm() {
     could: "Coulds",
   };
 
+  const dotGridSize = Math.max(8, 28 * view.zoom);
+  const dotGridOffsetX = ((view.x % dotGridSize) + dotGridSize) % dotGridSize;
+  const dotGridOffsetY = ((view.y % dotGridSize) + dotGridSize) % dotGridSize;
+  const dotGridColor = shape === "blob" ? sketchPalette.ink : "var(--foreground)";
+
   const sendFocusedToPlanner = async (target: PlannerTarget) => {
     if (!focusedIdea) return;
     const planner = await loadState();
@@ -1034,27 +1113,20 @@ export function Brainstorm() {
       className="relative h-screen w-screen overflow-hidden"
       style={{
         fontFamily: theme.fontFamily,
-        background:
-          shape === "blob"
-            ? `radial-gradient(circle at 28% 18%, ${sketchPalette.paperAccent}, transparent 24%), radial-gradient(circle at 74% 76%, ${sketchPalette.markerGlow}, transparent 22%), ${sketchPalette.paper}`
-            : undefined,
+        background: shape === "blob" ? sketchPalette.paper : "var(--background)",
         color: shape === "blob" ? sketchPalette.ink : undefined,
       }}
     >
-      {shape === "blob" ? (
-        <SketchDoodles palette={sketchPalette} />
-      ) : (
-        <>
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[color:var(--could)] opacity-45 blur-3xl"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute bottom-0 -right-24 h-80 w-80 rounded-full bg-[color:var(--mit)] opacity-42 blur-3xl"
-          />
-        </>
-      )}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{
+          backgroundImage: `radial-gradient(circle, ${dotGridColor} 1.15px, transparent 1.25px)`,
+          backgroundPosition: `${dotGridOffsetX}px ${dotGridOffsetY}px`,
+          backgroundSize: `${dotGridSize}px ${dotGridSize}px`,
+          opacity: shape === "blob" ? 0.16 : 0.12,
+        }}
+      />
 
       <BrainstormTopBar
         library={library}
@@ -1134,29 +1206,6 @@ export function Brainstorm() {
             transformOrigin: "0 0",
           }}
         >
-          <TitleNode
-            title={state.title}
-            shape={shape}
-            theme={theme}
-            sketchPalette={sketchPalette}
-            centerActive={centerActive}
-            onActivate={() => {
-              setFocusedId(null);
-              setCenterActive(true);
-            }}
-            onTitleChange={(title) =>
-              updateBrainstormState((current) => ({
-                ...current,
-                title,
-              }))
-            }
-            onShapeChange={(nextShape) =>
-              updateBrainstormState((current) => ({
-                ...current,
-                shape: nextShape,
-              }))
-            }
-          />
           <NodesLayer
             ideas={visibleIdeas}
             placements={visiblePlacements}
@@ -1211,11 +1260,18 @@ export function Brainstorm() {
           {focusedIdea && !clearMode && (
             <NodeActionBar
               focusedIdea={focusedIdea}
+              isRoot={!focusedIdea.parentId}
               shape={shape}
               theme={theme}
               sketchPalette={sketchPalette}
               onSendToPlanner={(target) => void sendFocusedToPlanner(target)}
               onUpdateIdea={updateFocusedIdea}
+              onShapeChange={(nextShape) =>
+                updateBrainstormState((current) => ({
+                  ...current,
+                  shape: nextShape,
+                }))
+              }
             />
           )}
         </AnimatePresence>

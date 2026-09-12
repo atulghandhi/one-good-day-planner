@@ -7,10 +7,18 @@ import {
   OUTWARD_CHILD_SLOTS,
   PAD_X,
   PAD_Y,
+  ROOT_NODE_BOX,
 } from "./constants";
 import { computeDepthMap, depthLevel, ideaFontSize } from "./graph";
-import { isFiniteNumber } from "./math";
+import { clamp, isFiniteNumber } from "./math";
 import type { Idea, Placed, ShapeKey } from "./types";
+
+export type PlacementBounds = {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+};
 
 export function estimateCardSize(
   text: string,
@@ -30,6 +38,19 @@ export function estimateCardSize(
   }
   const lines = Math.ceil(oneLine / maxW);
   return { w: maxW, h: lines * lineH + padY };
+}
+
+export function estimateRootSize(text: string, shape: ShapeKey): { w: number; h: number } {
+  const charW = shape === "boxy" ? 12 : shape === "blob" ? 14 : 11.2;
+  const maxW = shape === "blob" ? 390 : 360;
+  const minW = shape === "blob" ? 250 : 230;
+  const oneLine = text.length * charW + 84;
+  const lines = oneLine <= maxW ? 1 : 2;
+
+  return {
+    w: Math.min(maxW, Math.max(minW, oneLine)),
+    h: shape === "blob" ? (lines === 1 ? 96 : 116) : lines === 1 ? 86 : 106,
+  };
 }
 
 export function rectsOverlap(a: Placed, b: Placed, margin = 24): boolean {
@@ -132,12 +153,116 @@ export function findOpenSpot(
   };
 }
 
+export function findOpenRootSpot(
+  preferredCenter: { x: number; y: number },
+  size: { w: number; h: number },
+  occupied: Placed[],
+  rootIndex: number,
+): Placed {
+  const preferred = {
+    x: preferredCenter.x,
+    y: preferredCenter.y,
+    w: size.w,
+    h: size.h,
+  };
+
+  if (!occupied.some((placed) => rectsOverlap(preferred, placed, 54))) {
+    return preferred;
+  }
+
+  const startAngle = (rootIndex * GOLDEN_DEG - 24) * (Math.PI / 180);
+  for (let ring = 1; ring <= 16; ring += 1) {
+    const radius = 460 + ring * 210;
+    const slots = Math.max(8, ring * 6);
+    for (let slot = 0; slot < slots; slot += 1) {
+      const angle = startAngle + (slot / slots) * Math.PI * 2;
+      const rect = {
+        x: preferredCenter.x + Math.cos(angle) * radius,
+        y: preferredCenter.y + Math.sin(angle) * radius,
+        w: size.w,
+        h: size.h,
+      };
+      if (!occupied.some((placed) => rectsOverlap(rect, placed, 54))) {
+        return rect;
+      }
+    }
+  }
+
+  return {
+    x: preferredCenter.x + rootIndex * 520,
+    y: preferredCenter.y + Math.sin(rootIndex) * 280,
+    w: size.w,
+    h: size.h,
+  };
+}
+
+function rectInsideBounds(rect: Placed, bounds: PlacementBounds): boolean {
+  return (
+    rect.x - rect.w / 2 >= bounds.minX &&
+    rect.x + rect.w / 2 <= bounds.maxX &&
+    rect.y - rect.h / 2 >= bounds.minY &&
+    rect.y + rect.h / 2 <= bounds.maxY
+  );
+}
+
+export function findOpenRootSpotInBounds(
+  preferredCenter: { x: number; y: number },
+  size: { w: number; h: number },
+  occupied: Placed[],
+  rootIndex: number,
+  bounds: PlacementBounds,
+): Placed | null {
+  const minX = bounds.minX + size.w / 2;
+  const maxX = bounds.maxX - size.w / 2;
+  const minY = bounds.minY + size.h / 2;
+  const maxY = bounds.maxY - size.h / 2;
+
+  if (minX > maxX || minY > maxY) return null;
+
+  const makeRect = (x: number, y: number) => ({
+    x: clamp(x, minX, maxX),
+    y: clamp(y, minY, maxY),
+    w: size.w,
+    h: size.h,
+  });
+
+  const preferred = makeRect(preferredCenter.x, preferredCenter.y);
+  if (
+    rectInsideBounds(preferred, bounds) &&
+    !occupied.some((placed) => rectsOverlap(preferred, placed, 54))
+  ) {
+    return preferred;
+  }
+
+  const startAngle = (rootIndex * GOLDEN_DEG - 24) * (Math.PI / 180);
+  const maxRadius = Math.max(180, Math.hypot(maxX - minX, maxY - minY) / 2);
+  for (let radius = 150; radius <= maxRadius; radius += 78) {
+    const slots = Math.max(10, Math.ceil((radius / 120) * 8));
+    for (let slot = 0; slot < slots; slot += 1) {
+      const angle = startAngle + (slot / slots) * Math.PI * 2;
+      const rect = makeRect(
+        preferredCenter.x + Math.cos(angle) * radius,
+        preferredCenter.y + Math.sin(angle) * radius,
+      );
+      if (
+        rectInsideBounds(rect, bounds) &&
+        !occupied.some((placed) => rectsOverlap(rect, placed, 54))
+      ) {
+        return rect;
+      }
+    }
+  }
+
+  return null;
+}
+
 export function layoutIdeas(ideas: Idea[], shape: ShapeKey): Placed[] {
   const byId = new Map(ideas.map((idea, index) => [idea.id, { idea, index }]));
   const depthById = computeDepthMap(ideas);
   const placed = new Map<string, Placed>();
-  const occupied: Placed[] = [CENTER_BOX];
+  const occupied: Placed[] = [];
   const siblingCounts = new Map<string, number>();
+  const rootOrder = new Map<string, number>();
   const visiting = new Set<string>();
 
   const placeIdea = (idea: Idea): Placed => {
@@ -151,23 +276,35 @@ export function layoutIdeas(ideas: Idea[], shape: ShapeKey): Placed[] {
     }
 
     visiting.add(idea.id);
-    const size = estimateCardSize(idea.text, shape, depthById.get(idea.id) ?? 0);
+    const isRoot = !idea.parentId || !byId.has(idea.parentId);
+    const rootIndex = isRoot ? (rootOrder.get(idea.id) ?? rootOrder.size) : -1;
+    if (isRoot && !rootOrder.has(idea.id)) {
+      rootOrder.set(idea.id, rootIndex);
+    }
+    const size = isRoot
+      ? estimateRootSize(idea.text, shape)
+      : estimateCardSize(idea.text, shape, depthById.get(idea.id) ?? 0);
     let rect: Placed;
 
     if (isFiniteNumber(idea.cx) && isFiniteNumber(idea.cy)) {
       rect = { x: idea.cx, y: idea.cy, ...size };
+    } else if (isRoot) {
+      rect =
+        rootIndex === 0
+          ? { ...ROOT_NODE_BOX, ...size }
+          : findOpenRootSpot({ x: 0, y: 0 }, size, occupied, rootIndex);
     } else {
-      const parentInfo = idea.parentId ? byId.get(idea.parentId) : undefined;
+      const parentInfo = byId.get(idea.parentId!);
       const parent = parentInfo ? placeIdea(parentInfo.idea) : CENTER_BOX;
       const grandparentInfo = parentInfo?.idea.parentId
         ? byId.get(parentInfo.idea.parentId)
         : undefined;
-      const parentOrigin = grandparentInfo ? placeIdea(grandparentInfo.idea) : CENTER_BOX;
+      const parentOrigin = grandparentInfo ? placeIdea(grandparentInfo.idea) : parent;
       const preferredAngle =
-        shape === "blob" && parentInfo
+        shape === "blob" && parentInfo && grandparentInfo
           ? Math.atan2(parent.y - parentOrigin.y, parent.x - parentOrigin.x)
           : undefined;
-      const parentKey = idea.parentId ?? "center";
+      const parentKey = idea.parentId!;
       const siblingIndex = siblingCounts.get(parentKey) ?? 0;
       siblingCounts.set(parentKey, siblingIndex + 1);
       rect = findOpenSpot(parent, size, occupied, siblingIndex, shape, preferredAngle);

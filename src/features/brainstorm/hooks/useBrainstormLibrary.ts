@@ -42,7 +42,7 @@ export function useBrainstormLibrary({
         const nextDoc = {
           ...activeDoc,
           ...nextState,
-          version: 3 as const,
+          version: 4 as const,
           id: activeDoc.id,
           updatedAt: Date.now(),
         };

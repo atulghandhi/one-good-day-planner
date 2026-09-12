@@ -67,7 +67,7 @@ export function IdeaInputBar({
           }
         }}
         placeholder={
-          focusedId ? "Add a linked idea, press Enter..." : "Add an idea, press Enter..."
+          focusedId ? "Add a linked idea, press Enter..." : "Add a central node, press Enter..."
         }
         className={cn(
           "relative z-10 w-full px-5 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-[color:var(--mit)]",

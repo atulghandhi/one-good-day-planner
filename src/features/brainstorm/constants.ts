@@ -4,9 +4,9 @@ export const LEGACY_STORAGE_KEY = "one-good-day:brainstorm:v2";
 export const STORAGE_KEY = "one-good-day:brainstorms:v1";
 
 export const EMPTY: BrainstormState = {
-  version: 3,
+  version: 4,
   title: "Options",
-  ideas: [],
+  ideas: [{ id: "root", text: "Options", cx: 0, cy: 0 }],
   shape: "blob",
 };
 
@@ -30,9 +30,9 @@ export const SHAPES: { key: ShapeKey; label: string }[] = [
 
 export const VALID_SHAPES = new Set<ShapeKey>(SHAPES.map((shape) => shape.key));
 
-export const WORLD_SIZE = 6200;
+export const WORLD_SIZE = 100000;
 export const WORLD_CENTER = WORLD_SIZE / 2;
-export const MIN_ZOOM = 0.35;
+export const MIN_ZOOM = 0.18;
 export const MAX_ZOOM = 2.25;
 export const MAX_CARD_W = 230;
 export const MAX_TITLE_CHARS = 64;
@@ -43,6 +43,7 @@ export const PAD_X = 30;
 export const LINE_H = 22;
 export const PAD_Y = 24;
 export const CENTER_BOX: Placed = { x: 0, y: 0, w: 360, h: 124 };
+export const ROOT_NODE_BOX: Placed = { x: 0, y: 0, w: 360, h: 104 };
 export const GOLDEN_DEG = 137.50776;
 export const OUTWARD_CHILD_SLOTS = [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5];
 
