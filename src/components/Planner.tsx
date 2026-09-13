@@ -32,6 +32,8 @@ import { playDoneTone } from "@/lib/sound";
 import { hasPlannerContent, isoDate } from "@/features/planner/storage";
 import kirbyImg from "@/assets/kirby.png";
 
+import { PlannerHelp } from "./PlannerHelp";
+
 const WEEK_LAYOUT_ID = "date-to-week-card";
 
 function todayLabel() {
@@ -315,7 +317,7 @@ function PlannerInner() {
               One good day.
             </h1>
             <p data-intro-show="3" className="mt-2 t-body text-muted-foreground">
-              Pick what matters. Let the rest go.
+              Your simple daily planner. Pick what matters. Let the rest go.
             </p>
           </div>
 
@@ -653,6 +655,8 @@ function PlannerInner() {
           )}
           {hasPlannerContent(state) && <SendToDevice state={state} />}
         </div>
+
+        <PlannerHelp />
 
         <footer className="mt-12 flex flex-col items-center gap-1.5 text-center text-muted-foreground">
           <p className="t-meta">

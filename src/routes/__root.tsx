@@ -13,7 +13,7 @@ import appCss from "../styles.css?url";
 
 const APP_DESCRIPTION =
   "A lightweight daily planner and brainstorm canvas for choosing what matters today, catching ideas, and keeping momentum without accounts or clutter.";
-const SOCIAL_IMAGE = "/og-image.png";
+const SOCIAL_IMAGE = "https://www.onegoodday.work/og-image.png";
 
 function NotFoundComponent() {
   return (

@@ -1,8 +1,17 @@
+import { seoHead } from "@/lib/seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/diary")({
+  head: () =>
+    seoHead({
+      title: "Why We Built a Simpler Planner | One Good Day",
+      description:
+        "Design notes from One Good Day: why this daily planner has no streaks, fewer controls, and a calmer approach to choosing what matters.",
+      path: "/diary",
+      noindex: false,
+    }),
   component: DiaryPage,
 });
 

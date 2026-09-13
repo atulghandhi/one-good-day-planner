@@ -9,12 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ReflectRouteImport } from './routes/reflect'
 import { Route as ReceiveRouteImport } from './routes/receive'
+import { Route as GuidesRouteImport } from './routes/guides'
 import { Route as DiaryRouteImport } from './routes/diary'
 import { Route as BrainstormRouteImport } from './routes/brainstorm'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GuidesIndexRouteImport } from './routes/guides.index'
+import { Route as GuidesSlugRouteImport } from './routes/guides.$slug'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReflectRoute = ReflectRouteImport.update({
   id: '/reflect',
   path: '/reflect',
@@ -23,6 +32,11 @@ const ReflectRoute = ReflectRouteImport.update({
 const ReceiveRoute = ReceiveRouteImport.update({
   id: '/receive',
   path: '/receive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesRoute = GuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiaryRoute = DiaryRouteImport.update({
@@ -40,13 +54,27 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuidesIndexRoute = GuidesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GuidesRoute,
+} as any)
+const GuidesSlugRoute = GuidesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => GuidesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/brainstorm': typeof BrainstormRoute
   '/diary': typeof DiaryRoute
+  '/guides': typeof GuidesRouteWithChildren
   '/receive': typeof ReceiveRoute
   '/reflect': typeof ReflectRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/guides/$slug': typeof GuidesSlugRoute
+  '/guides/': typeof GuidesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,33 +82,76 @@ export interface FileRoutesByTo {
   '/diary': typeof DiaryRoute
   '/receive': typeof ReceiveRoute
   '/reflect': typeof ReflectRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/guides/$slug': typeof GuidesSlugRoute
+  '/guides': typeof GuidesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/brainstorm': typeof BrainstormRoute
   '/diary': typeof DiaryRoute
+  '/guides': typeof GuidesRouteWithChildren
   '/receive': typeof ReceiveRoute
   '/reflect': typeof ReflectRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/guides/$slug': typeof GuidesSlugRoute
+  '/guides/': typeof GuidesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/brainstorm' | '/diary' | '/receive' | '/reflect'
+  fullPaths:
+    | '/'
+    | '/brainstorm'
+    | '/diary'
+    | '/guides'
+    | '/receive'
+    | '/reflect'
+    | '/sitemap.xml'
+    | '/guides/$slug'
+    | '/guides/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/brainstorm' | '/diary' | '/receive' | '/reflect'
-  id: '__root__' | '/' | '/brainstorm' | '/diary' | '/receive' | '/reflect'
+  to:
+    | '/'
+    | '/brainstorm'
+    | '/diary'
+    | '/receive'
+    | '/reflect'
+    | '/sitemap.xml'
+    | '/guides/$slug'
+    | '/guides'
+  id:
+    | '__root__'
+    | '/'
+    | '/brainstorm'
+    | '/diary'
+    | '/guides'
+    | '/receive'
+    | '/reflect'
+    | '/sitemap.xml'
+    | '/guides/$slug'
+    | '/guides/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BrainstormRoute: typeof BrainstormRoute
   DiaryRoute: typeof DiaryRoute
+  GuidesRoute: typeof GuidesRouteWithChildren
   ReceiveRoute: typeof ReceiveRoute
   ReflectRoute: typeof ReflectRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reflect': {
       id: '/reflect'
       path: '/reflect'
@@ -93,6 +164,13 @@ declare module '@tanstack/react-router' {
       path: '/receive'
       fullPath: '/receive'
       preLoaderRoute: typeof ReceiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides': {
+      id: '/guides'
+      path: '/guides'
+      fullPath: '/guides'
+      preLoaderRoute: typeof GuidesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/diary': {
@@ -116,15 +194,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guides/': {
+      id: '/guides/'
+      path: '/'
+      fullPath: '/guides/'
+      preLoaderRoute: typeof GuidesIndexRouteImport
+      parentRoute: typeof GuidesRoute
+    }
+    '/guides/$slug': {
+      id: '/guides/$slug'
+      path: '/$slug'
+      fullPath: '/guides/$slug'
+      preLoaderRoute: typeof GuidesSlugRouteImport
+      parentRoute: typeof GuidesRoute
+    }
   }
 }
+
+interface GuidesRouteChildren {
+  GuidesSlugRoute: typeof GuidesSlugRoute
+  GuidesIndexRoute: typeof GuidesIndexRoute
+}
+
+const GuidesRouteChildren: GuidesRouteChildren = {
+  GuidesSlugRoute: GuidesSlugRoute,
+  GuidesIndexRoute: GuidesIndexRoute,
+}
+
+const GuidesRouteWithChildren =
+  GuidesRoute._addFileChildren(GuidesRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BrainstormRoute: BrainstormRoute,
   DiaryRoute: DiaryRoute,
+  GuidesRoute: GuidesRouteWithChildren,
   ReceiveRoute: ReceiveRoute,
   ReflectRoute: ReflectRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

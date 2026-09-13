@@ -1,3 +1,4 @@
+import { seoHead } from "@/lib/seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
@@ -6,6 +7,13 @@ import { loadReflections } from "@/features/planner/reflections";
 import type { Reflection } from "@/features/planner/types";
 
 export const Route = createFileRoute("/reflect")({
+  head: () =>
+    seoHead({
+      title: "Your Daily Reflections | One Good Day",
+      description: "Your personal daily reflections saved in this browser.",
+      path: "/reflect",
+      noindex: true,
+    }),
   component: ReflectTimeline,
 });
 

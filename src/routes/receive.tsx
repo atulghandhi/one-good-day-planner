@@ -1,3 +1,4 @@
+import { seoHead } from "@/lib/seo";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
@@ -7,6 +8,13 @@ import { saveState } from "@/features/planner/storage";
 import { htmlToPlainText } from "@/features/planner/text";
 
 export const Route = createFileRoute("/receive")({
+  head: () =>
+    seoHead({
+      title: "Transfer Your Daily Plan | One Good Day",
+      description: "Bring a shared daily plan into this browser.",
+      path: "/receive",
+      noindex: true,
+    }),
   component: ReceivePage,
 });
 
