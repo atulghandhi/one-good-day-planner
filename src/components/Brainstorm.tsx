@@ -23,7 +23,11 @@ import {
   downloadBrainstormExport,
   type BrainstormExportFormat,
 } from "@/features/brainstorm/export";
-import { computeDepthMap } from "@/features/brainstorm/graph";
+import {
+  computeDepthMap,
+  getDefaultFocusedIdeaId,
+  getFocusedIdeaIdAfterAdd,
+} from "@/features/brainstorm/graph";
 import {
   EMPTY_BRAINSTORM_HISTORY,
   recordBrainstormHistory,
@@ -174,6 +178,13 @@ export function Brainstorm() {
 
   stateRef.current = state;
   activeBrainstormIdRef.current = library.activeId;
+
+  const defaultFocusedId = useMemo(() => getDefaultFocusedIdeaId(state.ideas), [state.ideas]);
+
+  useEffect(() => {
+    if (!hydrated || !defaultFocusedId) return;
+    setFocusedId((current) => current ?? defaultFocusedId);
+  }, [defaultFocusedId, hydrated, library.activeId]);
 
   const shape = state.shape;
   const theme = SHAPE_THEMES[shape];
@@ -641,7 +652,7 @@ export function Brainstorm() {
         }),
     }));
     setLastAddedId(id);
-    setFocusedId(id);
+    setFocusedId(getFocusedIdeaIdAfterAdd(parentId, id));
     setDraft("");
     if (parentId) {
       focusBoxes(getBranchBoxes(parentId, [placement]));

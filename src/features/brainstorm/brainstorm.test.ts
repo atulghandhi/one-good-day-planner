@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { connectorPathFromPoints } from "./canvas";
 import { CENTER_BOX } from "./constants";
-import { computeDepthMap } from "./graph";
+import { computeDepthMap, getDefaultFocusedIdeaId, getFocusedIdeaIdAfterAdd } from "./graph";
 import {
   EMPTY_BRAINSTORM_HISTORY,
   recordBrainstormHistory,
@@ -124,6 +124,20 @@ describe("brainstorm domain", () => {
     expect(depth.get("b")).toBe(1);
     expect(depth.get("c")).toBe(2);
     expect(depth.get("loop")).toBe(1);
+  });
+
+  it("selects the central node by default", () => {
+    expect(
+      getDefaultFocusedIdeaId([
+        { id: "root", text: "Options" },
+        { id: "child", text: "First option", parentId: "root" },
+      ]),
+    ).toBe("root");
+  });
+
+  it("keeps the parent selected after adding a child", () => {
+    expect(getFocusedIdeaIdAfterAdd("root", "child")).toBe("root");
+    expect(getFocusedIdeaIdAfterAdd(undefined, "root")).toBe("root");
   });
 
   it("places child ideas away from their parent by default", () => {
