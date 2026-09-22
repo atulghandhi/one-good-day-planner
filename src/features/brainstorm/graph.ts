@@ -32,3 +32,11 @@ export function computeDepthMap(ideas: Idea[]) {
   ideas.forEach(depthOf);
   return memo;
 }
+
+export function getDefaultFocusedIdeaId(ideas: Idea[]) {
+  return ideas.find((idea) => !idea.parentId)?.id ?? null;
+}
+
+export function getFocusedIdeaIdAfterAdd(parentId: string | undefined, addedId: string) {
+  return parentId ?? addedId;
+}
