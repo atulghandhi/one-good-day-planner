@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
-import { Brain, Check, Play, Plus, RotateCcw, Sparkles, X } from "lucide-react";
+import { Brain, Check, List, Play, Plus, RotateCcw, Sparkles, X } from "lucide-react";
 import type { TaskItem } from "@/features/planner/types";
 import { useMitFocus } from "@/features/planner/hooks/useMitFocus";
 import { usePlannerState } from "@/features/planner/hooks/usePlannerState";
@@ -33,6 +33,15 @@ import { hasPlannerContent, isoDate } from "@/features/planner/storage";
 import kirbyImg from "@/assets/kirby.png";
 
 import { PlannerHelp } from "./PlannerHelp";
+import { JotList } from "./JotList";
+import {
+  copyPlannerItemsToJot,
+  loadJotItems,
+  loadPlannerMode,
+  saveJotItems,
+  savePlannerMode,
+  type PlannerMode,
+} from "@/features/planner/jot";
 
 const WEEK_LAYOUT_ID = "date-to-week-card";
 
@@ -110,6 +119,10 @@ function PlannerInner() {
   const [startMode, setStartMode] = useState<StartModeTarget | null>(null);
   const [startTimer, setStartTimer] = useState<StartModeTimer>(DEFAULT_START_MODE_TIMER);
   const [plannerNotice, setPlannerNotice] = useState("");
+  const [plannerMode, setPlannerMode] = useState<PlannerMode>("structured");
+  const [jotItems, setJotItems] = useState<TaskItem[]>([{ text: "", done: false }]);
+  const [copyPromptOpen, setCopyPromptOpen] = useState(false);
+  const [jotHydrated, setJotHydrated] = useState(false);
   const plannerNoticeTimerRef = useRef<number | null>(null);
   const requestMitFocus = useMitFocus(state.mitSubs.length);
 
@@ -126,6 +139,18 @@ function PlannerInner() {
       setDateStilled(false);
     }
   }, []);
+
+  useEffect(() => {
+    setPlannerMode(loadPlannerMode());
+    setJotItems(loadJotItems());
+    setJotHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!jotHydrated) return;
+    savePlannerMode(plannerMode);
+    saveJotItems(jotItems);
+  }, [jotHydrated, jotItems, plannerMode]);
 
   const stillDateBubble = useCallback(() => {
     if (dateStilled) return;
@@ -173,10 +198,29 @@ function PlannerInner() {
   );
 
   const handleReset = async () => {
-    await resetPlanner();
+    if (plannerMode === "jot") {
+      setJotItems([{ text: "", done: false }]);
+    } else {
+      await resetPlanner();
+    }
     setStartTimer(DEFAULT_START_MODE_TIMER);
     setStartMode(null);
     setConfirmOpen(false);
+  };
+
+  const openJotList = () => {
+    const jotHasContent = jotItems.some((item) => item.text.trim());
+    if (hasPlannerContent(state) && !jotHasContent) {
+      setCopyPromptOpen(true);
+      return;
+    }
+    setPlannerMode("jot");
+  };
+
+  const finishJotSwitch = (copyItems: boolean) => {
+    if (copyItems) setJotItems(copyPlannerItemsToJot(state));
+    setPlannerMode("jot");
+    setCopyPromptOpen(false);
   };
 
   useEffect(() => {
@@ -319,6 +363,28 @@ function PlannerInner() {
             <p data-intro-show="3" className="mt-2 t-body text-muted-foreground">
               Your simple daily planner. Pick what matters. Let the rest go.
             </p>
+            <div
+              className="mt-4 inline-flex rounded-full border border-white/45 bg-card/65 p-1 shadow-soft backdrop-blur"
+              aria-label="Choose list style"
+            >
+              <button
+                type="button"
+                onClick={() => setPlannerMode("structured")}
+                aria-pressed={plannerMode === "structured"}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${plannerMode === "structured" ? "bg-foreground text-background shadow-soft" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Daily plan
+              </button>
+              <button
+                type="button"
+                onClick={openJotList}
+                aria-pressed={plannerMode === "jot"}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${plannerMode === "jot" ? "bg-foreground text-background shadow-soft" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <List className="h-3.5 w-3.5" />
+                Jot down
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -345,316 +411,322 @@ function PlannerInner() {
           </div>
         </div>
 
-        {/* MIT */}
-        <motion.section
-          layout
-          data-intro-show="4"
-          className="rounded-[2.2rem] bg-gradient-mit p-1 shadow-pop"
-          animate={mitCelebrating ? { scale: [1, 1.02, 1] } : { scale: 1 }}
-          transition={{
-            layout: { duration: 0.32, ease: [0.32, 0.72, 0, 1] },
-            scale: { duration: 0.7, ease: [0.32, 0.72, 0, 1] },
-          }}
-        >
-          <div className="rounded-[2rem] bg-card/90 backdrop-blur p-5 md:p-6">
-            <label className="mb-3 block px-2 t-eyebrow text-[color:var(--mit-foreground)]">
-              ★ The one thing
-            </label>
-            <MitEditor
-              value={state.mit}
-              autoFocus
-              done={state.mitDone}
-              onChange={(html) =>
-                setState((s) => {
-                  const needsSub = mitHasContent(html) && s.mitSubs.length === 0;
-                  return {
-                    ...s,
-                    mit: html,
-                    mitSubs: needsSub ? [{ text: "", done: false }] : s.mitSubs,
-                  };
-                })
-              }
-              onAdvance={() => {
-                if (!mitHasContent(state.mit)) return;
-                requestMitFocus(0);
-                setState((s) =>
-                  s.mitSubs.length === 0 ? { ...s, mitSubs: [{ text: "", done: false }] } : s,
-                );
+        {plannerMode === "structured" ? (
+          <>
+            {/* MIT */}
+            <motion.section
+              layout
+              data-intro-show="4"
+              className="rounded-[2.2rem] bg-gradient-mit p-1 shadow-pop"
+              animate={mitCelebrating ? { scale: [1, 1.02, 1] } : { scale: 1 }}
+              transition={{
+                layout: { duration: 0.32, ease: [0.32, 0.72, 0, 1] },
+                scale: { duration: 0.7, ease: [0.32, 0.72, 0, 1] },
               }}
-              onBlur={flushSave}
-              placeholder="What would make today a win?"
-            />
+            >
+              <div className="rounded-[2rem] bg-card/90 backdrop-blur p-5 md:p-6">
+                <label className="mb-3 block px-2 t-eyebrow text-[color:var(--mit-foreground)]">
+                  ★ The one thing
+                </label>
+                <MitEditor
+                  value={state.mit}
+                  autoFocus
+                  done={state.mitDone}
+                  onChange={(html) =>
+                    setState((s) => {
+                      const needsSub = mitHasContent(html) && s.mitSubs.length === 0;
+                      return {
+                        ...s,
+                        mit: html,
+                        mitSubs: needsSub ? [{ text: "", done: false }] : s.mitSubs,
+                      };
+                    })
+                  }
+                  onAdvance={() => {
+                    if (!mitHasContent(state.mit)) return;
+                    requestMitFocus(0);
+                    setState((s) =>
+                      s.mitSubs.length === 0 ? { ...s, mitSubs: [{ text: "", done: false }] } : s,
+                    );
+                  }}
+                  onBlur={flushSave}
+                  placeholder="What would make today a win?"
+                />
 
-            {mitHasContent(state.mit) && !state.mitDone && (
-              <div className="mt-3 flex justify-end gap-2 px-2">
-                <motion.button
-                  type="button"
-                  onClick={(e) => {
-                    setStartMode({ kind: "mit" });
-                    (e.currentTarget as HTMLElement).blur();
-                  }}
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.94 }}
-                  tabIndex={-1}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-background/75 px-3 py-1 text-xs font-semibold text-muted-foreground shadow-soft transition hover:bg-card hover:text-foreground"
-                  aria-label="Start MIT"
-                >
-                  <Play className="h-3.5 w-3.5 fill-current" strokeWidth={3} />
-                  Start
-                </motion.button>
-                <motion.button
-                  type="button"
-                  onClick={(e) => {
-                    setState((s) => ({ ...s, mitDone: true }));
-                    celebrateMitDone();
-                    (e.currentTarget as HTMLElement).blur();
-                  }}
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.94 }}
-                  tabIndex={-1}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--mit)]/80 px-3 py-1 text-xs font-semibold text-[color:var(--mit-foreground)] shadow-soft hover:bg-[color:var(--mit)]"
-                >
-                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                  Done!
-                </motion.button>
+                {mitHasContent(state.mit) && !state.mitDone && (
+                  <div className="mt-3 flex justify-end gap-2 px-2">
+                    <motion.button
+                      type="button"
+                      onClick={(e) => {
+                        setStartMode({ kind: "mit" });
+                        (e.currentTarget as HTMLElement).blur();
+                      }}
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.94 }}
+                      tabIndex={-1}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-background/75 px-3 py-1 text-xs font-semibold text-muted-foreground shadow-soft transition hover:bg-card hover:text-foreground"
+                      aria-label="Start MIT"
+                    >
+                      <Play className="h-3.5 w-3.5 fill-current" strokeWidth={3} />
+                      Start
+                    </motion.button>
+                    <motion.button
+                      type="button"
+                      onClick={(e) => {
+                        setState((s) => ({ ...s, mitDone: true }));
+                        celebrateMitDone();
+                        (e.currentTarget as HTMLElement).blur();
+                      }}
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.94 }}
+                      tabIndex={-1}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--mit)]/80 px-3 py-1 text-xs font-semibold text-[color:var(--mit-foreground)] shadow-soft hover:bg-[color:var(--mit)]"
+                    >
+                      <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                      Done!
+                    </motion.button>
+                  </div>
+                )}
+                {state.mitDone && (
+                  <div className="mt-3 flex justify-end px-2">
+                    <button
+                      type="button"
+                      onClick={() => setState((s) => ({ ...s, mitDone: false }))}
+                      className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+                    >
+                      undo
+                    </button>
+                  </div>
+                )}
+                <AnimatePresence initial={false}>
+                  {showSubs && (
+                    <motion.div
+                      key="subs"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{
+                        height: { duration: 0.32, ease: [0.32, 0.72, 0, 1] },
+                        opacity: { duration: 0.2 },
+                      }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-2 pt-5 pb-1">
+                        <div className="mb-3 flex items-center justify-between">
+                          <p className="t-meta text-muted-foreground">Break it down (optional)</p>
+                          <motion.button
+                            onClick={() =>
+                              setState((s) => ({
+                                ...s,
+                                mitSubs: [...s.mitSubs, { text: "", done: false } as TaskItem],
+                              }))
+                            }
+                            whileTap={{ scale: 0.85, rotate: -10 }}
+                            whileHover={{ scale: 1.08, rotate: 8 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 14 }}
+                            className="grid h-9 w-9 place-items-center rounded-full bg-gradient-mit text-foreground shadow-pop"
+                            aria-label="Add step"
+                            type="button"
+                            tabIndex={-1}
+                          >
+                            <Plus className="h-4 w-4" strokeWidth={2.8} />
+                          </motion.button>
+                        </div>
+                        <ul className="flex flex-col gap-2.5">
+                          <AnimatePresence initial={false}>
+                            {orderedSubs.map(({ item: sub, originalIndex: i }) => (
+                              <motion.li
+                                key={i}
+                                layout="position"
+                                initial={{ opacity: 0, height: 0, scale: 0.92 }}
+                                animate={{ opacity: 1, height: "auto", scale: 1 }}
+                                exit={{ opacity: 0, height: 0, scale: 0.92 }}
+                                transition={{
+                                  height: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
+                                  opacity: { duration: 0.2 },
+                                  scale: { duration: 0.22, ease: [0.32, 0.72, 0, 1] },
+                                  layout: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
+                                }}
+                                className="group relative overflow-hidden rounded-full"
+                              >
+                                <PillTextArea
+                                  tone="mit"
+                                  value={sub.text}
+                                  done={sub.done}
+                                  readOnly={sub.done}
+                                  data-mit-sub-index={i}
+                                  onChange={(e) => {
+                                    const next = [...state.mitSubs];
+                                    next[i] = { ...next[i], text: e.target.value };
+                                    setState((s) => ({ ...s, mitSubs: next }));
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && e.shiftKey) return;
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      if (focusNextSiblingField(e.currentTarget)) {
+                                        return;
+                                      }
+                                      if (sub.text.trim().length > 0) {
+                                        const newIndex = state.mitSubs.length;
+                                        requestMitFocus(newIndex);
+                                        setState((s) => ({
+                                          ...s,
+                                          mitSubs: [...s.mitSubs, { text: "", done: false }],
+                                        }));
+                                      }
+                                      return;
+                                    }
+                                    if (
+                                      e.key === "Backspace" &&
+                                      sub.text === "" &&
+                                      state.mitSubs.length > 1
+                                    ) {
+                                      e.preventDefault();
+                                      const list = e.currentTarget.closest("ul");
+                                      const inputs = list
+                                        ? Array.from(
+                                            list.querySelectorAll<HTMLTextAreaElement>("textarea"),
+                                          )
+                                        : [];
+                                      const idx = inputs.indexOf(e.currentTarget);
+                                      const prev = inputs[idx - 1];
+                                      setState((s) => ({
+                                        ...s,
+                                        mitSubs: s.mitSubs.filter((_, idx2) => idx2 !== i),
+                                      }));
+                                      if (prev) {
+                                        requestAnimationFrame(() => {
+                                          prev.focus();
+                                          const len = prev.value.length;
+                                          try {
+                                            prev.setSelectionRange(len, len);
+                                          } catch {
+                                            /* ignore */
+                                          }
+                                        });
+                                      }
+                                    }
+                                  }}
+                                  onBlur={flushSave}
+                                  placeholder={`Step ${i + 1}`}
+                                  className="pr-20"
+                                  maxLines={2}
+                                  onMaxLinesExceeded={() =>
+                                    showPlannerNotice("Break this step down into a new step.")
+                                  }
+                                />
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                  {sub.done && (
+                                    <button
+                                      onClick={() =>
+                                        setState((s) => ({
+                                          ...s,
+                                          mitSubs: s.mitSubs.filter((_, idx) => idx !== i),
+                                        }))
+                                      }
+                                      className="grid h-8 w-8 place-items-center rounded-full bg-background/70 text-muted-foreground transition-all hover:bg-destructive hover:text-destructive-foreground"
+                                      aria-label="Remove step"
+                                      type="button"
+                                      tabIndex={-1}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                  {sub.text.trim().length > 0 && (
+                                    <button
+                                      onClick={() => {
+                                        setState((s) => ({
+                                          ...s,
+                                          mitSubs: s.mitSubs.map((it, idx) =>
+                                            idx === i ? { ...it, done: !it.done } : it,
+                                          ),
+                                        }));
+                                      }}
+                                      className={`grid h-8 w-8 place-items-center rounded-full transition-all ${
+                                        sub.done
+                                          ? "bg-[color:var(--mit)]/80 text-[color:var(--mit-foreground)] shadow-soft"
+                                          : "bg-background/70 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-[color:var(--mit)]/70 hover:text-[color:var(--mit-foreground)]"
+                                      }`}
+                                      aria-label={sub.done ? "Mark incomplete" : "Mark done"}
+                                      type="button"
+                                      tabIndex={-1}
+                                    >
+                                      <Check className="h-4 w-4" strokeWidth={3} />
+                                    </button>
+                                  )}
+                                </div>
+                              </motion.li>
+                            ))}
+                          </AnimatePresence>
+                        </ul>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            )}
-            {state.mitDone && (
-              <div className="mt-3 flex justify-end px-2">
+            </motion.section>
+
+            {/* Shoulds + Coulds */}
+            <div className="mt-8 flex flex-col gap-6">
+              <TaskSection
+                title="Shoulds"
+                hint="Nice to get done"
+                emoji="🌿"
+                tone="should"
+                items={state.shoulds}
+                onChange={(shoulds) => setState((s) => ({ ...s, shoulds }))}
+                onStartTask={(index) => setStartMode({ kind: "should", index })}
+                onLimitReached={showPlannerNotice}
+                placeholder="Something you should do…"
+                iconBow={mitCelebrating}
+                iconBowDelay={0}
+              />
+              <TaskSection
+                title="Coulds"
+                hint="If there's time"
+                emoji="✨"
+                tone="could"
+                items={state.coulds}
+                onChange={(coulds) => setState((s) => ({ ...s, coulds }))}
+                onStartTask={(index) => setStartMode({ kind: "could", index })}
+                onLimitReached={showPlannerNotice}
+                placeholder="Something you could do…"
+                iconBow={mitCelebrating}
+                iconBowDelay={0.06}
+              />
+            </div>
+
+            <ReflectSheet state={state} />
+
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+              <a
+                href="/brainstorm?today=1"
+                className="inline-flex items-center gap-1.5 t-meta text-muted-foreground transition hover:text-foreground"
+              >
+                Map today on the canvas
+                <span aria-hidden>→</span>
+              </a>
+              {hasPlannerContent(state) && (
                 <button
                   type="button"
-                  onClick={() => setState((s) => ({ ...s, mitDone: false }))}
-                  className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-                >
-                  undo
-                </button>
-              </div>
-            )}
-            <AnimatePresence initial={false}>
-              {showSubs && (
-                <motion.div
-                  key="subs"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{
-                    height: { duration: 0.32, ease: [0.32, 0.72, 0, 1] },
-                    opacity: { duration: 0.2 },
+                  onClick={() => {
+                    void shareToday(state, isoDate()).catch(() => {
+                      showPlannerNotice("Couldn't render the share card.");
+                    });
                   }}
-                  className="overflow-hidden"
+                  className="inline-flex items-center gap-1.5 t-meta text-muted-foreground transition hover:text-foreground"
                 >
-                  <div className="px-2 pt-5 pb-1">
-                    <div className="mb-3 flex items-center justify-between">
-                      <p className="t-meta text-muted-foreground">Break it down (optional)</p>
-                      <motion.button
-                        onClick={() =>
-                          setState((s) => ({
-                            ...s,
-                            mitSubs: [...s.mitSubs, { text: "", done: false } as TaskItem],
-                          }))
-                        }
-                        whileTap={{ scale: 0.85, rotate: -10 }}
-                        whileHover={{ scale: 1.08, rotate: 8 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 14 }}
-                        className="grid h-9 w-9 place-items-center rounded-full bg-gradient-mit text-foreground shadow-pop"
-                        aria-label="Add step"
-                        type="button"
-                        tabIndex={-1}
-                      >
-                        <Plus className="h-4 w-4" strokeWidth={2.8} />
-                      </motion.button>
-                    </div>
-                    <ul className="flex flex-col gap-2.5">
-                      <AnimatePresence initial={false}>
-                        {orderedSubs.map(({ item: sub, originalIndex: i }) => (
-                          <motion.li
-                            key={i}
-                            layout="position"
-                            initial={{ opacity: 0, height: 0, scale: 0.92 }}
-                            animate={{ opacity: 1, height: "auto", scale: 1 }}
-                            exit={{ opacity: 0, height: 0, scale: 0.92 }}
-                            transition={{
-                              height: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
-                              opacity: { duration: 0.2 },
-                              scale: { duration: 0.22, ease: [0.32, 0.72, 0, 1] },
-                              layout: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
-                            }}
-                            className="group relative overflow-hidden rounded-full"
-                          >
-                            <PillTextArea
-                              tone="mit"
-                              value={sub.text}
-                              done={sub.done}
-                              readOnly={sub.done}
-                              data-mit-sub-index={i}
-                              onChange={(e) => {
-                                const next = [...state.mitSubs];
-                                next[i] = { ...next[i], text: e.target.value };
-                                setState((s) => ({ ...s, mitSubs: next }));
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" && e.shiftKey) return;
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  if (focusNextSiblingField(e.currentTarget)) {
-                                    return;
-                                  }
-                                  if (sub.text.trim().length > 0) {
-                                    const newIndex = state.mitSubs.length;
-                                    requestMitFocus(newIndex);
-                                    setState((s) => ({
-                                      ...s,
-                                      mitSubs: [...s.mitSubs, { text: "", done: false }],
-                                    }));
-                                  }
-                                  return;
-                                }
-                                if (
-                                  e.key === "Backspace" &&
-                                  sub.text === "" &&
-                                  state.mitSubs.length > 1
-                                ) {
-                                  e.preventDefault();
-                                  const list = e.currentTarget.closest("ul");
-                                  const inputs = list
-                                    ? Array.from(
-                                        list.querySelectorAll<HTMLTextAreaElement>("textarea"),
-                                      )
-                                    : [];
-                                  const idx = inputs.indexOf(e.currentTarget);
-                                  const prev = inputs[idx - 1];
-                                  setState((s) => ({
-                                    ...s,
-                                    mitSubs: s.mitSubs.filter((_, idx2) => idx2 !== i),
-                                  }));
-                                  if (prev) {
-                                    requestAnimationFrame(() => {
-                                      prev.focus();
-                                      const len = prev.value.length;
-                                      try {
-                                        prev.setSelectionRange(len, len);
-                                      } catch {
-                                        /* ignore */
-                                      }
-                                    });
-                                  }
-                                }
-                              }}
-                              onBlur={flushSave}
-                              placeholder={`Step ${i + 1}`}
-                              className="pr-20"
-                              maxLines={2}
-                              onMaxLinesExceeded={() =>
-                                showPlannerNotice("Break this step down into a new step.")
-                              }
-                            />
-                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                              {sub.done && (
-                                <button
-                                  onClick={() =>
-                                    setState((s) => ({
-                                      ...s,
-                                      mitSubs: s.mitSubs.filter((_, idx) => idx !== i),
-                                    }))
-                                  }
-                                  className="grid h-8 w-8 place-items-center rounded-full bg-background/70 text-muted-foreground transition-all hover:bg-destructive hover:text-destructive-foreground"
-                                  aria-label="Remove step"
-                                  type="button"
-                                  tabIndex={-1}
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
-                              )}
-                              {sub.text.trim().length > 0 && (
-                                <button
-                                  onClick={() => {
-                                    setState((s) => ({
-                                      ...s,
-                                      mitSubs: s.mitSubs.map((it, idx) =>
-                                        idx === i ? { ...it, done: !it.done } : it,
-                                      ),
-                                    }));
-                                  }}
-                                  className={`grid h-8 w-8 place-items-center rounded-full transition-all ${
-                                    sub.done
-                                      ? "bg-[color:var(--mit)]/80 text-[color:var(--mit-foreground)] shadow-soft"
-                                      : "bg-background/70 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-[color:var(--mit)]/70 hover:text-[color:var(--mit-foreground)]"
-                                  }`}
-                                  aria-label={sub.done ? "Mark incomplete" : "Mark done"}
-                                  type="button"
-                                  tabIndex={-1}
-                                >
-                                  <Check className="h-4 w-4" strokeWidth={3} />
-                                </button>
-                              )}
-                            </div>
-                          </motion.li>
-                        ))}
-                      </AnimatePresence>
-                    </ul>
-                  </div>
-                </motion.div>
+                  Share today
+                  <span aria-hidden>→</span>
+                </button>
               )}
-            </AnimatePresence>
-          </div>
-        </motion.section>
-
-        {/* Shoulds + Coulds */}
-        <div className="mt-8 flex flex-col gap-6">
-          <TaskSection
-            title="Shoulds"
-            hint="Nice to get done"
-            emoji="🌿"
-            tone="should"
-            items={state.shoulds}
-            onChange={(shoulds) => setState((s) => ({ ...s, shoulds }))}
-            onStartTask={(index) => setStartMode({ kind: "should", index })}
-            onLimitReached={showPlannerNotice}
-            placeholder="Something you should do…"
-            iconBow={mitCelebrating}
-            iconBowDelay={0}
-          />
-          <TaskSection
-            title="Coulds"
-            hint="If there's time"
-            emoji="✨"
-            tone="could"
-            items={state.coulds}
-            onChange={(coulds) => setState((s) => ({ ...s, coulds }))}
-            onStartTask={(index) => setStartMode({ kind: "could", index })}
-            onLimitReached={showPlannerNotice}
-            placeholder="Something you could do…"
-            iconBow={mitCelebrating}
-            iconBowDelay={0.06}
-          />
-        </div>
-
-        <ReflectSheet state={state} />
-
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-          <a
-            href="/brainstorm?today=1"
-            className="inline-flex items-center gap-1.5 t-meta text-muted-foreground transition hover:text-foreground"
-          >
-            Map today on the canvas
-            <span aria-hidden>→</span>
-          </a>
-          {hasPlannerContent(state) && (
-            <button
-              type="button"
-              onClick={() => {
-                void shareToday(state, isoDate()).catch(() => {
-                  showPlannerNotice("Couldn't render the share card.");
-                });
-              }}
-              className="inline-flex items-center gap-1.5 t-meta text-muted-foreground transition hover:text-foreground"
-            >
-              Share today
-              <span aria-hidden>→</span>
-            </button>
-          )}
-          {hasPlannerContent(state) && <SendToDevice state={state} />}
-        </div>
+              {hasPlannerContent(state) && <SendToDevice state={state} />}
+            </div>
+          </>
+        ) : (
+          <JotList items={jotItems} onChange={setJotItems} onLimitReached={showPlannerNotice} />
+        )}
 
         <PlannerHelp />
 
@@ -683,7 +755,59 @@ function PlannerInner() {
         open={confirmOpen}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={handleReset}
+        listName={plannerMode === "jot" ? "your jot-down list" : "today's plan"}
       />
+
+      <AnimatePresence>
+        {copyPromptOpen && (
+          <motion.div
+            className="fixed inset-0 z-[80] flex items-start justify-center p-4 pt-24"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <button
+              type="button"
+              className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
+              aria-label="Close"
+              onClick={() => setCopyPromptOpen(false)}
+            />
+            <motion.div
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="jot-copy-title"
+              initial={{ y: -18, opacity: 0, scale: 0.96 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: -12, opacity: 0, scale: 0.96 }}
+              className="relative w-full max-w-md rounded-[2rem] border border-white/50 bg-card p-6 shadow-pop"
+            >
+              <h2 id="jot-copy-title" className="font-display text-2xl tracking-tight">
+                Bring your plan along?
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                You already have items in your daily plan. Copy them into Jot down? Your original
+                plan will stay exactly as it is, ready when you switch back.
+              </p>
+              <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => finishJotSwitch(false)}
+                  className="rounded-full border border-border bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground"
+                >
+                  Start empty
+                </button>
+                <button
+                  type="button"
+                  onClick={() => finishJotSwitch(true)}
+                  className="rounded-full bg-gradient-mit px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-pop"
+                >
+                  Copy my items
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <CarryForwardSheet
         tasks={rolloverQueue}

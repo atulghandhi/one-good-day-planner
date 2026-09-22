@@ -5,9 +5,10 @@ type Props = {
   open: boolean;
   onCancel: () => void;
   onConfirm: () => void;
+  listName?: string;
 };
 
-export function ResetDialog({ open, onCancel, onConfirm }: Props) {
+export function ResetDialog({ open, onCancel, onConfirm, listName = "today's plan" }: Props) {
   return (
     <AnimatePresence>
       {open && (
@@ -40,7 +41,7 @@ export function ResetDialog({ open, onCancel, onConfirm }: Props) {
               <div>
                 <h2 className="font-display text-2xl tracking-tight">Start fresh?</h2>
                 <p className="text-sm text-muted-foreground">
-                  This wipes today's plan. It can't be undone.
+                  This wipes {listName}. It can't be undone.
                 </p>
               </div>
             </div>
@@ -50,7 +51,7 @@ export function ResetDialog({ open, onCancel, onConfirm }: Props) {
                 onClick={onCancel}
                 className="flex-1 rounded-full border border-border bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground shadow-soft transition-transform active:scale-[0.97]"
               >
-                Keep my plan
+                Keep my list
               </button>
               <button
                 onClick={onConfirm}
