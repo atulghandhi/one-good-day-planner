@@ -2,8 +2,26 @@ import { describe, expect, it } from "vitest";
 import { orderTaskItems } from "./priority";
 import { collectRolloverTasks, insertRolloverTask, pruneRolloverQueue } from "./rollover";
 import { normalizePlannerState, startOfWeek, weekDates } from "./storage";
+import { copyPlannerItemsToJot, normalizeJotItems } from "./jot";
 
 describe("planner domain", () => {
+  it("copies structured tasks to a flat jot list without changing the source", () => {
+    const state = normalizePlannerState({
+      mit: "<p>Ship the thing</p>",
+      mitDone: true,
+      shoulds: [{ text: "Reply", done: false, priority: "high" }],
+      coulds: [{ text: "Walk", done: false }],
+    });
+    const before = structuredClone(state);
+
+    expect(copyPlannerItemsToJot(state).map(({ text, done }) => ({ text, done }))).toEqual([
+      { text: "Ship the thing", done: true },
+      { text: "Reply", done: false },
+      { text: "Walk", done: false },
+    ]);
+    expect(state).toEqual(before);
+    expect(normalizeJotItems([])).toEqual([{ text: "", done: false }]);
+  });
   it("normalizes legacy string task arrays and priority values", () => {
     expect(
       normalizePlannerState({
