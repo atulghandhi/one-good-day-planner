@@ -316,6 +316,14 @@
     background: var(--gradient-could);
   }
 
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   .feature-pill {
     position: relative;
     isolation: isolate;
@@ -485,16 +493,8 @@ html[data-theme="tide"] body::before {
   pointer-events: none;
   z-index: 0;
   background-image:
-    radial-gradient(
-      ellipse 70% 20% at 30% 90%,
-      oklch(0.95 0.06 200 / 0.35) 0%,
-      transparent 70%
-    ),
-    radial-gradient(
-      ellipse 60% 18% at 70% 80%,
-      oklch(0.94 0.07 220 / 0.3) 0%,
-      transparent 70%
-    );
+    radial-gradient(ellipse 70% 20% at 30% 90%, oklch(0.95 0.06 200 / 0.35) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 18% at 70% 80%, oklch(0.94 0.07 220 / 0.3) 0%, transparent 70%);
   background-size:
     140% 100%,
     140% 100%;

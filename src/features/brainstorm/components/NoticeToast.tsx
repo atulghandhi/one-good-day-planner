@@ -20,7 +20,7 @@ export function NoticeToast({ notice, shape, theme, sketchPalette }: NoticeToast
           exit={{ opacity: 0, y: -8, scale: 0.96 }}
           transition={{ type: "spring", stiffness: 280, damping: 22 }}
           className={cn(
-            "absolute left-1/2 top-16 z-[60] -translate-x-1/2 px-4 py-2 text-xs font-semibold shadow-pop backdrop-blur",
+            "absolute left-1/2 top-28 sm:top-16 z-[60] -translate-x-1/2 px-4 py-2 text-xs font-semibold shadow-pop backdrop-blur",
             theme.controlClassName,
           )}
           style={controlStyle(shape, theme, sketchPalette)}

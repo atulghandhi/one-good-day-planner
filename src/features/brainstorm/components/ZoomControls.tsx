@@ -1,5 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronsLeft, ChevronsRight, LocateFixed, Minus, Plus } from "lucide-react";
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  LocateFixed,
+  Map as MapIcon,
+  Minus,
+  Plus,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { controlStyle } from "../theme";
 import type { ShapeKey, ShapeTheme, SketchPalette } from "../types";
@@ -13,6 +20,8 @@ type ZoomControlsProps = {
   onFit: () => void;
   onToggleClearMode: () => void;
   clearMode?: boolean;
+  onToggleOverviewMap?: () => void;
+  overviewMapOpen?: boolean;
 };
 
 export function ZoomControls({
@@ -24,16 +33,18 @@ export function ZoomControls({
   onFit,
   onToggleClearMode,
   clearMode = false,
+  onToggleOverviewMap,
+  overviewMapOpen = false,
 }: ZoomControlsProps) {
   const buttonClass = cn(
-    "grid h-10 w-10 place-items-center text-foreground transition hover:bg-card/90",
+    "grid h-9 w-9 sm:h-10 sm:w-10 place-items-center text-foreground transition hover:bg-card/90",
     theme.controlClassName,
   );
   const style = controlStyle(shape, theme, sketchPalette);
 
   return (
     <div
-      className="absolute bottom-5 right-5 z-40 flex flex-col items-end gap-2"
+      className="absolute bottom-40 sm:bottom-5 right-3 sm:right-5 z-40 flex flex-col items-end gap-1.5 sm:gap-2"
       onClick={(event) => event.stopPropagation()}
     >
       <button
@@ -53,12 +64,28 @@ export function ZoomControls({
       <AnimatePresence>
         {!clearMode && (
           <motion.div
-            className="flex flex-col gap-2"
+            className="flex flex-col gap-1.5 sm:gap-2"
             initial={false}
             animate={{ x: 0, opacity: 1, scale: 1 }}
             exit={{ x: 88, opacity: 0, scale: 0.86 }}
             transition={{ type: "spring", stiffness: 320, damping: 20 }}
           >
+            {onToggleOverviewMap && (
+              <button
+                type="button"
+                className={cn(
+                  buttonClass,
+                  "md:hidden",
+                  overviewMapOpen && "bg-[color:var(--mit)]/30 text-foreground",
+                )}
+                style={style}
+                onClick={onToggleOverviewMap}
+                aria-label={overviewMapOpen ? "Hide overview map" : "Show overview map"}
+                title="Overview map"
+              >
+                <MapIcon className="h-4 w-4" />
+              </button>
+            )}
             <button
               type="button"
               className={buttonClass}

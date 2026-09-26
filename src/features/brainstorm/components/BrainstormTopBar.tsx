@@ -75,7 +75,7 @@ export function BrainstormTopBar({
   const control = controlStyle(shape, theme, sketchPalette);
   const panel = floatingPanelStyle(shape, theme, sketchPalette);
   const iconButtonClass = cn(
-    "grid h-10 w-10 place-items-center text-foreground",
+    "grid h-9 w-9 sm:h-10 sm:w-10 place-items-center text-foreground shrink-0",
     theme.controlClassName,
   );
   const sketchButtonStyle = sketchChipStyle(shape, theme, sketchPalette);
@@ -124,7 +124,7 @@ export function BrainstormTopBar({
   );
 
   return (
-    <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-5 py-4">
+    <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-3 py-3 sm:px-5 sm:py-4">
       <motion.div
         animate={clearMode ? { x: -220, opacity: 0, scale: 0.86 } : { x: 0, opacity: 1, scale: 1 }}
         transition={{ type: "spring", stiffness: 320, damping: 20 }}
@@ -133,7 +133,7 @@ export function BrainstormTopBar({
         <Link
           to="/"
           className={cn(
-            "inline-flex min-h-12 items-center gap-2 px-5 py-2 text-sm font-bold text-muted-foreground transition hover:bg-card/90",
+            "inline-flex min-h-10 sm:min-h-12 items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 text-xs sm:text-sm font-bold text-muted-foreground transition hover:bg-card/90",
             theme.controlClassName,
           )}
           style={control}
@@ -141,12 +141,13 @@ export function BrainstormTopBar({
           aria-hidden={clearMode}
           tabIndex={clearMode ? -1 : undefined}
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to today
+          <ArrowLeft className="h-4 w-4 shrink-0" />
+          <span className="hidden sm:inline">Back to today</span>
+          <span className="sm:hidden">Today</span>
         </Link>
       </motion.div>
       <motion.div
-        className="relative flex items-center gap-2"
+        className="relative flex items-center gap-1.5 sm:gap-2"
         animate={clearMode ? { x: 300, opacity: 0, scale: 0.86 } : { x: 0, opacity: 1, scale: 1 }}
         transition={{ type: "spring", stiffness: 320, damping: 20 }}
         aria-hidden={clearMode}
@@ -222,13 +223,12 @@ export function BrainstormTopBar({
           <Share2 className="h-4 w-4" strokeWidth={2.5} />
         </motion.button>
         <ThemePicker
-          buttonClassName={cn("h-10 w-10 transition hover:bg-card/90", theme.controlClassName)}
+          buttonClassName={cn(
+            "h-9 w-9 sm:h-10 sm:w-10 shrink-0 transition hover:bg-card/90",
+            theme.controlClassName,
+          )}
           iconClassName="h-4 w-4"
-          buttonStyle={{
-            ...control,
-            height: 40,
-            width: 40,
-          }}
+          buttonStyle={control}
           onOpenChange={(open) => {
             if (!open) return;
             cancelLibraryClose();
@@ -265,7 +265,7 @@ export function BrainstormTopBar({
               exit={{ opacity: 0, y: -6, scale: 0.96 }}
               transition={{ type: "spring", stiffness: 280, damping: 22 }}
               className={cn(
-                "absolute right-0 top-14 z-50 w-72 p-3 shadow-pop",
+                "absolute right-0 top-12 sm:top-14 z-50 w-72 max-w-[calc(100vw-1.5rem)] p-3 shadow-pop",
                 isSketch ? "border-2" : cn("backdrop-blur", theme.controlClassName),
               )}
               style={isSketch ? panel : control}
@@ -358,7 +358,7 @@ export function BrainstormTopBar({
               exit={{ opacity: 0, y: -6, scale: 0.96 }}
               transition={{ type: "spring", stiffness: 280, damping: 22 }}
               className={cn(
-                "absolute right-0 top-14 z-50 w-56 space-y-1 p-2 shadow-pop",
+                "absolute right-0 top-12 sm:top-14 z-50 w-56 max-w-[calc(100vw-1.5rem)] space-y-1 p-2 shadow-pop",
                 isSketch ? "border-2" : cn("backdrop-blur", theme.controlClassName),
               )}
               style={isSketch ? panel : control}
@@ -423,7 +423,7 @@ export function BrainstormTopBar({
               exit={{ opacity: 0, y: -6, scale: 0.96 }}
               transition={{ type: "spring", stiffness: 280, damping: 22 }}
               className={cn(
-                "absolute right-0 top-14 z-50 w-80 p-3 shadow-pop",
+                "absolute right-0 top-12 sm:top-14 z-50 w-80 max-w-[calc(100vw-1.5rem)] p-3 shadow-pop",
                 isSketch ? "border-2" : cn("backdrop-blur", theme.controlClassName),
               )}
               style={isSketch ? panel : control}

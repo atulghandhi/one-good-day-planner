@@ -110,6 +110,7 @@ export function Brainstorm() {
     y: number;
   } | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [overviewMapOpen, setOverviewMapOpen] = useState(false);
   const [pendingMitOverwrite, setPendingMitOverwrite] = useState<{
     idea: Idea;
     childItems: TaskItem[];
@@ -151,6 +152,7 @@ export function Brainstorm() {
     setEditingId(null);
     setLibraryOpen(false);
     setSearchOpen(false);
+    setOverviewMapOpen(false);
     setActiveFilter(null);
     setPendingMitOverwrite(null);
   }, []);
@@ -1011,6 +1013,7 @@ export function Brainstorm() {
       if (next) {
         setLibraryOpen(false);
         setSearchOpen(false);
+        setOverviewMapOpen(false);
       }
       return next;
     });
@@ -1249,6 +1252,7 @@ export function Brainstorm() {
         view={view}
         viewportStroke={PAGE_THEME_VIEWPORT_STROKE[pageTheme] ?? "currentColor"}
         clearMode={clearMode}
+        mobileOpen={overviewMapOpen}
         onFocusWorldPoint={(point) => focusWorldPoint(point)}
       />
 
@@ -1261,10 +1265,12 @@ export function Brainstorm() {
         onFit={fitChart}
         onToggleClearMode={toggleClearMode}
         clearMode={clearMode}
+        onToggleOverviewMap={() => setOverviewMapOpen((prev) => !prev)}
+        overviewMapOpen={overviewMapOpen}
       />
 
       <div
-        className="absolute bottom-6 left-1/2 z-40 w-full max-w-md -translate-x-1/2 px-5"
+        className="absolute bottom-14 sm:bottom-6 left-1/2 z-40 w-full max-w-md -translate-x-1/2 px-4 sm:px-5"
         onClick={(event) => event.stopPropagation()}
       >
         <AnimatePresence>

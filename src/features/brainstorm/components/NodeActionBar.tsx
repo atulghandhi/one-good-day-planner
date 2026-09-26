@@ -31,11 +31,11 @@ export function NodeActionBar({
   const chipStyle = sketchChipStyle(shape, theme, sketchPalette);
   const activeChipStyle = sketchChipStyle(shape, theme, sketchPalette, true);
   const actionButtonClass = cn(
-    "h-9 border-2 px-3 text-xs font-bold transition",
+    "h-8 sm:h-9 border-2 px-2.5 sm:px-3 text-[11px] sm:text-xs font-bold shrink-0 transition",
     isSketch ? "" : "rounded-full border-0 bg-card/80 text-[11px] hover:bg-card",
   );
   const activeButtonClass = cn(
-    "h-9 border-2 px-3 text-xs font-bold capitalize transition",
+    "h-8 sm:h-9 border-2 px-2.5 sm:px-3 text-[11px] sm:text-xs font-bold capitalize shrink-0 transition",
     isSketch ? "" : "rounded-full border-0 text-[11px]",
   );
 
@@ -46,10 +46,10 @@ export function NodeActionBar({
       exit={{ opacity: 0, y: 8, scale: 0.96 }}
       transition={{ type: "spring", stiffness: 280, damping: 22 }}
       className={cn(
-        "mx-auto mb-2 flex w-fit flex-wrap items-center justify-center",
+        "mx-auto mb-2 flex max-w-full items-center overflow-x-auto no-scrollbar sm:w-fit sm:flex-wrap sm:justify-center py-0.5 px-1",
         isSketch
-          ? "gap-2 p-0"
-          : cn("gap-1.5 p-1.5 shadow-pop backdrop-blur", theme.controlClassName),
+          ? "gap-1.5 sm:gap-2 p-0"
+          : cn("gap-1 sm:gap-1.5 p-1 sm:p-1.5 shadow-pop backdrop-blur", theme.controlClassName),
       )}
       style={
         isSketch ? { fontFamily: theme.fontFamily } : controlStyle(shape, theme, sketchPalette)
@@ -80,7 +80,7 @@ export function NodeActionBar({
       >
         Could
       </button>
-      <span className="mx-0.5 h-7 w-px bg-current/20" aria-hidden />
+      <span className="mx-0.5 h-6 sm:h-7 w-px shrink-0 bg-current/20" aria-hidden />
       {IDEA_KIND_OPTIONS.map((kind) => (
         <button
           key={kind}
@@ -120,7 +120,7 @@ export function NodeActionBar({
             }))
           }
           className={cn(
-            "grid h-9 w-9 place-items-center border-2 transition",
+            "grid h-8 w-8 sm:h-9 sm:w-9 place-items-center border-2 shrink-0 transition",
             isSketch
               ? ""
               : cn(
@@ -139,14 +139,14 @@ export function NodeActionBar({
       )}
       {isRoot && (
         <>
-          <span className="mx-0.5 h-7 w-px bg-current/20" aria-hidden />
+          <span className="mx-0.5 h-6 sm:h-7 w-px shrink-0 bg-current/20" aria-hidden />
           {SHAPES.map((candidate) => (
             <button
               key={candidate.key}
               type="button"
               onClick={() => onShapeChange(candidate.key)}
               className={cn(
-                "grid h-9 w-9 place-items-center border-2 transition",
+                "grid h-8 w-8 sm:h-9 sm:w-9 place-items-center border-2 shrink-0 transition",
                 !isSketch &&
                   (shape === candidate.key
                     ? "rounded-full bg-[color:var(--mit)]/30 text-foreground"

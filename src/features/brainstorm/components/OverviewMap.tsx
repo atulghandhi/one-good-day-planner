@@ -1,6 +1,7 @@
 import type React from "react";
 import { useMemo, useRef } from "react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { WORLD_CENTER } from "../constants";
 import { clamp } from "../math";
 import type { CanvasView, Idea, Placed } from "../types";
@@ -12,6 +13,7 @@ export type OverviewMapProps = {
   view: CanvasView;
   viewportStroke: string;
   clearMode?: boolean;
+  mobileOpen?: boolean;
   onFocusWorldPoint: (point: { x: number; y: number }) => void;
 };
 
@@ -22,6 +24,7 @@ export function OverviewMap({
   view,
   viewportStroke,
   clearMode = false,
+  mobileOpen = false,
   onFocusWorldPoint,
 }: OverviewMapProps) {
   const draggingRef = useRef(false);
@@ -97,7 +100,11 @@ export function OverviewMap({
   return (
     <motion.button
       type="button"
-      className="absolute bottom-5 left-5 z-40 block cursor-crosshair border-2 border-foreground/25 bg-card/90 p-2 text-left shadow-[4px_4px_0_color-mix(in_oklab,var(--mit)_24%,transparent)] backdrop-blur active:cursor-grabbing"
+      className={cn(
+        "absolute z-40 cursor-crosshair border-2 border-foreground/25 bg-card/90 p-2 text-left shadow-[4px_4px_0_color-mix(in_oklab,var(--mit)_24%,transparent)] backdrop-blur active:cursor-grabbing",
+        "bottom-40 left-3 sm:bottom-5 sm:left-5",
+        mobileOpen ? "block" : "hidden md:block",
+      )}
       animate={
         clearMode
           ? { x: -236, y: 44, opacity: 0, scale: 0.86 }

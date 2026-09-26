@@ -70,7 +70,7 @@ export function IdeaInputBar({
           focusedId ? "Add a linked idea, press Enter..." : "Add a central node, press Enter..."
         }
         className={cn(
-          "relative z-10 w-full px-5 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-[color:var(--mit)]",
+          "relative z-10 w-full px-4 sm:px-5 py-2.5 sm:py-3 text-sm sm:text-base font-medium outline-none focus:ring-2 focus:ring-[color:var(--mit)]",
           shape === "blob"
             ? "placeholder:text-[color:var(--sketch-placeholder)]"
             : "bg-card/95 text-foreground placeholder:text-muted-foreground",

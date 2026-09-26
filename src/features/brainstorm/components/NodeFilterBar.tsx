@@ -25,13 +25,13 @@ export function NodeFilterBar({
   const activeChipStyle = sketchChipStyle(shape, theme, sketchPalette, true);
 
   return (
-    <div className="absolute left-1/2 top-4 z-40 -translate-x-1/2">
+    <div className="absolute left-1/2 top-16 sm:top-4 z-40 -translate-x-1/2 max-w-[calc(100vw-1.5rem)]">
       <motion.div
         initial={{ opacity: 0, y: -16, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -48, scale: 0.86 }}
         transition={{ type: "spring", stiffness: 300, damping: 22 }}
-        className="flex items-center gap-2"
+        className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 px-1"
         onClick={(event) => event.stopPropagation()}
       >
         {IDEA_KIND_OPTIONS.map((kind) => {
@@ -42,7 +42,7 @@ export function NodeFilterBar({
               type="button"
               onClick={() => onFilterChange(active ? null : kind)}
               className={cn(
-                "h-10 px-4 text-xs font-black transition hover:-translate-y-0.5",
+                "h-8 sm:h-10 px-3 sm:px-4 text-[11px] sm:text-xs font-black shrink-0 transition hover:-translate-y-0.5",
                 isSketch
                   ? "border-2"
                   : cn(
@@ -64,7 +64,7 @@ export function NodeFilterBar({
             type="button"
             onClick={() => onFilterChange(null)}
             className={cn(
-              "grid h-10 w-10 place-items-center text-muted-foreground transition hover:text-foreground",
+              "grid h-8 w-8 sm:h-10 sm:w-10 place-items-center shrink-0 text-muted-foreground transition hover:text-foreground",
               isSketch ? "border-2" : "rounded-full bg-card/65 hover:bg-card",
             )}
             style={isSketch ? chipStyle : undefined}
